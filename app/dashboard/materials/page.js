@@ -212,8 +212,14 @@ function MaterialsContent() {
       {/* نافذة معاينة الملف الكبيرة */}
       {previewFile && (
         <div className="modal active" onClick={() => setPreviewFile(null)} style={{display:'flex', zIndex: 3000}}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{width:'95%', height:'95vh', maxWidth:'1000px', display:'flex', flexDirection:'column', position:'relative', padding:'0', background:'#000', border:'1px solid #444'}}>
-                
+            <div className="modal-content">
+   <button className="close-btn" onClick={closeModal}>X</button>
+   
+   <div className="modal-image-scroll">
+      <img src={selectedFile.url} alt="Preview" />
+   </div>
+   
+</div>
                 <div style={{padding:'15px', background:'#1a1a1a', display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid #333'}}>
                     <h3 style={{color:'white', margin:0, fontSize:'1em'}}>معاينة الملف</h3>
                     <button onClick={() => setPreviewFile(null)} style={{background:'transparent', border:'none', color:'white', fontSize:'1.5em', cursor:'pointer'}}>×</button>
