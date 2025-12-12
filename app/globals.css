@@ -1860,3 +1860,21 @@ cubic-bezier(0.34, 1.56, 0.64, 1);
   justify-content: center;
   gap: 8px;
 }
+/* حاوية الصورة داخل النافذة المنبثقة */
+.modal-image-scroll {
+  max-height: 80vh;       /* ارتفاع النافذة لا يتعدى 80% من طول الشاشة */
+  overflow-y: auto;       /* إظهار سكرول عمودي إذا كانت الصورة طويلة */
+  width: 100%;            /* العرض كامل */
+  display: flex;
+  justify-content: center;
+  background-color: #000; /* خلفية سوداء */
+  border-radius: 8px;
+}
+
+/* تنسيق الصورة نفسها */
+.modal-image-scroll img {
+  width: 100%;            /* الصورة تأخذ عرض النافذة */
+  height: auto;           /* الطول يتغير تلقائياً ليناسب العرض (بدون مط) */
+  max-width: 800px;       /* أقصى عرض للصورة حتى لا تصبح عملاقة جداً */
+  object-fit: contain;
+}
