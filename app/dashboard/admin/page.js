@@ -1,12 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation"; // 👈 1. استدعاء أداة التوجيه
 import { db } from "../../../lib/firebase"; 
 import { collection, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, onSnapshot } from "firebase/firestore";
 import { FaCloudUploadAlt, FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaLock } from "react-icons/fa";
 
 export default function AdminPage() {
-  // 🔐 1. إعدادات الحماية (غير كلمة السر من هنا)
-  const ADMIN_PASSWORD = "98612"; // 👈 ضع كلمة السر التي تريدها هنا
+  const router = useRouter(); // 👈 2. تفعيل التوجيه
+
+  // 🔐 إعدادات الحماية
+  const ADMIN_PASSWORD = "leogamer98612"; 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
 
@@ -34,20 +37,21 @@ export default function AdminPage() {
     "مبادئ ادارة الاعمال"
   ];
 
-  // دالة التحقق من كلمة السر
+  // ✅ دالة التحقق المعدلة (تطرد المتطفلين)
   const handleLogin = (e) => {
     e.preventDefault();
     if (passwordInput === ADMIN_PASSWORD) {
-      setIsAuthenticated(true); // فتح البوابة
+      setIsAuthenticated(true); // كلمة السر صحيحة: افتح الباب
     } else {
-      alert("كلمة المرور خاطئة! ⛔");
-      setPasswordInput("");
+      // كلمة السر خاطئة: اطرد المستخدم فوراً
+      alert("⛔ ممنوع الدخول! سيتم تحويلك للصفحة الرئيسية.");
+      router.push("/"); // 👈 يرميه خارج لوحة التحكم إلى الصفحة الرئيسية
     }
   };
 
-  // جلب المواد (يعمل فقط بعد تسجيل الدخول لتوفير البيانات)
+  // جلب المواد (يعمل فقط بعد تسجيل الدخول)
   useEffect(() => {
-    if (!isAuthenticated) return; // لا تجلب البيانات إذا لم يسجل الدخول
+    if (!isAuthenticated) return; 
 
     const q = query(collection(db, "materials"), orderBy("date", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -131,7 +135,7 @@ export default function AdminPage() {
       setTitle("");
       setDesc("");
       setFiles([]);
-      setMessage("تم رفع جميع الملفات بنجاح! ");
+      setMessage("تم رفع جميع الملفات بنجاح! 🎉");
       setTimeout(() => setMessage(""), 3000);
 
     } catch (error) {
@@ -141,7 +145,7 @@ export default function AdminPage() {
     }
   };
 
-  // 🔒 إذا لم يسجل الدخول، اعرض شاشة القفل فقط
+  // شاشة القفل
   if (!isAuthenticated) {
     return (
       <div style={{
@@ -161,7 +165,7 @@ export default function AdminPage() {
             boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
         }}>
             <FaLock size={50} style={{marginBottom: '20px', color: '#00f260'}} />
-            <h2 style={{marginBottom: '20px'}}>منطقة الإدارة 🔐</h2>
+            <h2 style={{marginBottom: '20px'}}>منطقة الإدارة </h2>
             <form onSubmit={handleLogin}>
                 <input 
                     type="password" 
@@ -179,18 +183,33 @@ export default function AdminPage() {
                         textAlign: 'center'
                     }}
                 />
-                <button type="submit" className="submit-btn">دخول 🚀</button>
+                <button type="submit" className="submit-btn">دخول </button>
             </form>
+            
+            {/* زر عودة اختياري للطلاب التائهين */}
+            <button 
+                onClick={() => router.push('/')}
+                style={{
+                    marginTop: '10px', 
+                    background: 'transparent', 
+                    color: '#888', 
+                    border: 'none', 
+                    textDecoration: 'underline', 
+                    cursor: 'pointer'
+                }}
+            >
+                لست الأدمن؟ العودة للرئيسية
+            </button>
         </div>
       </div>
     );
   }
 
-  // 🔓 إذا سجل الدخول، اعرض لوحة التحكم
+  // لوحة التحكم
   return (
     <div className="admin-container">
       <h1 style={{color: 'white', textAlign: 'center', marginBottom: '30px', fontSize: '2rem'}}>
-        لوحة التحكم 
+        لوحة التحكم 🚀
       </h1>
 
       {message && (
@@ -217,7 +236,7 @@ export default function AdminPage() {
             <label>نوع الملف</label>
             <select className="form-select" value={type} onChange={(e) => setType(e.target.value)}>
                 <option value="summary">ملخص </option>
-                <option value="assignment">تكليف  </option>
+                <option value="assignment">تكليف </option>
             </select>
             </div>
         </div>
@@ -286,7 +305,7 @@ export default function AdminPage() {
                                     padding: '2px 8px', 
                                     borderRadius: '6px',
                                 }}>
-                                    {item.type === 'assignment' ? 'تكليف / واجب' : 'ملخص'}
+                                    {item.type === 'assignment' ? 'تكليف' : 'ملخص'}
                                 </span>
                             </div>
                         </div>
