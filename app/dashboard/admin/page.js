@@ -191,52 +191,89 @@ export default function AdminPage() {
         ) : materialsList.length === 0 ? (
             <p style={{color: '#888', textAlign: 'center'}}>لا توجد مواد مرفوعة حتى الآن.</p>
         ) : (
-            <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+        <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
                 {materialsList.map((item) => (
                     <div key={item.id} style={{
-                        background: '#222', 
-                        padding: '10px 15px', // قللت الحواف قليلاً
-                        borderRadius: '10px', 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
+                        background: 'rgba(255, 255, 255, 0.05)', // خلفية شفافة هادئة
+                        border: '1px solid rgba(255, 255, 255, 0.1)', // حدود خفيفة جداً
+                        borderRadius: '12px', // حواف دائرية ناعمة
+                        padding: '15px 20px',
+                        display: 'flex',
+                        justifyContent: 'space-between', // يفصل الكلام عن زر الحذف
                         alignItems: 'center',
-                        border: '1px solid #333'
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
                     }}>
-                        <div>
-                            <h4 style={{color: 'white', margin: '0 0 5px 0', fontSize: '1rem'}}>{item.title}</h4>
-                            <span style={{fontSize: '0.75rem', color: '#888', background: '#333', padding: '2px 8px', borderRadius: '4px', marginLeft: '10px'}}>
-                                {item.subject}
-                            </span>
-                            <span style={{fontSize: '0.75rem', color: '#00f260'}}>
-                                {item.type === 'assignment' ? 'تكليف' : 'ملخص'}
-                            </span>
+                        {/* === يمين: بيانات الملف === */}
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                            {/* العنوان بخط واضح */}
+                            <h4 style={{
+                                color: 'white', 
+                                margin: 0, 
+                                fontSize: '1.1rem', 
+                                fontWeight: 'bold',
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '8px'
+                            }}>
+                                <FaFilePdf style={{color: item.type === 'summary' ? '#00f260' : '#ff9f43'}} /> 
+                                {item.title}
+                            </h4>
+
+                            {/* التسميات (Badges) */}
+                            <div style={{display: 'flex', gap: '10px', fontSize: '0.85rem'}}>
+                                {/* اسم المادة */}
+                                <span style={{
+                                    color: '#ccc', 
+                                    background: 'rgba(255,255,255,0.1)', 
+                                    padding: '2px 8px', 
+                                    borderRadius: '6px'
+                                }}>
+                                    📌 {item.subject}
+                                </span>
+
+                                {/* نوع الملف (ملون حسب النوع) */}
+                                <span style={{
+                                    color: item.type === 'summary' ? '#00f260' : '#ff9f43', // أخضر للملخص، برتقالي للتكليف
+                                    background: item.type === 'summary' ? 'rgba(0, 242, 96, 0.1)' : 'rgba(255, 159, 67, 0.1)',
+                                    padding: '2px 8px', 
+                                    borderRadius: '6px',
+                                    fontWeight: 'bold'
+                                }}>
+                                    {item.type === 'assignment' ? 'تكليف / واجب' : 'ملخص'}
+                                </span>
+                            </div>
                         </div>
 
-                        {/* 👇👇 هذا هو الزر الجديد الصغير 👇👇 */}
+                        {/* === يسار: زر الحذف === */}
                         <button 
                             onClick={() => handleDelete(item.id, item.title)}
-                            title="حذف"
+                            title="حذف الملف"
                             style={{
-                                background: '#ff4d4d', 
-                                color: 'white', 
-                                border: 'none', 
-                                width: '30px',          // حجم ثابت صغير
-                                height: '30px',         
-                                borderRadius: '50%',    // شكل دائري
+                                background: 'transparent', 
+                                color: '#ff4d4d', // أيقونة حمراء
+                                border: '1px solid rgba(255, 77, 77, 0.3)', // إطار أحمر خافت
+                                width: '35px',          
+                                height: '35px',         
+                                borderRadius: '8px',    
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                transition: 'transform 0.2s',
-                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                                transition: 'all 0.2s',
+                            }}
+                            onMouseOver={(e) => {
+                                e.currentTarget.style.background = '#ff4d4d';
+                                e.currentTarget.style.color = 'white';
+                            }}
+                            onMouseOut={(e) => {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = '#ff4d4d';
                             }}
                         >
-                            <FaTrash size={12} />
+                            <FaTrash size={14} />
                         </button>
-                        {/* 👆👆 نهاية الزر الجديد 👆👆 */}
 
                     </div>
                 ))}
             </div>
-        )}
-      </div>
