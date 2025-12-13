@@ -5,10 +5,10 @@ export const metadata = {
   title: "El Agamy Materials | منصة العجمي التعليمية",
   description: "منصة تعليمية شاملة لطلاب الاقتصاد، تحتوي على ملخصات، تكاليف، ومحاضرات محدثة باستمرار.",
   icons: {
-    icon: '/icon.png', // تأكد أنك أضفت الصورة في الخطوة السابقة
+    icon: '/icon.png',
   },
   verification: {
-    google: 'pt1w4p5h-Q8RGvS1PjMC-8hpfdwTslNy8m-kF4BnFNs', // 👈 هذا هو كود التفعيل الخاص بك
+    google: 'S5pMWU_XezcEhJnIRbN_jJI7KqHnvF050Ed5268sCa8', // 👈 الكود الجديد هنا
   },
   openGraph: {
     title: 'El Agamy Materials',
