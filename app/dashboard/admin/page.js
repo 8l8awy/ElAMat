@@ -3,22 +3,22 @@ import { useState } from "react";
 import { db, storage } from "../../../lib/firebase"; 
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { FaCloudUploadAlt, FaCheckCircle, FaSpinner } from "react-icons/fa";
+import { FaCloudUploadAlt, FaCheckCircle, FaSpinner, FaFile } from "react-icons/fa";
 
 export default function AdminPage() {
-  // المتغيرات لتخزين البيانات
+  // المتغيرات
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
-  const [subject, setSubject] = useState("مبادئ الاقتصاد"); // القيمة الافتراضية
+  const [subject, setSubject] = useState("مبادئ الاقتصاد");
   const [type, setType] = useState("summary");
-  const [file, setFile] = useState(null);
   
-  // متغيرات حالة التحميل
+  // ✅ تغيير: أصبحنا نستخدم مصفوفة للملفات بدلاً من ملف واحد
+  const [files, setFiles] = useState([]); 
+  
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("");
 
-  // ✅ قائمة المواد المحدثة حسب طلبك
   const subjects = [
     "مبادئ الاقتصاد",
     "لغة اجنبية (1)",
@@ -27,78 +27,96 @@ export default function AdminPage() {
     "مبادئ ادارة الاعمال"
   ];
 
-  // دالة اختيار الملف
+  // ✅ دالة اختيار الملفات المعدلة (تقبل أكثر من ملف)
   const handleFileChange = (e) => {
-    if (e.target.files[0]) {
-      setFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      // تحويل FileList إلى مصفوفة عادية
+      setFiles(Array.from(e.target.files));
     }
   };
 
-  // دالة الرفع الرئيسية
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!file || !title) {
-      alert("الرجاء اختيار ملف وكتابة العنوان!");
+    if (files.length === 0 || !title) {
+      alert("الرجاء اختيار ملف واحد على الأقل وكتابة العنوان!");
       return;
     }
 
     setUploading(true);
-    setMessage("");
+    setMessage("جاري بدء الرفع...");
 
-    // 1. تجهيز مكان الملف في Storage
-    const storageRef = ref(storage, `materials/${file.name}-${Date.now()}`);
-    
-    // 2. بدء الرفع مع مراقبة التقدم
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    const uploadedFilesData = []; // هنا سنخزن روابط الملفات بعد رفعها
 
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        const prog = Math.round(
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-        );
-        setProgress(prog);
-      },
-      (error) => {
-        console.error(error);
-        setUploading(false);
-        alert("حدث خطأ أثناء الرفع!");
-      },
-      async () => {
-        // 3. عند اكتمال الرفع
-        const url = await getDownloadURL(uploadTask.snapshot.ref);
-
-        // 4. حفظ البيانات في Firestore
-        await addDoc(collection(db, "materials"), {
-          title,
-          desc,
-          subject,
-          type,
-          files: [{ name: file.name, url: url, type: file.type }],
-          date: new Date().toISOString(),
-          status: "approved",
-          viewCount: 0,
-          downloadCount: 0,
-          createdAt: serverTimestamp(),
-        });
-
-        // 5. إعادة تعيين النموذج
-        setUploading(false);
-        setProgress(0);
-        setTitle("");
-        setDesc("");
-        setFile(null);
-        setMessage("تم الرفع ");
+    try {
+      // ✅ حلقة تكرارية لرفع الملفات واحداً تلو الآخر
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setMessage(`جاري رفع الملف ${i + 1} من ${files.length}: ${file.name}...`);
         
-        setTimeout(() => setMessage(""), 3000);
+        // إنشاء مرجع للملف
+        const storageRef = ref(storage, `materials/${Date.now()}-${file.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        // ننتظر حتى ينتهي رفع هذا الملف للحصول على الرابط
+        await new Promise((resolve, reject) => {
+            uploadTask.on(
+                "state_changed",
+                (snapshot) => {
+                    const prog = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                    // تحديث الشريط (يمكن تحسينه ليعكس الإجمالي، لكن هنا يعرض تقدم الملف الحالي)
+                    setProgress(prog); 
+                },
+                (error) => reject(error),
+                async () => {
+                    const url = await getDownloadURL(uploadTask.snapshot.ref);
+                    uploadedFilesData.push({ 
+                        name: file.name, 
+                        url: url, 
+                        type: file.type 
+                    });
+                    resolve();
+                }
+            );
+        });
       }
-    );
+
+      setMessage("جاري حفظ البيانات...");
+
+      // حفظ البيانات في Firestore مرة واحدة بعد رفع كل الملفات
+      await addDoc(collection(db, "materials"), {
+        title,
+        desc,
+        subject,
+        type,
+        files: uploadedFilesData, // ✅ تخزين كل الملفات
+        date: new Date().toISOString(),
+        status: "approved",
+        viewCount: 0,
+        downloadCount: 0,
+        createdAt: serverTimestamp(),
+      });
+
+      // إعادة التعيين
+      setUploading(false);
+      setProgress(0);
+      setTitle("");
+      setDesc("");
+      setFiles([]); // تفريغ الملفات
+      setMessage("تم رفع جميع الملفات بنجاح! 🎉");
+      
+      setTimeout(() => setMessage(""), 3000);
+
+    } catch (error) {
+      console.error(error);
+      setUploading(false);
+      alert("حدث خطأ أثناء الرفع! تأكد من الاتصال بالإنترنت.");
+    }
   };
 
   return (
     <div className="admin-container">
       <h1 style={{color: 'white', textAlign: 'center', marginBottom: '30px', fontSize: '2rem'}}>
-        لوحة التحكم 
+        لوحة التحكم 🚀
       </h1>
 
       {message && (
@@ -108,20 +126,18 @@ export default function AdminPage() {
       )}
 
       <form onSubmit={handleUpload}>
-        {/* عنوان المادة */}
         <div className="form-group">
           <label>عنوان المادة</label>
           <input 
             type="text" 
             className="form-input" 
-            placeholder="عنوان " 
+            placeholder="مثال: ملخص الفصل الأول" 
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
           />
         </div>
 
-        {/* اختيار المادة والنوع */}
         <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
             <div className="form-group">
             <label>المادة الدراسية</label>
@@ -135,16 +151,14 @@ export default function AdminPage() {
             <div className="form-group">
             <label>نوع الملف</label>
             <select className="form-select" value={type} onChange={(e) => setType(e.target.value)}>
-                {/* ✅ تم حذف الامتحانات والخيارات الزائدة */}
-                <option value="summary">ملخص </option>
-                <option value="assignment">تكليف </option>
+                <option value="summary">ملخص 📝</option>
+                <option value="assignment">تكليف / واجب 📋</option>
             </select>
             </div>
         </div>
 
-        {/* الوصف */}
         <div className="form-group">
-          <label>وصف  (اختياري)</label>
+          <label>وصف بسيط (اختياري)</label>
           <textarea 
             className="form-textarea" 
             rows="3" 
@@ -154,32 +168,34 @@ export default function AdminPage() {
           ></textarea>
         </div>
 
-        {/* رفع الملف */}
         <div className="form-group">
-            <label>ملف المادة (PDF أو صور)</label>
+            <label>الملفات (يمكنك اختيار أكثر من صورة)</label>
             <div className="upload-area">
-                <input type="file" onChange={handleFileChange} accept=".pdf,image/*" />
+                {/* ✅ الخاصية multiple هي السر هنا */}
+                <input type="file" onChange={handleFileChange} accept=".pdf,image/*" multiple />
                 
-                {file ? (
+                {files.length > 0 ? (
                     <div style={{color: '#00f260'}}>
                         <FaCheckCircle size={40} style={{marginBottom: '10px'}} />
-                        <p>تم اختيار: <strong>{file.name}</strong></p>
+                        <p>تم اختيار <strong>{files.length}</strong> ملفات</p>
+                        <ul style={{listStyle:'none', padding:0, fontSize:'0.8em', color:'#ccc'}}>
+                           {files.map((f, i) => <li key={i}>📄 {f.name}</li>)}
+                        </ul>
                     </div>
                 ) : (
                     <div style={{color: '#888'}}>
                         <FaCloudUploadAlt size={50} style={{marginBottom: '10px'}} />
-                        <p>اضغط هنا لاختيار ملف</p>
-                        <span style={{fontSize: '0.8rem'}}>أو اسحب الملف وأفلته هنا</span>
+                        <p>اضغط هنا لاختيار ملفات</p>
+                        <span style={{fontSize: '0.8rem'}}>يمكنك سحب وإفلات صور متعددة أو ملف PDF</span>
                     </div>
                 )}
             </div>
         </div>
 
-        {/* شريط التحميل */}
         {uploading && (
             <div style={{marginBottom: '20px'}}>
                 <div style={{display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '0.9rem', marginBottom: '5px'}}>
-                    <span>جاري الرفع...</span>
+                    <span>{message}</span>
                     <span>{progress}%</span>
                 </div>
                 <div className="progress-container">
@@ -188,13 +204,12 @@ export default function AdminPage() {
             </div>
         )}
 
-        {/* زر الإرسال */}
         <button type="submit" className="submit-btn" disabled={uploading}>
           {uploading ? (
              <span style={{display:'flex', alignItems:'center', justifyContent:'center', gap:'10px'}}>
                 <FaSpinner className="fa-spin" /> جاري الرفع...
              </span>
-          ) : "رفع "}
+          ) : "رفع المواد 🚀"}
         </button>
 
       </form>
