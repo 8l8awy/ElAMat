@@ -172,12 +172,12 @@ export default function AdminPage() {
         flexDirection: 'column', 
         alignItems: 'center', 
         justifyContent: 'center', 
-        color: '#000', 
-        background: '#fff', 
+        color: '#777', 
+        background: '#050505', 
         fontFamily: '-apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Fira Sans", Avenir, "Helvetica Neue", "Lucida Grande", sans-serif'
       }}>
         <h1 style={{fontSize: '2rem', fontWeight: '600', margin: '0 0 10px 0'}}>404</h1>
-        <div style={{height: '40px', width: '1px', background: 'rgba(0,0,0,0.3)', margin: '0 20px', display: 'none'}}></div> 
+        <div style={{height: '40px', width: '1px', background: '#050505', margin: '0 20px', display: 'none'}}></div> 
         <h2 style={{fontSize: '14px', fontWeight: 'normal', margin: 0}}>This page could not be found.</h2>
       </div>
     );
