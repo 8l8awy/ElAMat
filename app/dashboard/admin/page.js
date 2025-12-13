@@ -2,12 +2,12 @@
 import { useState, useEffect } from "react";
 import { db } from "../../../lib/firebase"; 
 import { collection, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, onSnapshot } from "firebase/firestore";
-import { FaCloudUploadAlt, FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaImage } from "react-icons/fa";
+import { FaCloudUploadAlt, FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaFileAlt } from "react-icons/fa";
 
 export default function AdminPage() {
-  // بيانات Cloudinary
-  const CLOUD_NAME = "dhj0extnk"; // ⚠️ ضع اسمك هنا
-  const UPLOAD_PRESET = "ml_default"; // ⚠️ ضع البريسيت هنا
+  // 🔴 بيانات Cloudinary (تأكد من كتابة بياناتك هنا)
+  const CLOUD_NAME = "dhj0extnk"; 
+  const UPLOAD_PRESET = "ml_default"; 
 
   // المتغيرات
   const [title, setTitle] = useState("");
@@ -16,7 +16,7 @@ export default function AdminPage() {
   const [type, setType] = useState("summary");
   const [files, setFiles] = useState([]); 
   
-  // متغيرات خاصة بقائمة المواد والحذف
+  // متغيرات القائمة والحذف
   const [materialsList, setMaterialsList] = useState([]);
   const [loadingList, setLoadingList] = useState(true);
 
@@ -31,7 +31,7 @@ export default function AdminPage() {
     "مبادئ ادارة الاعمال"
   ];
 
-  // ✅ 1. جلب المواد الموجودة تلقائياً (Real-time)
+  // 1. جلب المواد تلقائياً
   useEffect(() => {
     const q = query(collection(db, "materials"), orderBy("date", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -46,12 +46,12 @@ export default function AdminPage() {
     return () => unsubscribe();
   }, []);
 
-  // ✅ 2. دالة الحذف
+  // 2. دالة الحذف
   const handleDelete = async (id, title) => {
-    if (confirm(`هل أنت متأكد من حذف "${title}"؟ لا يمكن التراجع عن هذا الإجراء!`)) {
+    if (confirm(`هل أنت متأكد من حذف "${title}"؟`)) {
       try {
         await deleteDoc(doc(db, "materials", id));
-        alert("تم الحذف بنجاح ✅");
+        // لا نحتاج لرسالة تنبيه هنا لأن القائمة ستتحدث تلقائياً
       } catch (error) {
         console.error(error);
         alert("حدث خطأ أثناء الحذف");
@@ -180,7 +180,7 @@ export default function AdminPage() {
         </button>
       </form>
 
-    {/* === ✅ قسم إدارة المواد (القائمة) === */}
+      {/* === ✅ قسم إدارة المواد (التصميم الجديد) === */}
       <div>
         <h2 style={{color: 'white', fontSize: '1.5rem', marginBottom: '20px', borderRight: '4px solid #00f260', paddingRight: '10px'}}>
            إدارة الملفات المرفوعة ({materialsList.length})
@@ -191,27 +191,24 @@ export default function AdminPage() {
         ) : materialsList.length === 0 ? (
             <p style={{color: '#888', textAlign: 'center'}}>لا توجد مواد مرفوعة حتى الآن.</p>
         ) : (
-        <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+            <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
                 {materialsList.map((item) => (
                     <div key={item.id} style={{
-                        background: 'rgba(255, 255, 255, 0.05)', // خلفية شفافة هادئة
-                        border: '1px solid rgba(255, 255, 255, 0.1)', // حدود خفيفة جداً
-                        borderRadius: '12px', // حواف دائرية ناعمة
+                        background: 'rgba(255, 255, 255, 0.05)', // ✅ خلفية رمادية شفافة
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '12px',
                         padding: '15px 20px',
                         display: 'flex',
-                        justifyContent: 'space-between', // يفصل الكلام عن زر الحذف
+                        justifyContent: 'space-between',
                         alignItems: 'center',
                         transition: 'all 0.2s ease',
-                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
                     }}>
-                        {/* === يمين: بيانات الملف === */}
+                        {/* بيانات الملف */}
                         <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
-                            {/* العنوان بخط واضح */}
                             <h4 style={{
                                 color: 'white', 
                                 margin: 0, 
                                 fontSize: '1.1rem', 
-                                fontWeight: 'bold',
                                 display: 'flex', 
                                 alignItems: 'center', 
                                 gap: '8px'
@@ -220,39 +217,29 @@ export default function AdminPage() {
                                 {item.title}
                             </h4>
 
-                            {/* التسميات (Badges) */}
                             <div style={{display: 'flex', gap: '10px', fontSize: '0.85rem'}}>
-                                {/* اسم المادة */}
-                                <span style={{
-                                    color: '#ccc', 
-                                    background: 'rgba(255,255,255,0.1)', 
-                                    padding: '2px 8px', 
-                                    borderRadius: '6px'
-                                }}>
+                                <span style={{color: '#ccc', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '6px'}}>
                                     📌 {item.subject}
                                 </span>
-
-                                {/* نوع الملف (ملون حسب النوع) */}
                                 <span style={{
-                                    color: item.type === 'summary' ? '#00f260' : '#ff9f43', // أخضر للملخص، برتقالي للتكليف
+                                    color: item.type === 'summary' ? '#00f260' : '#ff9f43', 
                                     background: item.type === 'summary' ? 'rgba(0, 242, 96, 0.1)' : 'rgba(255, 159, 67, 0.1)',
                                     padding: '2px 8px', 
                                     borderRadius: '6px',
-                                    fontWeight: 'bold'
                                 }}>
                                     {item.type === 'assignment' ? 'تكليف / واجب' : 'ملخص'}
                                 </span>
                             </div>
                         </div>
 
-                        {/* === يسار: زر الحذف === */}
+                        {/* زر الحذف */}
                         <button 
                             onClick={() => handleDelete(item.id, item.title)}
                             title="حذف الملف"
                             style={{
                                 background: 'transparent', 
-                                color: '#ff4d4d', // أيقونة حمراء
-                                border: '1px solid rgba(255, 77, 77, 0.3)', // إطار أحمر خافت
+                                color: '#ff4d4d', 
+                                border: '1px solid rgba(255, 77, 77, 0.3)', 
                                 width: '35px',          
                                 height: '35px',         
                                 borderRadius: '8px',    
@@ -262,18 +249,17 @@ export default function AdminPage() {
                                 justifyContent: 'center',
                                 transition: 'all 0.2s',
                             }}
-                            onMouseOver={(e) => {
-                                e.currentTarget.style.background = '#ff4d4d';
-                                e.currentTarget.style.color = 'white';
-                            }}
-                            onMouseOut={(e) => {
-                                e.currentTarget.style.background = 'transparent';
-                                e.currentTarget.style.color = '#ff4d4d';
-                            }}
+                            onMouseOver={(e) => {e.currentTarget.style.background = '#ff4d4d'; e.currentTarget.style.color = 'white';}}
+                            onMouseOut={(e) => {e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#ff4d4d';}}
                         >
                             <FaTrash size={14} />
                         </button>
-
                     </div>
                 ))}
             </div>
+        )}
+      </div>
+
+    </div>
+  );
+}
