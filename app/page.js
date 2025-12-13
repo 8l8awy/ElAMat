@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // للتوجيه
-import { db } from "../../lib/firebase"; // تأكد من المسار
+import { useRouter } from "next/navigation"; 
+import { db } from "../lib/firebase"; // 👈 تم التصحيح (نقطتين فقط)
 import { collection, getDocs, query, where } from "firebase/firestore";
 
 export default function LoginPage() {
@@ -23,13 +23,13 @@ export default function LoginPage() {
         
         // 2. هل هو أدمن؟
         if (userData.admin === true) {
-          // ✅ نعم! احفظ الكود في الجهاز (هذا هو المفتاح)
+          // ✅ نعم! احفظ الكود في الجهاز
           localStorage.setItem("adminCode", inputCode.trim());
           
           // 🚀 حولني لصفحة الأدمن
           router.push("/dashboard/admin");
         } else {
-          // طالب عادي (يمكنك توجيهه لصفحة الطلاب)
+          // طالب عادي
           alert("أهلاً بك يا طالب! (سيتم توجيهك لصفحة المواد قريباً)");
           // router.push("/materials"); 
         }
