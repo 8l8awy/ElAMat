@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation"; 
-import { db } from "../lib/firebase"; // 👈 تم التصحيح (نقطتين فقط بدلاً من ثلاثة)
+import { db } from "../lib/firebase"; // 👈 تأكد أن هذا السطر يحتوي على نقطتين فقط (..)
 import { collection, getDocs, query, where } from "firebase/firestore";
 
 export default function LoginPage() {
@@ -14,7 +14,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // 1. البحث عن الكود في قاعدة البيانات
+      // 1. البحث عن الكود
       const q = query(collection(db, "allowedCodes"), where("code", "==", inputCode.trim()));
       const querySnapshot = await getDocs(q);
 
@@ -23,13 +23,9 @@ export default function LoginPage() {
         
         // 2. هل هو أدمن؟
         if (userData.admin === true) {
-          // ✅ نعم! احفظ الكود في الجهاز
           localStorage.setItem("adminCode", inputCode.trim());
-          
-          // 🚀 حولني لصفحة الأدمن
           router.push("/dashboard/admin");
         } else {
-          // طالب عادي
           alert("أهلاً بك يا طالب! (سيتم توجيهك لصفحة المواد قريباً)");
           // router.push("/materials"); 
         }
