@@ -143,14 +143,14 @@ export default function LoginPage() {
                 type="text" 
                 value={loginEmail} 
                 onChange={(e) => setLoginEmail(e.target.value)} 
-                placeholder="الكود الجامعي أو البريد الإلكتروني" 
+                placeholder=" البريد الإلكتروني" 
                 required
             />
             <input 
                 type="password" 
                 value={loginPassword} 
                 onChange={(e) => setLoginPassword(e.target.value)} 
-                placeholder="كلمة المرور (إذا كنت تملك حساباً)" 
+                placeholder="كلمة المرور " 
             />
             <button type="submit" disabled={loading} className="btn">
                 {loading ? "جاري التحقق..." : "دخول"}
