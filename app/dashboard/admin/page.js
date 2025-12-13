@@ -2,10 +2,15 @@
 import { useState, useEffect } from "react";
 import { db } from "../../../lib/firebase"; 
 import { collection, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, onSnapshot } from "firebase/firestore";
-import { FaCloudUploadAlt, FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaFileAlt } from "react-icons/fa";
+import { FaCloudUploadAlt, FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaLock } from "react-icons/fa";
 
 export default function AdminPage() {
-  // 🔴 بيانات Cloudinary (تأكد من كتابة بياناتك هنا)
+  // 🔐 1. إعدادات الحماية (غير كلمة السر من هنا)
+  const ADMIN_PASSWORD = "98612"; // 👈 ضع كلمة السر التي تريدها هنا
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+
+  // 🔴 بيانات Cloudinary
   const CLOUD_NAME = "dhj0extnk"; 
   const UPLOAD_PRESET = "ml_default"; 
 
@@ -16,10 +21,8 @@ export default function AdminPage() {
   const [type, setType] = useState("summary");
   const [files, setFiles] = useState([]); 
   
-  // متغيرات القائمة والحذف
   const [materialsList, setMaterialsList] = useState([]);
   const [loadingList, setLoadingList] = useState(true);
-
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -31,8 +34,21 @@ export default function AdminPage() {
     "مبادئ ادارة الاعمال"
   ];
 
-  // 1. جلب المواد تلقائياً
+  // دالة التحقق من كلمة السر
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (passwordInput === ADMIN_PASSWORD) {
+      setIsAuthenticated(true); // فتح البوابة
+    } else {
+      alert("كلمة المرور خاطئة! ⛔");
+      setPasswordInput("");
+    }
+  };
+
+  // جلب المواد (يعمل فقط بعد تسجيل الدخول لتوفير البيانات)
   useEffect(() => {
+    if (!isAuthenticated) return; // لا تجلب البيانات إذا لم يسجل الدخول
+
     const q = query(collection(db, "materials"), orderBy("date", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({
@@ -44,14 +60,12 @@ export default function AdminPage() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isAuthenticated]);
 
-  // 2. دالة الحذف
   const handleDelete = async (id, title) => {
     if (confirm(`هل أنت متأكد من حذف "${title}"؟`)) {
       try {
         await deleteDoc(doc(db, "materials", id));
-        // لا نحتاج لرسالة تنبيه هنا لأن القائمة ستتحدث تلقائياً
       } catch (error) {
         console.error(error);
         alert("حدث خطأ أثناء الحذف");
@@ -127,6 +141,52 @@ export default function AdminPage() {
     }
   };
 
+  // 🔒 إذا لم يسجل الدخول، اعرض شاشة القفل فقط
+  if (!isAuthenticated) {
+    return (
+      <div style={{
+        height: '80vh', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        color: 'white'
+      }}>
+        <div style={{
+            background: '#1a1a1a', 
+            padding: '40px', 
+            borderRadius: '20px', 
+            textAlign: 'center',
+            border: '1px solid #333',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+        }}>
+            <FaLock size={50} style={{marginBottom: '20px', color: '#00f260'}} />
+            <h2 style={{marginBottom: '20px'}}>منطقة الإدارة 🔐</h2>
+            <form onSubmit={handleLogin}>
+                <input 
+                    type="password" 
+                    placeholder="كلمة المرور" 
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    style={{
+                        padding: '10px', 
+                        borderRadius: '8px', 
+                        border: '1px solid #444', 
+                        background: '#222', 
+                        color: 'white',
+                        marginBottom: '15px',
+                        width: '100%',
+                        textAlign: 'center'
+                    }}
+                />
+                <button type="submit" className="submit-btn">دخول 🚀</button>
+            </form>
+        </div>
+      </div>
+    );
+  }
+
+  // 🔓 إذا سجل الدخول، اعرض لوحة التحكم
   return (
     <div className="admin-container">
       <h1 style={{color: 'white', textAlign: 'center', marginBottom: '30px', fontSize: '2rem'}}>
@@ -157,7 +217,7 @@ export default function AdminPage() {
             <label>نوع الملف</label>
             <select className="form-select" value={type} onChange={(e) => setType(e.target.value)}>
                 <option value="summary">ملخص </option>
-                <option value="assignment">تكليف </option>
+                <option value="assignment">تكليف  </option>
             </select>
             </div>
         </div>
@@ -180,7 +240,7 @@ export default function AdminPage() {
         </button>
       </form>
 
-      {/* === ✅ قسم إدارة المواد (التصميم الجديد) === */}
+      {/* === ✅ قسم إدارة المواد === */}
       <div>
         <h2 style={{color: 'white', fontSize: '1.5rem', marginBottom: '20px', borderRight: '4px solid #00f260', paddingRight: '10px'}}>
            إدارة الملفات المرفوعة ({materialsList.length})
@@ -194,7 +254,7 @@ export default function AdminPage() {
             <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
                 {materialsList.map((item) => (
                     <div key={item.id} style={{
-                        background: 'rgba(255, 255, 255, 0.05)', // ✅ خلفية رمادية شفافة
+                        background: 'rgba(255, 255, 255, 0.05)',
                         border: '1px solid rgba(255, 255, 255, 0.1)',
                         borderRadius: '12px',
                         padding: '15px 20px',
@@ -203,7 +263,6 @@ export default function AdminPage() {
                         alignItems: 'center',
                         transition: 'all 0.2s ease',
                     }}>
-                        {/* بيانات الملف */}
                         <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
                             <h4 style={{
                                 color: 'white', 
@@ -227,12 +286,11 @@ export default function AdminPage() {
                                     padding: '2px 8px', 
                                     borderRadius: '6px',
                                 }}>
-                                    {item.type === 'assignment' ? 'تكليف ' : 'ملخص'}
+                                    {item.type === 'assignment' ? 'تكليف / واجب' : 'ملخص'}
                                 </span>
                             </div>
                         </div>
 
-                        {/* زر الحذف */}
                         <button 
                             onClick={() => handleDelete(item.id, item.title)}
                             title="حذف الملف"
@@ -259,7 +317,6 @@ export default function AdminPage() {
             </div>
         )}
       </div>
-
     </div>
   );
 }
