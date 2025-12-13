@@ -1,128 +1,72 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useAuth } from "../../context/AuthContext";
-import { db } from "../../lib/firebase";
-import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore";
-// استخدام مكتبة الأيقونات التي قمنا بتثبيتها
-import { FaUsers, FaFileAlt, FaClipboardList, FaLayerGroup } from "react-icons/fa"; 
+import { useState } from "react";
+import { useRouter } from "next/navigation"; 
+import { db } from "../lib/firebase"; // ✅ المسار الصحيح (نقطتين فقط)
+import { collection, getDocs, query, where } from "firebase/firestore";
 
-export default function Dashboard() {
-  const { user } = useAuth();
-  // حالة لحفظ الإحصائيات
-  const [stats, setStats] = useState({ users: 0, summaries: 0, assignments: 0, total: 0 });
-  // حالة لحفظ الإعلانات
-  const [announcements, setAnnouncements] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function LoginPage() {
+  const router = useRouter();
+  const [inputCode, setInputCode] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // دالة مساعدة لتوحيد أنواع الملفات (نفس المنطق من الكود القديم)
-  const normalizeType = (type) => {
-    if (!type) return "";
-    type = type.toString().trim();
-    const summaryList = ["summary", "ملخص", "ملخصات", "تلخيص"];
-    const assignmentList = ["assignment", "تكليف", "تكاليف", "واجب"];
-    if (summaryList.includes(type)) return "summary";
-    if (assignmentList.includes(type)) return "assignment";
-    return type;
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      // 1. البحث عن الكود في قاعدة البيانات
+      const q = query(collection(db, "allowedCodes"), where("code", "==", inputCode.trim()));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const userData = querySnapshot.docs[0].data();
+        
+        // 2. التحقق من الصلاحيات
+        if (userData.admin === true) {
+          // ✅ حالة الأدمن: احفظ الكود وافتح لوحة التحكم
+          localStorage.setItem("adminCode", inputCode.trim());
+          router.push("/dashboard/admin");
+        } else {
+          // 👤 حالة المستخدم العادي: لا تظهر له صفحة الأدمن
+          // (طلبت أن لا يظهر له شيء، لذا سنكتفي برسالة صغيرة أو يمكنك تركها فارغة)
+          alert("مرحباً بك! (حساب طالب)");
+          // لن يتم التوجيه لأي مكان
+        }
+      } else {
+        alert("⛔ الكود غير صحيح!");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("حدث خطأ في الاتصال");
+    }
+    setLoading(false);
   };
 
-  useEffect(() => {
-    async function fetchData() {
-      if (!user) return;
-      
-      try {
-        // 1. جلب عدد الطلاب (المسجلين + الأكواد المسموحة)
-        const usersSnap = await getDocs(collection(db, "users"));
-        const codesSnap = await getDocs(collection(db, "allowedCodes"));
-        const usersCount = usersSnap.size + codesSnap.size;
-
-        // 2. جلب إحصائيات المواد (الملخصات والتكاليف)
-        const materialsQuery = query(collection(db, "materials"), where("status", "==", "approved"));
-        const materialsSnap = await getDocs(materialsQuery);
-        
-        let summariesCount = 0;
-        let assignmentsCount = 0;
-
-        materialsSnap.forEach((doc) => {
-           const type = normalizeType(doc.data().type);
-           if (type === "summary") summariesCount++;
-           if (type === "assignment") assignmentsCount++;
-        });
-
-        setStats({
-          users: usersCount,
-          summaries: summariesCount,
-          assignments: assignmentsCount,
-          total: materialsSnap.size
-        });
-
-        // 3. جلب آخر 3 إعلانات
-        const annQuery = query(collection(db, "announcements"), orderBy("date", "desc"), limit(3));
-        const annSnap = await getDocs(annQuery);
-        const annList = annSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setAnnouncements(annList);
-
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, [user]);
-
-  if (loading) return <div style={{textAlign: 'center', padding: '50px', color: '#fff'}}>جاري تحميل البيانات...</div>;
-
   return (
-    <div id="homePage">
-        <h2 className="page-title" style={{ color: 'white', fontSize: '2.5em', margin: '30px 0', fontWeight: '900' }}>لوحة المعلومات</h2>
+    <div style={{height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'black', color: 'white', fontFamily: 'sans-serif'}}>
+      <div style={{textAlign: 'center', width: '100%', maxWidth: '400px', padding: '20px'}}>
+        <h1 style={{fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '10px'}}>El Agamy<br/>Materials</h1>
         
-        {/* شبكة الإحصائيات */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <h3>{stats.users}</h3>
-            <p><FaUsers style={{marginLeft:'8px', display:'inline'}}/> الطلاب</p>
-          </div>
-          <div className="stat-card">
-            <h3>{stats.summaries}</h3>
-            <p><FaFileAlt style={{marginLeft:'8px', display:'inline'}}/> ملخصات</p>
-          </div>
-          <div className="stat-card">
-            <h3>{stats.assignments}</h3>
-            <p><FaClipboardList style={{marginLeft:'8px', display:'inline'}}/> تكاليف</p>
-          </div>
-          <div className="stat-card">
-            <h3>{stats.total}</h3>
-            <p><FaLayerGroup style={{marginLeft:'8px', display:'inline'}}/> الإجمالي</p>
-          </div>
-        </div>
-
-        {/* قسم الإعلانات الأخيرة */}
-        <div className="admin-panel" style={{marginTop: '40px'}}> 
-          <h3 style={{color: '#fff', fontSize: '2em', marginBottom: '20px', fontWeight: '800'}}>الإعلانات الأخيرة</h3>
+        <form onSubmit={handleLogin} style={{display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '40px'}}>
+          <input 
+            type="text" 
+            placeholder="الكود الخاص بك" 
+            value={inputCode}
+            onChange={(e) => setInputCode(e.target.value)}
+            style={{padding: '15px', borderRadius: '10px', border: '1px solid #333', background: '#111', color: 'white', outline: 'none', textAlign: 'right'}}
+          />
+          <input 
+            type="password" 
+            placeholder="كلمة المرور (اختياري)" 
+            disabled 
+            style={{padding: '15px', borderRadius: '10px', border: '1px solid #333', background: '#111', color: '#555', outline: 'none', textAlign: 'right', cursor: 'not-allowed'}}
+          />
           
-          <div id="recentAnnouncements">
-            {announcements.length === 0 ? (
-              <p style={{color:'#94a3b8', textAlign:'center'}}>لا توجد إعلانات</p>
-            ) : (
-              announcements.map(ann => (
-                <div key={ann.id} style={{
-                    background:'#1a1a1a', // لون خلفية داكن يناسب التصميم
-                    padding:'20px', 
-                    borderRadius:'15px', 
-                    marginBottom:'15px', 
-                    border: '1px solid #333'
-                }}>
-                  <h4 style={{fontSize:'1.2em', marginBottom:'8px', color:'#fff', fontWeight:'700'}}>{ann.title}</h4>
-                  <p style={{fontSize:'1em', marginBottom:'10px', color:'#ccc', lineHeight: '1.6'}}>{ann.content}</p>
-                  <span style={{display:'block', fontSize:'0.9em', color:'#666', textAlign:'left', direction: 'ltr'}}>
-                    {new Date(ann.date).toLocaleDateString("ar-EG")}
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+          <button type="submit" disabled={loading} style={{padding: '15px', borderRadius: '10px', border: 'none', background: 'white', color: 'black', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px'}}>
+            {loading ? "جاري التحقق..." : "دخول"}
+          </button>
+        </form>
       </div>
+    </div>
   );
 }
