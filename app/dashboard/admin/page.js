@@ -110,7 +110,7 @@ export default function AdminPage() {
   return (
     <div className="admin-container">
       <h1 style={{color: 'white', textAlign: 'center', marginBottom: '30px', fontSize: '2rem'}}>
-        لوحة التحكم (Cloudinary) ☁️
+        لوحة التحكم 
       </h1>
 
       {message && (
