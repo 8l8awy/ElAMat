@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation"; 
-import { db } from "../lib/firebase"; // ✅ المسار الصحيح (نقطتين فقط)
+import { useRouter } from "next/navigation"; // للتوجيه
+import { db } from "../../lib/firebase"; // تأكد من المسار
 import { collection, getDocs, query, where } from "firebase/firestore";
 
 export default function LoginPage() {
@@ -21,15 +21,17 @@ export default function LoginPage() {
       if (!querySnapshot.empty) {
         const userData = querySnapshot.docs[0].data();
         
-        // 2. التحقق من الصلاحيات
+        // 2. هل هو أدمن؟
         if (userData.admin === true) {
-          // ✅ حالة الأدمن: احفظ الكود وافتح لوحة التحكم
+          // ✅ نعم! احفظ الكود في الجهاز (هذا هو المفتاح)
           localStorage.setItem("adminCode", inputCode.trim());
+          
+          // 🚀 حولني لصفحة الأدمن
           router.push("/dashboard/admin");
         } else {
-          // 👤 حالة المستخدم العادي: لا تظهر له صفحة الأدمن
-          // (تظهر رسالة ترحيب فقط ويبقى في نفس الصفحة)
-          alert(`مرحباً بك يا ${userData.name || "طالب"}!`);
+          // طالب عادي (يمكنك توجيهه لصفحة الطلاب)
+          alert("أهلاً بك يا طالب! (سيتم توجيهك لصفحة المواد قريباً)");
+          // router.push("/materials"); 
         }
       } else {
         alert("⛔ الكود غير صحيح!");
@@ -49,14 +51,14 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} style={{display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '40px'}}>
           <input 
             type="text" 
-            placeholder="الكود الخاص بك" 
+            placeholder="الكود أو البريد الإلكتروني" 
             value={inputCode}
             onChange={(e) => setInputCode(e.target.value)}
             style={{padding: '15px', borderRadius: '10px', border: '1px solid #333', background: '#111', color: 'white', outline: 'none', textAlign: 'right'}}
           />
           <input 
             type="password" 
-            placeholder="كلمة المرور (اختياري)" 
+            placeholder="كلمة المرور" 
             disabled 
             style={{padding: '15px', borderRadius: '10px', border: '1px solid #333', background: '#111', color: '#555', outline: 'none', textAlign: 'right', cursor: 'not-allowed'}}
           />
