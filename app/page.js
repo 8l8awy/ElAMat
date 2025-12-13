@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation"; 
-import { db } from "../lib/firebase"; // ✅ المسار الصحيح (رجوع خطوة واحدة)
+import { db } from "../lib/firebase"; // ✅ المسار الصحيح (نقطتين فقط)
 import { collection, getDocs, query, where } from "firebase/firestore";
 
 export default function LoginPage() {
@@ -14,28 +14,29 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // البحث عن الكود في قاعدة البيانات
+      // 1. البحث عن الكود في قاعدة البيانات
       const q = query(collection(db, "allowedCodes"), where("code", "==", inputCode.trim()));
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
         const userData = querySnapshot.docs[0].data();
         
-        // التحقق: هل هو أدمن؟
+        // 2. التحقق من الصلاحيات
         if (userData.admin === true) {
-          // ✅ أدمن: احفظ الكود وافتح لوحة التحكم
+          // ✅ حالة الأدمن: احفظ الكود وافتح لوحة التحكم
           localStorage.setItem("adminCode", inputCode.trim());
           router.push("/dashboard/admin");
         } else {
-          // 👤 طالب: رسالة ترحيب فقط (بدون توجيه للأدمن)
+          // 👤 حالة المستخدم العادي: لا تظهر له صفحة الأدمن
+          // (تظهر رسالة ترحيب فقط ويبقى في نفس الصفحة)
           alert(`مرحباً بك يا ${userData.name || "طالب"}!`);
         }
       } else {
         alert("⛔ الكود غير صحيح!");
       }
     } catch (error) {
-      console.error("Login Error:", error);
-      alert("حدث خطأ في الاتصال، تأكد من الإنترنت.");
+      console.error(error);
+      alert("حدث خطأ في الاتصال");
     }
     setLoading(false);
   };
