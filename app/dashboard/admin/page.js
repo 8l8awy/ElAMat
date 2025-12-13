@@ -1,13 +1,13 @@
 "use client";
-import { useState } from "react";
-import { db } from "../../../lib/firebase"; // نحتاج فقط قاعدة البيانات
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { FaCloudUploadAlt, FaCheckCircle, FaSpinner, FaFile } from "react-icons/fa";
+import { useState, useEffect } from "react";
+import { db } from "../../../lib/firebase"; 
+import { collection, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, onSnapshot } from "firebase/firestore";
+import { FaCloudUploadAlt, FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaImage } from "react-icons/fa";
 
 export default function AdminPage() {
-  // 🔴 بيانات Cloudinary (ضع بياناتك هنا)
-  const CLOUD_NAME = "dhj0extnk"; // مثال: "dxyz123"
-  const UPLOAD_PRESET = "ml_default"; // مثال: "ml_default"
+  // بيانات Cloudinary
+  const CLOUD_NAME = "dhj0extnk"; // ⚠️ ضع اسمك هنا
+  const UPLOAD_PRESET = "ml_default"; // ⚠️ ضع البريسيت هنا
 
   // المتغيرات
   const [title, setTitle] = useState("");
@@ -16,6 +16,10 @@ export default function AdminPage() {
   const [type, setType] = useState("summary");
   const [files, setFiles] = useState([]); 
   
+  // متغيرات خاصة بقائمة المواد والحذف
+  const [materialsList, setMaterialsList] = useState([]);
+  const [loadingList, setLoadingList] = useState(true);
+
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -27,25 +31,51 @@ export default function AdminPage() {
     "مبادئ ادارة الاعمال"
   ];
 
+  // ✅ 1. جلب المواد الموجودة تلقائياً (Real-time)
+  useEffect(() => {
+    const q = query(collection(db, "materials"), orderBy("date", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setMaterialsList(data);
+      setLoadingList(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // ✅ 2. دالة الحذف
+  const handleDelete = async (id, title) => {
+    if (confirm(`هل أنت متأكد من حذف "${title}"؟ لا يمكن التراجع عن هذا الإجراء!`)) {
+      try {
+        await deleteDoc(doc(db, "materials", id));
+        alert("تم الحذف بنجاح ✅");
+      } catch (error) {
+        console.error(error);
+        alert("حدث خطأ أثناء الحذف");
+      }
+    }
+  };
+
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       setFiles(Array.from(e.target.files));
     }
   };
 
-  // دالة الرفع إلى Cloudinary
   const uploadToCloudinary = async (file) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", UPLOAD_PRESET);
-    // نستخدم resource_type: auto ليقبل الصور والملفات PDF
     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
       method: "POST",
       body: formData,
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error?.message || "فشل الرفع");
-    return data.secure_url; // الرابط الجاهز
+    return data.secure_url;
   };
 
   const handleUpload = async (e) => {
@@ -61,23 +91,15 @@ export default function AdminPage() {
     const uploadedFilesData = [];
 
     try {
-      // رفع الملفات واحد تلو الآخر إلى Cloudinary
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         setMessage(`جاري رفع الملف ${i + 1} من ${files.length}: ${file.name}...`);
-        
         const url = await uploadToCloudinary(file);
-        
-        uploadedFilesData.push({ 
-            name: file.name, 
-            url: url, 
-            type: file.type 
-        });
+        uploadedFilesData.push({ name: file.name, url: url, type: file.type });
       }
 
       setMessage("جاري حفظ البيانات...");
 
-      // حفظ الروابط في Firebase Database
       await addDoc(collection(db, "materials"), {
         title,
         desc,
@@ -91,13 +113,11 @@ export default function AdminPage() {
         createdAt: serverTimestamp(),
       });
 
-      // إعادة التعيين
       setUploading(false);
       setTitle("");
       setDesc("");
       setFiles([]);
       setMessage("تم رفع جميع الملفات بنجاح! ");
-      
       setTimeout(() => setMessage(""), 3000);
 
     } catch (error) {
@@ -119,29 +139,20 @@ export default function AdminPage() {
         </div>
       )}
 
-      <form onSubmit={handleUpload}>
+      {/* === نموذج الرفع === */}
+      <form onSubmit={handleUpload} style={{borderBottom: '1px solid #333', paddingBottom: '30px', marginBottom: '30px'}}>
         <div className="form-group">
           <label>عنوان المادة</label>
-          <input 
-            type="text" 
-            className="form-input" 
-            placeholder="مثال: ملخص الفصل الأول" 
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
+          <input type="text" className="form-input" placeholder="مثال: ملخص الفصل الأول" value={title} onChange={(e) => setTitle(e.target.value)} required />
         </div>
 
         <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
             <div className="form-group">
             <label>المادة الدراسية</label>
             <select className="form-select" value={subject} onChange={(e) => setSubject(e.target.value)}>
-                {subjects.map((sub, index) => (
-                <option key={index} value={sub}>{sub}</option>
-                ))}
+                {subjects.map((sub, index) => <option key={index} value={sub}>{sub}</option>)}
             </select>
             </div>
-
             <div className="form-group">
             <label>نوع الملف</label>
             <select className="form-select" value={type} onChange={(e) => setType(e.target.value)}>
@@ -152,47 +163,77 @@ export default function AdminPage() {
         </div>
 
         <div className="form-group">
-          <label>وصف بسيط (اختياري)</label>
-          <textarea 
-            className="form-textarea" 
-            rows="3" 
-            placeholder="اكتب تفاصيل إضافية هنا..."
-            value={desc}
-            onChange={(e) => setDesc(e.target.value)}
-          ></textarea>
+          <label>وصف بسيط</label>
+          <textarea className="form-textarea" rows="2" placeholder="تفاصيل إضافية..." value={desc} onChange={(e) => setDesc(e.target.value)}></textarea>
         </div>
 
         <div className="form-group">
-            <label>الملفات (يمكنك اختيار أكثر من صورة)</label>
-            <div className="upload-area">
+            <label>الملفات</label>
+            <div className="upload-area" style={{padding: '20px'}}>
                 <input type="file" onChange={handleFileChange} accept=".pdf,image/*" multiple />
-                
-                {files.length > 0 ? (
-                    <div style={{color: '#00f260'}}>
-                        <FaCheckCircle size={40} style={{marginBottom: '10px'}} />
-                        <p>تم اختيار <strong>{files.length}</strong> ملفات</p>
-                        <ul style={{listStyle:'none', padding:0, fontSize:'0.8em', color:'#ccc'}}>
-                           {files.map((f, i) => <li key={i}>📄 {f.name}</li>)}
-                        </ul>
-                    </div>
-                ) : (
-                    <div style={{color: '#888'}}>
-                        <FaCloudUploadAlt size={50} style={{marginBottom: '10px'}} />
-                        <p>اضغط هنا لاختيار ملفات</p>
-                    </div>
-                )}
+                {files.length > 0 ? <p style={{color: '#00f260'}}>تم اختيار {files.length} ملفات</p> : <p style={{color: '#888'}}>اضغط لاختيار ملفات</p>}
             </div>
         </div>
 
         <button type="submit" className="submit-btn" disabled={uploading}>
-          {uploading ? (
-             <span style={{display:'flex', alignItems:'center', justifyContent:'center', gap:'10px'}}>
-                <FaSpinner className="fa-spin" /> {message || "جاري الرفع..."}
-             </span>
-          ) : "رفع المواد "}
+          {uploading ? <span style={{display:'flex', justifyContent:'center', gap:'10px'}}><FaSpinner className="fa-spin" /> جاري الرفع...</span> : "رفع المواد 🚀"}
         </button>
-
       </form>
+
+      {/* === ✅ قسم إدارة المواد (الحذف) === */}
+      <div>
+        <h2 style={{color: 'white', fontSize: '1.5rem', marginBottom: '20px', borderRight: '4px solid #00f260', paddingRight: '10px'}}>
+           إدارة الملفات المرفوعة ({materialsList.length})
+        </h2>
+
+        {loadingList ? (
+            <p style={{color: '#888', textAlign: 'center'}}>جاري تحميل القائمة...</p>
+        ) : materialsList.length === 0 ? (
+            <p style={{color: '#888', textAlign: 'center'}}>لا توجد مواد مرفوعة حتى الآن.</p>
+        ) : (
+            <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+                {materialsList.map((item) => (
+                    <div key={item.id} style={{
+                        background: '#222', 
+                        padding: '15px', 
+                        borderRadius: '10px', 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        border: '1px solid #333'
+                    }}>
+                        <div>
+                            <h4 style={{color: 'white', margin: '0 0 5px 0'}}>{item.title}</h4>
+                            <span style={{fontSize: '0.8rem', color: '#888', background: '#333', padding: '2px 8px', borderRadius: '4px'}}>
+                                {item.subject}
+                            </span>
+                            <span style={{fontSize: '0.8rem', color: '#00f260', marginRight: '10px'}}>
+                                {item.type === 'assignment' ? 'تكليف' : 'ملخص'}
+                            </span>
+                        </div>
+
+                        <button 
+                            onClick={() => handleDelete(item.id, item.title)}
+                            style={{
+                                background: '#ff4d4d', 
+                                color: 'white', 
+                                border: 'none', 
+                                padding: '10px', 
+                                borderRadius: '8px', 
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px'
+                            }}
+                        >
+                            <FaTrash /> حذف
+                        </button>
+                    </div>
+                ))}
+            </div>
+        )}
+      </div>
+
     </div>
   );
 }
