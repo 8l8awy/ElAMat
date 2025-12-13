@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation"; // للتوجيه
-import { db } from "../../lib/firebase"; // تأكد من المسار
+import { db } from "../lib/firebase"; // تأكد من المسار
 import { collection, getDocs, query, where } from "firebase/firestore";
 
 export default function LoginPage() {
