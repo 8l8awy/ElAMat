@@ -149,7 +149,7 @@ export default function AdminPage() {
         title, desc, subject, type, files: uploadedFilesData,
         date: new Date().toISOString(), status: "approved", viewCount: 0, downloadCount: 0, createdAt: serverTimestamp(),
       });
-      setUploading(false); setTitle(""); setDesc(""); setFiles([]); setMessage("تم بنجاح! 🎉");
+      setUploading(false); setTitle(""); setDesc(""); setFiles([]); setMessage("تم بنجاح! ");
       setTimeout(() => setMessage(""), 3000);
     } catch (error) { setUploading(false); alert("خطأ في الرفع"); }
   };
@@ -253,7 +253,7 @@ export default function AdminPage() {
   return (
     <div className="admin-container">
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px'}}>
-        <h1 style={{color: 'white', fontSize: '2rem'}}>لوحة التحكم 🚀</h1>
+        <h1 style={{color: 'white', fontSize: '2rem'}}>لوحة التحكم </h1>
         <button onClick={handleLogout} style={{background: '#333', color: '#ff4d4d', border: '1px solid #ff4d4d', padding: '8px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', gap: '5px', alignItems: 'center'}}>
            خروج <FaSignOutAlt />
         </button>
@@ -268,7 +268,7 @@ export default function AdminPage() {
             <div className="form-group"><label>النوع</label><select className="form-select" value={type} onChange={(e)=>setType(e.target.value)}><option value="summary">ملخص</option><option value="assignment">تكليف</option></select></div>
         </div>
         <div className="form-group"><label>الملفات</label><div className="upload-area" style={{padding: '20px'}}><input type="file" onChange={handleFileChange} accept=".pdf,image/*" multiple />{files.length > 0 ? <p style={{color: '#00f260'}}>{files.length} ملفات</p> : <p style={{color: '#888'}}>اختر ملفات</p>}</div></div>
-        <button type="submit" className="submit-btn" disabled={uploading}>{uploading ? "جاري الرفع..." : "رفع 🚀"}</button>
+        <button type="submit" className="submit-btn" disabled={uploading}>{uploading ? "جاري الرفع..." : "رفع "}</button>
       </form>
 
       <div>
