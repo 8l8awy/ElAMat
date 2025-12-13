@@ -180,7 +180,7 @@ export default function AdminPage() {
         </button>
       </form>
 
-      {/* === ✅ قسم إدارة المواد (الحذف) === */}
+    {/* === ✅ قسم إدارة المواد (القائمة) === */}
       <div>
         <h2 style={{color: 'white', fontSize: '1.5rem', marginBottom: '20px', borderRight: '4px solid #00f260', paddingRight: '10px'}}>
            إدارة الملفات المرفوعة ({materialsList.length})
@@ -195,7 +195,7 @@ export default function AdminPage() {
                 {materialsList.map((item) => (
                     <div key={item.id} style={{
                         background: '#222', 
-                        padding: '15px', 
+                        padding: '10px 15px', // قللت الحواف قليلاً
                         borderRadius: '10px', 
                         display: 'flex', 
                         justifyContent: 'space-between', 
@@ -203,37 +203,40 @@ export default function AdminPage() {
                         border: '1px solid #333'
                     }}>
                         <div>
-                            <h4 style={{color: 'white', margin: '0 0 5px 0'}}>{item.title}</h4>
-                            <span style={{fontSize: '0.8rem', color: '#888', background: '#333', padding: '2px 8px', borderRadius: '4px'}}>
+                            <h4 style={{color: 'white', margin: '0 0 5px 0', fontSize: '1rem'}}>{item.title}</h4>
+                            <span style={{fontSize: '0.75rem', color: '#888', background: '#333', padding: '2px 8px', borderRadius: '4px', marginLeft: '10px'}}>
                                 {item.subject}
                             </span>
-                            <span style={{fontSize: '0.8rem', color: '#00f260', marginRight: '10px'}}>
+                            <span style={{fontSize: '0.75rem', color: '#00f260'}}>
                                 {item.type === 'assignment' ? 'تكليف' : 'ملخص'}
                             </span>
                         </div>
 
+                        {/* 👇👇 هذا هو الزر الجديد الصغير 👇👇 */}
                         <button 
                             onClick={() => handleDelete(item.id, item.title)}
+                            title="حذف"
                             style={{
                                 background: '#ff4d4d', 
                                 color: 'white', 
                                 border: 'none', 
-                                padding: '10px', 
-                                borderRadius: '8px', 
+                                width: '30px',          // حجم ثابت صغير
+                                height: '30px',         
+                                borderRadius: '50%',    // شكل دائري
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '5px'
+                                justifyContent: 'center',
+                                transition: 'transform 0.2s',
+                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
                             }}
                         >
-                            <FaTrash /> حذف
+                            <FaTrash size={12} />
                         </button>
+                        {/* 👆👆 نهاية الزر الجديد 👆👆 */}
+
                     </div>
                 ))}
             </div>
         )}
       </div>
-
-    </div>
-  );
-}
