@@ -227,7 +227,7 @@ export default function AdminPage() {
                                     padding: '2px 8px', 
                                     borderRadius: '6px',
                                 }}>
-                                    {item.type === 'assignment' ? 'تكليف / واجب' : 'ملخص'}
+                                    {item.type === 'assignment' ? 'تكليف ' : 'ملخص'}
                                 </span>
                             </div>
                         </div>
