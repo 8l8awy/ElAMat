@@ -2,22 +2,23 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { db } from "../../../lib/firebase"; 
-// لاحظ أننا أزلنا استدعاءات Google Auth لأننا لن نحتاجها
 import { collection, addDoc, deleteDoc, doc, getDocs, query, where, serverTimestamp, orderBy, onSnapshot } from "firebase/firestore";
-import { FaCloudUploadAlt, FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaLock, FaKey, FaSignOutAlt } from "react-icons/fa";
+import { FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaKey, FaSignOutAlt, FaLock } from "react-icons/fa";
 
 export default function AdminPage() {
   const router = useRouter();
 
-  // بيانات الكلاود
+  // ☁️ إعدادات Cloudinary
   const CLOUD_NAME = "dhj0extnk"; 
   const UPLOAD_PRESET = "ml_default"; 
 
-  // متغيرات الحالة
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // هل هو مسجل الدخول؟
-  const [inputCode, setInputCode] = useState(""); // الكود الذي يكتبه المستخدم
-  const [checkingCode, setCheckingCode] = useState(false); // حالة التحقق
+  // حالات النظام
+  const [isLoading, setIsLoading] = useState(true); // حالة التحميل
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // هل هو أدمن؟
+  const [inputCode, setInputCode] = useState(""); // الكود المدخل
+  const [checkingCode, setCheckingCode] = useState(false); // جاري التحقق من الكود
 
+  // متغيرات البيانات (للوحة التحكم)
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [subject, setSubject] = useState("مبادئ الاقتصاد");
@@ -30,58 +31,61 @@ export default function AdminPage() {
 
   const subjects = ["مبادئ الاقتصاد", "لغة اجنبية (1)", "مبادئ المحاسبة المالية", "مبادئ القانون", "مبادئ ادارة الاعمال"];
 
-  // ✅ دالة التحقق من الكود (بديلة لجوجل)
-  const handleCodeLogin = async (e) => {
-    e.preventDefault();
-    setCheckingCode(true);
-
-    try {
-      // 1. البحث في قاعدة البيانات عن الكود المدخل
-      const codesRef = collection(db, "allowedCodes");
-      // نبحث عن المستند الذي فيه الحقل code يساوي ما كتبه المستخدم
-      const q = query(codesRef, where("code", "==", inputCode.trim()));
-      const querySnapshot = await getDocs(q);
-
-      if (!querySnapshot.empty) {
-        // 2. وجدنا الكود.. هل صاحبه أدمن؟
-        const userData = querySnapshot.docs[0].data();
-        
-        if (userData.admin === true) {
-          setIsAuthenticated(true); // ✅ كود صحيح وصلاحية أدمن
-          // (اختياري) حفظ الدخول في المتصفح حتى لا يخرج عند التحديث
-          localStorage.setItem("adminCode", inputCode);
-        } else {
-          alert("⛔ هذا الكود صحيح ولكنه لا يملك صلاحية أدمن (admin: false).");
-          setIsAuthenticated(false);
-        }
-      } else {
-        alert("⛔ الكود خاطئ! تأكد من كتابته بشكل صحيح.");
-        setIsAuthenticated(false);
-      }
-    } catch (error) {
-      console.error("خطأ في التحقق:", error);
-      alert("حدث خطأ أثناء الاتصال بقاعدة البيانات");
-    }
-    setCheckingCode(false);
-  };
-
-  // (اختياري) التحقق التلقائي إذا كان قد دخل سابقاً وحفظنا الكود
+  // ✅ 1. الفحص التلقائي عند فتح الصفحة (هل الكود محفوظ؟)
   useEffect(() => {
     const savedCode = localStorage.getItem("adminCode");
     if (savedCode) {
-      setInputCode(savedCode);
-      // يمكننا تفعيل الدخول مباشرة أو تركه يضغط الزر، هنا سنتركه يضغط للسرعة
+      verifyCode(savedCode, true); // تحقق صامت
+    } else {
+      setIsLoading(false); // لا يوجد كود، أظهر شاشة الدخول
     }
   }, []);
 
-  // دالة الخروج
+  // دالة التحقق من الكود
+  const verifyCode = async (codeToVerify, isAutoCheck = false) => {
+    if (!isAutoCheck) setCheckingCode(true);
+
+    try {
+      const codesRef = collection(db, "allowedCodes");
+      const q = query(codesRef, where("code", "==", codeToVerify.trim()));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const userData = querySnapshot.docs[0].data();
+        if (userData.admin === true) {
+          // ✅ أدمن حقيقي
+          setIsAuthenticated(true);
+          localStorage.setItem("adminCode", codeToVerify); // حفظ الكود للمستقبل
+        } else {
+          if (!isAutoCheck) alert("⛔ هذا الكود لا يملك صلاحيات الأدمن");
+        }
+      } else {
+        if (!isAutoCheck) alert("⛔ الكود غير صحيح");
+        if (isAutoCheck) localStorage.removeItem("adminCode"); // تنظيف الكود القديم إذا كان خطأ
+      }
+    } catch (error) {
+      console.error(error);
+      if (!isAutoCheck) alert("حدث خطأ في الاتصال");
+    }
+    
+    setIsLoading(false);
+    if (!isAutoCheck) setCheckingCode(false);
+  };
+
+  // عند الضغط على زر "دخول"
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    if (!inputCode) return;
+    await verifyCode(inputCode);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("adminCode");
     setIsAuthenticated(false);
     setInputCode("");
   };
 
-  // جلب البيانات (فقط للمسجلين)
+  // ... (نفس دوال جلب البيانات والرفع) ...
   useEffect(() => {
     if (!isAuthenticated) return;
     const q = query(collection(db, "materials"), orderBy("date", "desc"));
@@ -93,7 +97,6 @@ export default function AdminPage() {
     return () => unsubscribe();
   }, [isAuthenticated]);
 
-  // دوال الرفع والحذف (كما هي)
   const handleDelete = async (id, title) => { if (confirm(`حذف "${title}"؟`)) await deleteDoc(doc(db, "materials", id)); };
   const handleFileChange = (e) => { if (e.target.files) setFiles(Array.from(e.target.files)); };
   
@@ -120,56 +123,80 @@ export default function AdminPage() {
         title, desc, subject, type, files: uploadedFilesData,
         date: new Date().toISOString(), status: "approved", viewCount: 0, downloadCount: 0, createdAt: serverTimestamp(),
       });
-      setUploading(false); setTitle(""); setDesc(""); setFiles([]); setMessage("تم بنجاح! ");
+      setUploading(false); setTitle(""); setDesc(""); setFiles([]); setMessage("تم بنجاح! 🎉");
       setTimeout(() => setMessage(""), 3000);
     } catch (error) { setUploading(false); alert("خطأ في الرفع"); }
   };
 
-  // 🔒 شاشة القفل (تطلب الكود)
+  // ⏳ شاشة تحميل (لحظة فتح الصفحة)
+  if (isLoading) {
+    return (
+      <div style={{height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#000'}}>
+        <FaSpinner className="fa-spin" size={40} color="#fff" />
+      </div>
+    );
+  }
+
+  // 🔒 شاشة تسجيل الدخول (إذا لم يكن أدمن)
   if (!isAuthenticated) {
     return (
-      <div style={{height: '80vh', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+      <div style={{
+        height: '100vh', 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        background: '#000', // خلفية سوداء كاملة
+        color: 'white',
+        fontFamily: 'sans-serif'
+      }}>
         <div style={{
-            background: '#1a1a1a', 
-            padding: '40px', 
+            background: 'rgba(255, 255, 255, 0.05)', 
+            padding: '50px 40px', 
             borderRadius: '20px', 
             textAlign: 'center', 
             border: '1px solid #333', 
-            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-            maxWidth: '400px',
-            width: '90%'
+            boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+            width: '100%',
+            maxWidth: '400px'
         }}>
-          <FaLock size={50} style={{marginBottom: '20px', color: '#00f260'}} />
-          <h2 style={{color: 'white', marginBottom: '10px'}}>منطقة الإدارة 🔐</h2>
-          <p style={{color: '#888', marginBottom: '30px', fontSize: '0.9rem'}}>أدخل الكود الخاص بك للدخول.</p>
+          <h1 style={{fontSize: '2rem', marginBottom: '10px', fontWeight: 'bold'}}>El Agamy<br/>Materials</h1>
+          <p style={{color: '#888', marginBottom: '30px', fontSize: '0.9rem'}}>Admin Access Only</p>
           
-          <form onSubmit={handleCodeLogin}>
-            <div style={{position: 'relative', marginBottom: '20px'}}>
-                <FaKey style={{position: 'absolute', top: '12px', right: '15px', color: '#666'}} />
+          <form onSubmit={handleLoginSubmit}>
+            <div style={{marginBottom: '20px', position: 'relative'}}>
+                <FaLock style={{position: 'absolute', left: '15px', top: '15px', color: '#666'}} />
                 <input 
-                    type="password" // جعلناه مخفياً كالرقم السري
-                    placeholder="كود الدخول (Code)" 
-                    value={inputCode}
+                    type="password" 
+                    placeholder="Enter Admin Code" 
+                    value={inputCode} 
                     onChange={(e) => setInputCode(e.target.value)}
                     style={{
-                        width: '100%',
-                        padding: '12px 40px 12px 15px',
-                        borderRadius: '10px',
-                        border: '1px solid #444',
-                        background: '#222',
-                        color: 'white',
-                        textAlign: 'left',
-                        fontSize: '1rem'
+                        width: '100%', 
+                        padding: '15px 15px 15px 45px', // مساحة للأيقونة
+                        borderRadius: '10px', 
+                        border: '1px solid #444', 
+                        background: '#111', 
+                        color: 'white', 
+                        fontSize: '1rem',
+                        outline: 'none'
                     }}
                 />
             </div>
             
             <button type="submit" disabled={checkingCode} style={{
-              background: '#00f260', color: '#000', border: 'none', padding: '12px 25px', borderRadius: '30px',
-              fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', width: '100%', transition: 'transform 0.2s',
+              background: 'white', 
+              color: 'black', 
+              border: 'none', 
+              padding: '15px', 
+              borderRadius: '10px', 
+              fontWeight: 'bold', 
+              fontSize: '1rem', 
+              width: '100%', 
+              cursor: 'pointer',
+              transition: 'transform 0.1s',
               opacity: checkingCode ? 0.7 : 1
             }}>
-              {checkingCode ? "جاري التحقق..." : "دخول 🚀"}
+              {checkingCode ? "Verifying..." : "Login"}
             </button>
           </form>
         </div>
@@ -177,7 +204,7 @@ export default function AdminPage() {
     );
   }
 
-  // ✅ لوحة التحكم (للمسجلين فقط)
+  // ✅ لوحة التحكم (تظهر فقط بعد الدخول الناجح)
   return (
     <div className="admin-container">
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px'}}>
@@ -196,7 +223,7 @@ export default function AdminPage() {
             <div className="form-group"><label>النوع</label><select className="form-select" value={type} onChange={(e)=>setType(e.target.value)}><option value="summary">ملخص</option><option value="assignment">تكليف</option></select></div>
         </div>
         <div className="form-group"><label>الملفات</label><div className="upload-area" style={{padding: '20px'}}><input type="file" onChange={handleFileChange} accept=".pdf,image/*" multiple />{files.length > 0 ? <p style={{color: '#00f260'}}>{files.length} ملفات</p> : <p style={{color: '#888'}}>اختر ملفات</p>}</div></div>
-        <button type="submit" className="submit-btn" disabled={uploading}>{uploading ? "جاري الرفع..." : "رفع 🚀"}</button>
+        <button type="submit" className="submit-btn" disabled={uploading}>{uploading ? "جاري الرفع..." : "رفع "}</button>
       </form>
 
       <div>
@@ -205,10 +232,7 @@ export default function AdminPage() {
             {materialsList.map((item) => (
                 <div key={item.id} style={{background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                     <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
-                        <h4 style={{color: 'white', margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px'}}>
-                            <FaFilePdf style={{color: item.type === 'summary' ? '#00f260' : '#ff9f43'}} /> 
-                            {item.title}
-                        </h4>
+                        <h4 style={{color: 'white', margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px'}}><FaFilePdf style={{color: item.type === 'summary' ? '#00f260' : '#ff9f43'}} /> {item.title}</h4>
                         <div style={{display: 'flex', gap: '10px', fontSize: '0.85rem'}}>
                             <span style={{color: '#ccc', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '6px'}}>📌 {item.subject}</span>
                             <span style={{color: item.type === 'summary' ? '#00f260' : '#ff9f43', background: item.type === 'summary' ? 'rgba(0, 242, 96, 0.1)' : 'rgba(255, 159, 67, 0.1)', padding: '2px 8px', borderRadius: '6px'}}>{item.type === 'assignment' ? 'تكليف' : 'ملخص'}</span>
