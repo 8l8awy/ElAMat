@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { db, storage } from "../../../lib/firebase"; // تأكد من المسار
+import { db, storage } from "../../../lib/firebase"; 
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { FaCloudUploadAlt, FaCheckCircle, FaSpinner } from "react-icons/fa";
@@ -9,7 +9,7 @@ export default function AdminPage() {
   // المتغيرات لتخزين البيانات
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
-  const [subject, setSubject] = useState("مبادئ اقتصاد"); // القيمة الافتراضية
+  const [subject, setSubject] = useState("مبادئ الاقتصاد"); // القيمة الافتراضية
   const [type, setType] = useState("summary");
   const [file, setFile] = useState(null);
   
@@ -18,14 +18,13 @@ export default function AdminPage() {
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("");
 
-  // قائمة المواد (يمكنك زيادتها)
+  // ✅ قائمة المواد المحدثة حسب طلبك
   const subjects = [
-    "مبادئ اقتصاد",
-    "اقتصاد كلي",
-    "اقتصاد جزئي",
-    "مالية عامة",
-    "محاسبة",
-    "إدارة أعمال"
+    "مبادئ الاقتصاد",
+    "لغة اجنبية (1)",
+    "مبادئ المحاسبة المالية",
+    "مبادئ القانون",
+    "مبادئ ادارة الاعمال"
   ];
 
   // دالة اختيار الملف
@@ -49,13 +48,12 @@ export default function AdminPage() {
     // 1. تجهيز مكان الملف في Storage
     const storageRef = ref(storage, `materials/${file.name}-${Date.now()}`);
     
-    // 2. بدء الرفع مع مراقبة التقدم (Upload Task)
+    // 2. بدء الرفع مع مراقبة التقدم
     const uploadTask = uploadBytesResumable(storageRef, file);
 
     uploadTask.on(
       "state_changed",
       (snapshot) => {
-        // حساب النسبة المئوية
         const prog = Math.round(
           (snapshot.bytesTransferred / snapshot.totalBytes) * 100
         );
@@ -67,7 +65,7 @@ export default function AdminPage() {
         alert("حدث خطأ أثناء الرفع!");
       },
       async () => {
-        // 3. عند اكتمال الرفع بنجاح
+        // 3. عند اكتمال الرفع
         const url = await getDownloadURL(uploadTask.snapshot.ref);
 
         // 4. حفظ البيانات في Firestore
@@ -76,9 +74,9 @@ export default function AdminPage() {
           desc,
           subject,
           type,
-          files: [{ name: file.name, url: url, type: file.type }], // تخزين كقائمة لسهولة التطوير مستقبلاً
+          files: [{ name: file.name, url: url, type: file.type }],
           date: new Date().toISOString(),
-          status: "approved", // يظهر فوراً
+          status: "approved",
           viewCount: 0,
           downloadCount: 0,
           createdAt: serverTimestamp(),
@@ -90,9 +88,8 @@ export default function AdminPage() {
         setTitle("");
         setDesc("");
         setFile(null);
-        setMessage("تم رفع المادة بنجاح! 🎉");
+        setMessage("تم الرفع ");
         
-        // إخفاء رسالة النجاح بعد 3 ثواني
         setTimeout(() => setMessage(""), 3000);
       }
     );
@@ -101,7 +98,7 @@ export default function AdminPage() {
   return (
     <div className="admin-container">
       <h1 style={{color: 'white', textAlign: 'center', marginBottom: '30px', fontSize: '2rem'}}>
-        لوحة التحكم 🚀
+        لوحة التحكم 
       </h1>
 
       {message && (
@@ -111,20 +108,20 @@ export default function AdminPage() {
       )}
 
       <form onSubmit={handleUpload}>
-        {/* 1. عنوان المادة */}
+        {/* عنوان المادة */}
         <div className="form-group">
           <label>عنوان المادة</label>
           <input 
             type="text" 
             className="form-input" 
-            placeholder="مثال: ملخص الفصل الأول" 
+            placeholder="عنوان " 
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
           />
         </div>
 
-        {/* 2. اختيار المادة والنوع (بجانب بعض) */}
+        {/* اختيار المادة والنوع */}
         <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
             <div className="form-group">
             <label>المادة الدراسية</label>
@@ -138,16 +135,16 @@ export default function AdminPage() {
             <div className="form-group">
             <label>نوع الملف</label>
             <select className="form-select" value={type} onChange={(e) => setType(e.target.value)}>
-                <option value="summary">ملخص 📝</option>
-                <option value="assignment">تكليف / واجب 📋</option>
-                <option value="exam">امتحان سابق 📄</option>
+                {/* ✅ تم حذف الامتحانات والخيارات الزائدة */}
+                <option value="summary">ملخص </option>
+                <option value="assignment">تكليف </option>
             </select>
             </div>
         </div>
 
-        {/* 3. الوصف */}
+        {/* الوصف */}
         <div className="form-group">
-          <label>وصف بسيط (اختياري)</label>
+          <label>وصف  (اختياري)</label>
           <textarea 
             className="form-textarea" 
             rows="3" 
@@ -157,7 +154,7 @@ export default function AdminPage() {
           ></textarea>
         </div>
 
-        {/* 4. منطقة رفع الملفات (Drag & Drop) */}
+        {/* رفع الملف */}
         <div className="form-group">
             <label>ملف المادة (PDF أو صور)</label>
             <div className="upload-area">
@@ -178,7 +175,7 @@ export default function AdminPage() {
             </div>
         </div>
 
-        {/* 5. شريط التحميل */}
+        {/* شريط التحميل */}
         {uploading && (
             <div style={{marginBottom: '20px'}}>
                 <div style={{display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '0.9rem', marginBottom: '5px'}}>
@@ -197,7 +194,7 @@ export default function AdminPage() {
              <span style={{display:'flex', alignItems:'center', justifyContent:'center', gap:'10px'}}>
                 <FaSpinner className="fa-spin" /> جاري الرفع...
              </span>
-          ) : "رفع المادة 🚀"}
+          ) : "رفع "}
         </button>
 
       </form>
