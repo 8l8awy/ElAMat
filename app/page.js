@@ -1,176 +1,178 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation"; 
-import { db } from "../lib/firebase"; 
-import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
-import { FaUserGraduate, FaUserShield, FaArrowLeft } from "react-icons/fa"; // تأكد من تثبيت react-icons
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../context/AuthContext";
+import { db } from "../lib/firebase";
+import { collection, getDocs, query, where, addDoc } from "firebase/firestore";
 
-export default function AuthPage() {
-  const router = useRouter();
+export default function LoginPage() {
+  const [isLogin, setIsLogin] = useState(true);
   
-  // view: تتحكم في الشاشة المعروضة
-  // 'student-login' (دخول طالب) | 'student-signup' (تسجيل طالب) | 'admin-login' (دخول مشرف بالكود)
-  const [view, setView] = useState("student-login");
+  // Login State
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  
+  // Register State
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
 
-  // بيانات النماذج
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [adminCode, setAdminCode] = useState("");
-  
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  const { login, user } = useAuth();
+  const router = useRouter();
 
-  // 1️⃣ دالة تسجيل دخول الطلاب (ايميل وباسورد)
-  const handleStudentLogin = async (e) => {
+  // إذا كان المستخدم مسجلاً بالفعل، حوله للوحة التحكم
+  useEffect(() => {
+    if (user) router.push("/dashboard");
+  }, [user, router]);
+
+  // --- دالة تسجيل الدخول ---
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
     setLoading(true);
+
     try {
-      // البحث في كوليكشن الطلاب
-      const q = query(collection(db, "students"), where("email", "==", email.toLowerCase().trim()), where("password", "==", password));
-      const snapshot = await getDocs(q);
+      // 1. التحقق أولاً من الأكواد المسموحة (allowedCodes)
+      // في كودك القديم، كان الكود يُستخدم كـ "email" في الفورم
+      const codesRef = collection(db, "allowedCodes");
+      const qCode = query(codesRef, where("code", "==", loginEmail));
+      const codeSnap = await getDocs(qCode);
 
-      if (!snapshot.empty) {
-        const student = snapshot.docs[0].data();
-        localStorage.setItem("studentName", student.name);
-        alert(`مرحباً بك يا ${student.name} 👋`);
-        // router.push("/dashboard/materials"); // وجهه لصفحة المواد لاحقاً
-      } else {
-        alert("❌ البريد الإلكتروني أو كلمة المرور غير صحيحة");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("حدث خطأ في الاتصال");
-    }
-    setLoading(false);
-  };
-
-  // 2️⃣ دالة إنشاء حساب طالب جديد
-  const handleStudentSignup = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      // التأكد ألا يكون الايميل مستخدم من قبل
-      const checkQ = query(collection(db, "students"), where("email", "==", email.toLowerCase().trim()));
-      const checkSnapshot = await getDocs(checkQ);
-
-      if (!checkSnapshot.empty) {
-        alert("⚠️ هذا البريد الإلكتروني مسجل بالفعل!");
-        setLoading(false);
+      if (!codeSnap.empty) {
+        const data = codeSnap.docs[0].data();
+        // تسجيل الدخول بنجاح كطالب أو أدمن
+        login({ 
+            name: data.name || "User", 
+            email: loginEmail, 
+            isAdmin: data.admin || false // هنا يتم تحديد الأدمن
+        });
+        router.push("/dashboard");
         return;
       }
 
-      // حفظ الطالب الجديد
-      await addDoc(collection(db, "students"), {
-        name: name,
-        email: email.toLowerCase().trim(),
-        password: password, // في تطبيق حقيقي يفضل تشفيرها
-        role: "student",
-        createdAt: new Date().toISOString()
-      });
+      // 2. إذا لم يكن كود، تحقق من المستخدمين المسجلين (users)
+      const usersRef = collection(db, "users");
+      const qUser = query(usersRef, where("email", "==", loginEmail));
+      const userSnap = await getDocs(qUser);
 
-      alert("🎉 تم إنشاء الحساب بنجاح! قم بتسجيل الدخول الآن.");
-      setView("student-login"); // العودة لشاشة الدخول
-
-    } catch (error) {
-      console.error(error);
-      alert("حدث خطأ أثناء التسجيل");
-    }
-    setLoading(false);
-  };
-
-  // 3️⃣ دالة دخول المشرفين (بالكود فقط)
-  const handleAdminLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const q = query(collection(db, "allowedCodes"), where("code", "==", adminCode.trim()));
-      const snapshot = await getDocs(q);
-
-      if (!snapshot.empty) {
-        const adminData = snapshot.docs[0].data();
-        if (adminData.admin === true) {
-          localStorage.setItem("adminCode", adminCode.trim());
-          router.push("/dashboard/admin");
+      if (!userSnap.empty) {
+        const data = userSnap.docs[0].data();
+        if (data.password === loginPassword) {
+          login({ 
+              ...data, 
+              isAdmin: data.isAdmin || false 
+          });
+          router.push("/dashboard");
         } else {
-          alert("⛔ هذا الكود ليس لمشرف!");
+          setError("كلمة المرور غير صحيحة");
         }
       } else {
-        alert("⛔ الكود غير صحيح!");
+        setError("الكود أو البريد الإلكتروني غير موجود");
       }
-    } catch (error) {
-      console.error(error);
-      alert("حدث خطأ في الاتصال");
+
+    } catch (err) {
+      console.error(err);
+      setError("حدث خطأ في الاتصال: " + err.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  // --- دالة إنشاء حساب جديد ---
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    if (!regName || !regEmail || !regPassword) {
+        setError("الرجاء ملء جميع الحقول");
+        setLoading(false);
+        return;
+    }
+
+    try {
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("email", "==", regEmail));
+        const snap = await getDocs(q);
+
+        if (!snap.empty) {
+            setError("البريد الإلكتروني مستخدم بالفعل");
+            setLoading(false);
+            return;
+        }
+
+        const newUser = {
+            name: regName,
+            email: regEmail,
+            password: regPassword,
+            isAdmin: false,
+            createdAt: new Date().toISOString()
+        };
+
+        await addDoc(usersRef, newUser);
+        
+        // تسجيل الدخول مباشرة بعد الإنشاء
+        login(newUser);
+        router.push("/dashboard");
+
+    } catch (err) {
+        console.error(err);
+        setError("فشل إنشاء الحساب");
+    } finally {
+        setLoading(false);
+    }
   };
 
   return (
-    <div style={{minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: 'black', color: 'white', fontFamily: 'sans-serif', padding: '20px'}}>
-      <div style={{textAlign: 'center', width: '100%', maxWidth: '400px', padding: '30px', backgroundColor: '#111', borderRadius: '20px', border: '1px solid #333', position: 'relative'}}>
+    <div className="login-container">
+      <div className="login-box">
+        <h2>El Agamy Materials</h2>
+        <p>منصة المواد الدراسية</p>
+
+        <div className="tab-buttons">
+          <button className={`tab-btn ${isLogin ? "active" : ""}`} onClick={() => {setIsLogin(true); setError("");}}>تسجيل الدخول</button>
+          <button className={`tab-btn ${!isLogin ? "active" : ""}`} onClick={() => {setIsLogin(false); setError("");}}>إنشاء حساب</button>
+        </div>
+
+        {isLogin ? (
+          <form onSubmit={handleLogin}>
+            <input 
+                type="text" 
+                value={loginEmail} 
+                onChange={(e) => setLoginEmail(e.target.value)} 
+                placeholder="الكود الجامعي أو البريد الإلكتروني" 
+                required
+            />
+            <input 
+                type="password" 
+                value={loginPassword} 
+                onChange={(e) => setLoginPassword(e.target.value)} 
+                placeholder="كلمة المرور (إذا كنت تملك حساباً)" 
+            />
+            <button type="submit" disabled={loading} className="btn">
+                {loading ? "جاري التحقق..." : "دخول"}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleRegister}>
+            <input type="text" value={regName} onChange={(e) => setRegName(e.target.value)} placeholder="الاسم" required />
+            <input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} placeholder="البريد الإلكتروني" required />
+            <input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} placeholder="كلمة المرور" required />
+            <button type="submit" disabled={loading} className="btn">
+                {loading ? "جاري الإنشاء..." : "إنشاء حساب"}
+            </button>
+          </form>
+        )}
         
-        {/* زر العودة (يظهر فقط إذا لم نكن في الصفحة الرئيسية) */}
-        {view !== "student-login" && (
-          <button onClick={() => setView("student-login")} style={{position: 'absolute', top: '20px', left: '20px', background: 'transparent', border: 'none', color: '#888', cursor: 'pointer'}}>
-            <FaArrowLeft size={20} />
-          </button>
-        )}
-
-        {/* --- العناوين --- */}
-        <h1 style={{fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '10px', color: view === 'admin-login' ? '#ff4d4d' : 'white'}}>
-          {view === 'admin-login' ? 'Admin Access' : 'El Agamy Materials'}
-        </h1>
-        <p style={{color: '#888', marginBottom: '30px', fontSize: '0.9rem'}}>
-          {view === 'student-login' && "تسجيل دخول الطلاب"}
-          {view === 'student-signup' && "إنشاء حساب طالب جديد"}
-          {view === 'admin-login' && "الدخول بالكود (للمشرفين فقط)"}
-        </p>
-
-        {/* --- نموذج دخول الطلاب --- */}
-        {view === "student-login" && (
-          <form onSubmit={handleStudentLogin} style={{display: 'flex', flexDirection: 'column', gap: '15px'}}>
-            <input type="email" placeholder="البريد الإلكتروني" required value={email} onChange={(e)=>setEmail(e.target.value)} style={inputStyle} />
-            <input type="password" placeholder="كلمة المرور" required value={password} onChange={(e)=>setPassword(e.target.value)} style={inputStyle} />
-            <button type="submit" disabled={loading} style={buttonStyle}>{loading ? "جاري الدخول..." : "دخول"}</button>
-            
-            <div style={{marginTop: '20px', fontSize: '0.9rem', color: '#ccc'}}>
-              ليس لديك حساب؟ <span onClick={()=>setView('student-signup')} style={{color: '#4dabf7', cursor: 'pointer', fontWeight: 'bold'}}>أنشئ حساباً</span>
-            </div>
-            <div style={{marginTop: '10px', fontSize: '0.8rem', color: '#666'}}>
-              هل أنت مشرف؟ <span onClick={()=>setView('admin-login')} style={{color: '#ff4d4d', cursor: 'pointer', fontWeight: 'bold'}}>الدخول بالكود</span>
-            </div>
-          </form>
-        )}
-
-        {/* --- نموذج تسجيل الطلاب --- */}
-        {view === "student-signup" && (
-          <form onSubmit={handleStudentSignup} style={{display: 'flex', flexDirection: 'column', gap: '15px'}}>
-            <input type="text" placeholder="الاسم بالكامل" required value={name} onChange={(e)=>setName(e.target.value)} style={inputStyle} />
-            <input type="email" placeholder="البريد الإلكتروني" required value={email} onChange={(e)=>setEmail(e.target.value)} style={inputStyle} />
-            <input type="password" placeholder="كلمة المرور" required value={password} onChange={(e)=>setPassword(e.target.value)} style={inputStyle} />
-            <button type="submit" disabled={loading} style={buttonStyle}>{loading ? "جاري التسجيل..." : "إنشاء الحساب"}</button>
-          </form>
-        )}
-
-        {/* --- نموذج دخول المشرفين --- */}
-        {view === "admin-login" && (
-          <form onSubmit={handleAdminLogin} style={{display: 'flex', flexDirection: 'column', gap: '15px'}}>
-            <div style={{background: 'rgba(255, 77, 77, 0.1)', padding: '10px', borderRadius: '10px', color: '#ff4d4d', fontSize: '0.85rem', marginBottom: '10px'}}>
-              هذه المنطقة مخصصة للمشرفين فقط
-            </div>
-            <input type="password" placeholder="كود المشرف" required value={adminCode} onChange={(e)=>setAdminCode(e.target.value)} style={{...inputStyle, textAlign: 'center', letterSpacing: '5px', fontSize: '1.2rem'}} />
-            <button type="submit" disabled={loading} style={{...buttonStyle, background: '#ff4d4d', color: 'white'}}>{loading ? "جاري التحقق..." : "دخول المشرف"}</button>
-          </form>
-        )}
-
+        {error && <p className="error-msg">{error}</p>}
+        
+        <div className="dev-footer">
+            <p className="dev-text">تحت إشراف <strong>محمد علي</strong></p>
+        </div>
       </div>
     </div>
   );
 }
-
-// تنسيقات ثابتة
-const inputStyle = {
-  padding: '15px', borderRadius: '10px', border: '1px solid #333', background: '#000', color: 'white', outline: 'none', textAlign: 'right'
-};
-const buttonStyle = {
-  padding: '15px', borderRadius: '10px', border: 'none', background: 'white', color: 'black', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem'
-};
