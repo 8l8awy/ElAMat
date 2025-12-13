@@ -1,22 +1,22 @@
 "use client";
 import { useState } from "react";
-import { db, storage } from "../../../lib/firebase"; 
+import { db } from "../../../lib/firebase"; // نحتاج فقط قاعدة البيانات
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { FaCloudUploadAlt, FaCheckCircle, FaSpinner, FaFile } from "react-icons/fa";
 
 export default function AdminPage() {
+  // 🔴 بيانات Cloudinary (ضع بياناتك هنا)
+  const CLOUD_NAME = "dhj0extnk"; // مثال: "dxyz123"
+  const UPLOAD_PRESET = "ml_default"; // مثال: "ml_default"
+
   // المتغيرات
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [subject, setSubject] = useState("مبادئ الاقتصاد");
   const [type, setType] = useState("summary");
-  
-  // ✅ تغيير: أصبحنا نستخدم مصفوفة للملفات بدلاً من ملف واحد
   const [files, setFiles] = useState([]); 
   
   const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("");
 
   const subjects = [
@@ -27,12 +27,25 @@ export default function AdminPage() {
     "مبادئ ادارة الاعمال"
   ];
 
-  // ✅ دالة اختيار الملفات المعدلة (تقبل أكثر من ملف)
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      // تحويل FileList إلى مصفوفة عادية
       setFiles(Array.from(e.target.files));
     }
+  };
+
+  // دالة الرفع إلى Cloudinary
+  const uploadToCloudinary = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
+    // نستخدم resource_type: auto ليقبل الصور والملفات PDF
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || "فشل الرفع");
+    return data.secure_url; // الرابط الجاهز
   };
 
   const handleUpload = async (e) => {
@@ -45,50 +58,32 @@ export default function AdminPage() {
     setUploading(true);
     setMessage("جاري بدء الرفع...");
 
-    const uploadedFilesData = []; // هنا سنخزن روابط الملفات بعد رفعها
+    const uploadedFilesData = [];
 
     try {
-      // ✅ حلقة تكرارية لرفع الملفات واحداً تلو الآخر
+      // رفع الملفات واحد تلو الآخر إلى Cloudinary
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         setMessage(`جاري رفع الملف ${i + 1} من ${files.length}: ${file.name}...`);
         
-        // إنشاء مرجع للملف
-        const storageRef = ref(storage, `materials/${Date.now()}-${file.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, file);
-
-        // ننتظر حتى ينتهي رفع هذا الملف للحصول على الرابط
-        await new Promise((resolve, reject) => {
-            uploadTask.on(
-                "state_changed",
-                (snapshot) => {
-                    const prog = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-                    // تحديث الشريط (يمكن تحسينه ليعكس الإجمالي، لكن هنا يعرض تقدم الملف الحالي)
-                    setProgress(prog); 
-                },
-                (error) => reject(error),
-                async () => {
-                    const url = await getDownloadURL(uploadTask.snapshot.ref);
-                    uploadedFilesData.push({ 
-                        name: file.name, 
-                        url: url, 
-                        type: file.type 
-                    });
-                    resolve();
-                }
-            );
+        const url = await uploadToCloudinary(file);
+        
+        uploadedFilesData.push({ 
+            name: file.name, 
+            url: url, 
+            type: file.type 
         });
       }
 
       setMessage("جاري حفظ البيانات...");
 
-      // حفظ البيانات في Firestore مرة واحدة بعد رفع كل الملفات
+      // حفظ الروابط في Firebase Database
       await addDoc(collection(db, "materials"), {
         title,
         desc,
         subject,
         type,
-        files: uploadedFilesData, // ✅ تخزين كل الملفات
+        files: uploadedFilesData,
         date: new Date().toISOString(),
         status: "approved",
         viewCount: 0,
@@ -98,25 +93,24 @@ export default function AdminPage() {
 
       // إعادة التعيين
       setUploading(false);
-      setProgress(0);
       setTitle("");
       setDesc("");
-      setFiles([]); // تفريغ الملفات
-      setMessage("تم رفع جميع الملفات بنجاح! 🎉");
+      setFiles([]);
+      setMessage("تم رفع جميع الملفات بنجاح! ");
       
       setTimeout(() => setMessage(""), 3000);
 
     } catch (error) {
       console.error(error);
       setUploading(false);
-      alert("حدث خطأ أثناء الرفع! تأكد من الاتصال بالإنترنت.");
+      alert(`حدث خطأ: ${error.message}`);
     }
   };
 
   return (
     <div className="admin-container">
       <h1 style={{color: 'white', textAlign: 'center', marginBottom: '30px', fontSize: '2rem'}}>
-        لوحة التحكم 🚀
+        لوحة التحكم (Cloudinary) ☁️
       </h1>
 
       {message && (
@@ -151,8 +145,8 @@ export default function AdminPage() {
             <div className="form-group">
             <label>نوع الملف</label>
             <select className="form-select" value={type} onChange={(e) => setType(e.target.value)}>
-                <option value="summary">ملخص 📝</option>
-                <option value="assignment">تكليف / واجب 📋</option>
+                <option value="summary">ملخص </option>
+                <option value="assignment">تكليف </option>
             </select>
             </div>
         </div>
@@ -171,7 +165,6 @@ export default function AdminPage() {
         <div className="form-group">
             <label>الملفات (يمكنك اختيار أكثر من صورة)</label>
             <div className="upload-area">
-                {/* ✅ الخاصية multiple هي السر هنا */}
                 <input type="file" onChange={handleFileChange} accept=".pdf,image/*" multiple />
                 
                 {files.length > 0 ? (
@@ -186,30 +179,17 @@ export default function AdminPage() {
                     <div style={{color: '#888'}}>
                         <FaCloudUploadAlt size={50} style={{marginBottom: '10px'}} />
                         <p>اضغط هنا لاختيار ملفات</p>
-                        <span style={{fontSize: '0.8rem'}}>يمكنك سحب وإفلات صور متعددة أو ملف PDF</span>
                     </div>
                 )}
             </div>
         </div>
 
-        {uploading && (
-            <div style={{marginBottom: '20px'}}>
-                <div style={{display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '0.9rem', marginBottom: '5px'}}>
-                    <span>{message}</span>
-                    <span>{progress}%</span>
-                </div>
-                <div className="progress-container">
-                    <div className="progress-bar" style={{width: `${progress}%`}}></div>
-                </div>
-            </div>
-        )}
-
         <button type="submit" className="submit-btn" disabled={uploading}>
           {uploading ? (
              <span style={{display:'flex', alignItems:'center', justifyContent:'center', gap:'10px'}}>
-                <FaSpinner className="fa-spin" /> جاري الرفع...
+                <FaSpinner className="fa-spin" /> {message || "جاري الرفع..."}
              </span>
-          ) : "رفع المواد 🚀"}
+          ) : "رفع المواد "}
         </button>
 
       </form>
