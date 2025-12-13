@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation"; 
-import { db } from "../lib/firebase"; // 👈 تم التصحيح (نقطتين فقط)
+import { db } from "../lib/firebase"; // 👈 تم التصحيح (نقطتين فقط بدلاً من ثلاثة)
 import { collection, getDocs, query, where } from "firebase/firestore";
 
 export default function LoginPage() {
