@@ -1,24 +1,26 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase"; 
 import { collection, addDoc, deleteDoc, doc, getDocs, query, where, serverTimestamp, orderBy, onSnapshot } from "firebase/firestore";
-import { FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaKey, FaSignOutAlt, FaLock } from "react-icons/fa";
+import { FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaLock, FaSignOutAlt, FaExclamationTriangle } from "react-icons/fa";
 
 export default function AdminPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // ☁️ إعدادات Cloudinary
+  // ☁️ بيانات Cloudinary
   const CLOUD_NAME = "dhj0extnk"; 
   const UPLOAD_PRESET = "ml_default"; 
 
   // حالات النظام
-  const [isLoading, setIsLoading] = useState(true); // حالة التحميل
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // هل هو أدمن؟
-  const [inputCode, setInputCode] = useState(""); // الكود المدخل
-  const [checkingCode, setCheckingCode] = useState(false); // جاري التحقق من الكود
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showFake404, setShowFake404] = useState(true); // الافتراضي: إخفاء الصفحة (404)
+  const [inputCode, setInputCode] = useState("");
+  const [checkingCode, setCheckingCode] = useState(false);
 
-  // متغيرات البيانات (للوحة التحكم)
+  // متغيرات لوحة التحكم
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [subject, setSubject] = useState("مبادئ الاقتصاد");
@@ -31,14 +33,29 @@ export default function AdminPage() {
 
   const subjects = ["مبادئ الاقتصاد", "لغة اجنبية (1)", "مبادئ المحاسبة المالية", "مبادئ القانون", "مبادئ ادارة الاعمال"];
 
-  // ✅ 1. الفحص التلقائي عند فتح الصفحة (هل الكود محفوظ؟)
+  // ✅ 1. الفحص الذكي عند فتح الصفحة
   useEffect(() => {
-    const savedCode = localStorage.getItem("adminCode");
-    if (savedCode) {
-      verifyCode(savedCode, true); // تحقق صامت
-    } else {
-      setIsLoading(false); // لا يوجد كود، أظهر شاشة الدخول
-    }
+    const checkAccess = async () => {
+      // 1. هل الكود محفوظ في جهازك؟
+      const savedCode = localStorage.getItem("adminCode");
+      // 2. هل تحاول الدخول من الباب السري؟ (?mode=login)
+      const isSecretMode = searchParams.get("mode") === "login";
+
+      if (savedCode) {
+        // ⚡ وجدنا كوداً محفوظاً! تحقق منه فوراً
+        await verifyCode(savedCode, true);
+      } else if (isSecretMode) {
+        // 🔑 لا يوجد كود، لكنك استخدمت الرابط السري -> اظهر شاشة الدخول
+        setIsLoading(false);
+        setShowFake404(false);
+      } else {
+        // ⛔ لا كود ولا رابط سري -> ابقِ الصفحة 404
+        setIsLoading(false);
+        setShowFake404(true);
+      }
+    };
+
+    checkAccess();
   }, []);
 
   // دالة التحقق من الكود
@@ -55,37 +72,46 @@ export default function AdminPage() {
         if (userData.admin === true) {
           // ✅ أدمن حقيقي
           setIsAuthenticated(true);
-          localStorage.setItem("adminCode", codeToVerify); // حفظ الكود للمستقبل
+          setShowFake404(false);
+          // 💾 حفظ الكود في اللوكل ستوريج (أهم خطوة)
+          localStorage.setItem("adminCode", codeToVerify); 
         } else {
-          if (!isAutoCheck) alert("⛔ هذا الكود لا يملك صلاحيات الأدمن");
+          if (!isAutoCheck) alert("⛔ هذا الكود ليس لمشرف (Admin)");
+          if (isAutoCheck) handleLoginFail(); // إذا كان الكود المحفوظ فاسداً
         }
       } else {
         if (!isAutoCheck) alert("⛔ الكود غير صحيح");
-        if (isAutoCheck) localStorage.removeItem("adminCode"); // تنظيف الكود القديم إذا كان خطأ
+        if (isAutoCheck) handleLoginFail();
       }
     } catch (error) {
       console.error(error);
-      if (!isAutoCheck) alert("حدث خطأ في الاتصال");
+      if (!isAutoCheck) alert("خطأ في الاتصال");
     }
     
     setIsLoading(false);
     if (!isAutoCheck) setCheckingCode(false);
   };
 
-  // عند الضغط على زر "دخول"
-  const handleLoginSubmit = async (e) => {
+  const handleLoginFail = () => {
+    localStorage.removeItem("adminCode"); // مسح الكود الخاطئ
+    setIsAuthenticated(false);
+    setShowFake404(true); // تفعيل وضع الشبح 404
+  };
+
+  const handleManualLogin = async (e) => {
     e.preventDefault();
-    if (!inputCode) return;
     await verifyCode(inputCode);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("adminCode");
+    localStorage.removeItem("adminCode"); // مسح الحفظ
     setIsAuthenticated(false);
+    setShowFake404(true); // العودة لوضع 404
     setInputCode("");
+    router.push("/"); // طرد للصفحة الرئيسية
   };
 
-  // ... (نفس دوال جلب البيانات والرفع) ...
+  // ... (دوال الرفع والحذف نفسها) ...
   useEffect(() => {
     if (!isAuthenticated) return;
     const q = query(collection(db, "materials"), orderBy("date", "desc"));
@@ -128,16 +154,36 @@ export default function AdminPage() {
     } catch (error) { setUploading(false); alert("خطأ في الرفع"); }
   };
 
-  // ⏳ شاشة تحميل (لحظة فتح الصفحة)
+  // ⏳ شاشة تحميل (تظهر لثانية واحدة أثناء الفحص التلقائي)
   if (isLoading) {
     return (
-      <div style={{height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#000'}}>
-        <FaSpinner className="fa-spin" size={40} color="#fff" />
+      <div style={{height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#fff'}}>
+        <FaSpinner className="fa-spin" size={40} color="#333" />
       </div>
     );
   }
 
-  // 🔒 شاشة تسجيل الدخول (إذا لم يكن أدمن)
+  // 👻 1. صفحة 404 الوهمية (تظهر للغرباء أو إذا لم يكن الكود محفوظاً)
+  if (showFake404) {
+    return (
+      <div style={{
+        height: '100vh', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        color: '#000', 
+        background: '#fff', 
+        fontFamily: '-apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Fira Sans", Avenir, "Helvetica Neue", "Lucida Grande", sans-serif'
+      }}>
+        <h1 style={{fontSize: '2rem', fontWeight: '600', margin: '0 0 10px 0'}}>404</h1>
+        <div style={{height: '40px', width: '1px', background: 'rgba(0,0,0,0.3)', margin: '0 20px', display: 'none'}}></div> 
+        <h2 style={{fontSize: '14px', fontWeight: 'normal', margin: 0}}>This page could not be found.</h2>
+      </div>
+    );
+  }
+
+  // 🔒 2. شاشة تسجيل الدخول (تظهر فقط عند استخدام الرابط السري)
   if (!isAuthenticated) {
     return (
       <div style={{
@@ -145,7 +191,7 @@ export default function AdminPage() {
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
-        background: '#000', // خلفية سوداء كاملة
+        background: '#000',
         color: 'white',
         fontFamily: 'sans-serif'
       }}>
@@ -159,20 +205,20 @@ export default function AdminPage() {
             width: '100%',
             maxWidth: '400px'
         }}>
-          <h1 style={{fontSize: '2rem', marginBottom: '10px', fontWeight: 'bold'}}>El Agamy<br/>Materials</h1>
-          <p style={{color: '#888', marginBottom: '30px', fontSize: '0.9rem'}}>Admin Access Only</p>
+          <h1 style={{fontSize: '1.8rem', marginBottom: '10px', fontWeight: 'bold'}}>Admin Access</h1>
+          <p style={{color: '#888', marginBottom: '30px', fontSize: '0.9rem'}}>Please enter your code</p>
           
-          <form onSubmit={handleLoginSubmit}>
+          <form onSubmit={handleManualLogin}>
             <div style={{marginBottom: '20px', position: 'relative'}}>
                 <FaLock style={{position: 'absolute', left: '15px', top: '15px', color: '#666'}} />
                 <input 
                     type="password" 
-                    placeholder="Enter Admin Code" 
+                    placeholder="Security Code" 
                     value={inputCode} 
                     onChange={(e) => setInputCode(e.target.value)}
                     style={{
                         width: '100%', 
-                        padding: '15px 15px 15px 45px', // مساحة للأيقونة
+                        padding: '15px 15px 15px 45px',
                         borderRadius: '10px', 
                         border: '1px solid #444', 
                         background: '#111', 
@@ -193,7 +239,6 @@ export default function AdminPage() {
               fontSize: '1rem', 
               width: '100%', 
               cursor: 'pointer',
-              transition: 'transform 0.1s',
               opacity: checkingCode ? 0.7 : 1
             }}>
               {checkingCode ? "Verifying..." : "Login"}
@@ -204,11 +249,11 @@ export default function AdminPage() {
     );
   }
 
-  // ✅ لوحة التحكم (تظهر فقط بعد الدخول الناجح)
+  // ✅ 3. لوحة التحكم (تظهر فقط بعد التحقق)
   return (
     <div className="admin-container">
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px'}}>
-        <h1 style={{color: 'white', fontSize: '2rem'}}>لوحة التحكم </h1>
+        <h1 style={{color: 'white', fontSize: '2rem'}}>لوحة التحكم 🚀</h1>
         <button onClick={handleLogout} style={{background: '#333', color: '#ff4d4d', border: '1px solid #ff4d4d', padding: '8px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', gap: '5px', alignItems: 'center'}}>
            خروج <FaSignOutAlt />
         </button>
@@ -223,7 +268,7 @@ export default function AdminPage() {
             <div className="form-group"><label>النوع</label><select className="form-select" value={type} onChange={(e)=>setType(e.target.value)}><option value="summary">ملخص</option><option value="assignment">تكليف</option></select></div>
         </div>
         <div className="form-group"><label>الملفات</label><div className="upload-area" style={{padding: '20px'}}><input type="file" onChange={handleFileChange} accept=".pdf,image/*" multiple />{files.length > 0 ? <p style={{color: '#00f260'}}>{files.length} ملفات</p> : <p style={{color: '#888'}}>اختر ملفات</p>}</div></div>
-        <button type="submit" className="submit-btn" disabled={uploading}>{uploading ? "جاري الرفع..." : "رفع "}</button>
+        <button type="submit" className="submit-btn" disabled={uploading}>{uploading ? "جاري الرفع..." : "رفع 🚀"}</button>
       </form>
 
       <div>
