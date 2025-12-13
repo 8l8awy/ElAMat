@@ -1,13 +1,13 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation"; 
-import { db } from "../lib/firebase"; // ✅ المسار الصحيح
+import { db } from "../lib/firebase"; // ✅ تم التصحيح: نقطتين فقط (../)
 import { collection, getDocs, query, where } from "firebase/firestore";
 
 export default function LoginPage() {
   const router = useRouter();
   const [inputCode, setInputCode] = useState("");
-  const [password, setPassword] = useState(""); // خانة كلمة المرور
+  const [password, setPassword] = useState(""); 
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
@@ -15,20 +15,15 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // البحث عن الكود في قاعدة البيانات
       const q = query(collection(db, "allowedCodes"), where("code", "==", inputCode.trim()));
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
         const userData = querySnapshot.docs[0].data();
-        
-        // التحقق: هل هو أدمن؟
         if (userData.admin === true) {
-          // ✅ أدمن: احفظ الكود وافتح لوحة التحكم
           localStorage.setItem("adminCode", inputCode.trim());
           router.push("/dashboard/admin");
         } else {
-          // 👤 طالب عادي: رسالة ترحيب فقط
           alert(`مرحباً بك يا ${userData.name || "طالب"}!`);
         }
       } else {
