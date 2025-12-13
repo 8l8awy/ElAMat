@@ -9,7 +9,7 @@ import {
   FaFolderOpen, 
   FaFilePdf, 
   FaFileImage,
-  FaShareNodes,     
+  FaShareNodes,      
 } from "react-icons/fa6";
 
 function MaterialsContent() {
@@ -177,12 +177,12 @@ function MaterialsContent() {
                 selectedMaterial.files.map((file, index) => (
                   <div key={index} className="modal-file-item" style={{background:'#222', padding:'15px', borderRadius:'10px', marginBottom:'10px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                     <span style={{color:'white', display:'flex', alignItems:'center', gap:'10px'}}>
-                       {file.type?.includes('pdf') ? <FaFilePdf color="#ef4444"/> : <FaFileImage color="#3b82f6"/>} 
-                       {file.name}
+                        {file.type?.includes('pdf') ? <FaFilePdf color="#ef4444"/> : <FaFileImage color="#3b82f6"/>} 
+                        {file.name}
                     </span>
                     <div style={{display:'flex', gap:'10px'}}>
                         
-                        {/* ✅ زر المعاينة الجديد بالكلاس الجديد btn-preview */}
+                        {/* زر المعاينة */}
                         <button 
                             onClick={() => handlePreviewFile(file.url)}
                             className="btn-preview"
@@ -209,17 +209,20 @@ function MaterialsContent() {
         </div>
       )}
 
-      {/* نافذة معاينة الملف الكبيرة */}
+      {/* نافذة معاينة الملف الكبيرة (تم التصحيح هنا) */}
       {previewFile && (
         <div className="modal active" onClick={() => setPreviewFile(null)} style={{display:'flex', zIndex: 3000}}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{width:'95%', height:'95vh', maxWidth:'1000px', display:'flex', flexDirection:'column', position:'relative', padding:'0', background:'#000', border:'1px solid #444'}}>
-                
+           
+           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{maxWidth: '900px', width: '95%', height: '90vh', display:'flex', flexDirection:'column', padding: '0', overflow: 'hidden'}}>
+               
+               {/* شريط العنوان وزر الإغلاق */}
                 <div style={{padding:'15px', background:'#1a1a1a', display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid #333'}}>
                     <h3 style={{color:'white', margin:0, fontSize:'1em'}}>معاينة الملف</h3>
-                    <button onClick={() => setPreviewFile(null)} style={{background:'transparent', border:'none', color:'white', fontSize:'1.5em', cursor:'pointer'}}>×</button>
+                    <button className="close-btn" onClick={() => setPreviewFile(null)} style={{background:'transparent', border:'none', color:'white', fontSize:'1.5em', cursor:'pointer'}}>×</button>
                 </div>
 
-                <div style={{flex:1, position:'relative', background:'#000'}}>
+                {/* جسم النافذة (الصورة أو الـ PDF) */}
+                <div style={{flex:1, position:'relative', background:'#000', overflow: 'hidden', display:'flex', justifyContent:'center'}}>
                     {previewFile.type === 'pdf' ? (
                         <>
                            <iframe 
@@ -234,7 +237,10 @@ function MaterialsContent() {
                             </a>
                         </>
                     ) : (
-                        <img src={previewFile.url} alt="Preview" style={{width:'100%', height:'100%', objectFit:'contain'}} />
+                        // ✅ هنا وضعنا ديف السكرول للصورة
+                        <div className="modal-image-scroll">
+                           <img src={previewFile.url} alt="Preview" />
+                        </div>
                     )}
                 </div>
             </div>
