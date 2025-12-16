@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { db } from "../lib/firebase";
 import { collection, getDocs, query, where, addDoc } from "firebase/firestore";
 
-/*export default function LoginPage() {
+export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   
   // Login State
