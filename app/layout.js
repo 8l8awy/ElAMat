@@ -54,39 +54,31 @@ export default function RootLayout({ children }) {
 
         {/* ✅ منطق الإغلاق والفتح */}
         {isClosed ? (
-          // 🎨 الخيار 1: تصميم حديث مع خلفية متدرجة
+          // 💻 الخيار 1: شاشة الموت الزرقاء (BSOD)
           <div style={{
             height: '100vh',
-            width: '100%',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            alignItems: 'center',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // خلفية موف وأزرق
+            alignItems: 'flex-start', // النص يبدأ من اليسار مثل الشاشة الحقيقية
+            backgroundColor: '#0078d7', // أزرق ويندوز
             color: 'white',
-            textAlign: 'center',
-            padding: '20px',
-            fontFamily: 'sans-serif'
+            padding: '50px',
+            fontFamily: 'Segoe UI, Tahoma, sans-serif',
+            direction: 'ltr' // النص بالإنجليزي ليبدو حقيقياً
           }}>
-            <div style={{ fontSize: '5rem', marginBottom: '20px', animation: 'bounce 2s infinite' }}>🚀</div>
-            <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '10px' }}>جاري تجهيز الانطلاق</h1>
-            <p style={{ fontSize: '1.2rem', opacity: '0.9', maxWidth: '600px', lineHeight: '1.8' }}>
-              نقوم بإضافة ملخصات ومواد جديدة لتكون جاهزة لك.
+            <h1 style={{ fontSize: '6rem', margin: 0 }}>:(</h1>
+            <h2 style={{ fontSize: '2rem', marginTop: '20px' }}>
+              Your PC ran into a problem... just kidding!
+            </h2>
+            <p style={{ fontSize: '1.5rem', marginTop: '20px' }}>
+              We are just updating "El Agamy Materials" database.
               <br />
-       عد إلينا قريباً !
+              <span style={{ fontSize: '1rem', opacity: 0.8 }}>Error Code: UPGRADING_SYSTEM_TO_V2</span>
             </p>
-            {/* زر وهمي للشكل الجمالي */}
-            <div style={{ marginTop: '30px', padding: '10px 25px', background: 'rgba(255,255,255,0.2)', borderRadius: '50px', backdropFilter: 'blur(5px)' }}>
-              قريباً جداً...
+            <div style={{ marginTop: '40px' }}>
+              <p>0% complete __________ 100%</p>
             </div>
-            
-            {/* كود الحركة البسيطة */}
-            <style>{`
-              @keyframes bounce {
-                0%, 100% { transform: translateY(0); }
-                50% { transform: translateY(-20px); }
-              }
-            `}</style>
           </div>
         ) : (
           children
