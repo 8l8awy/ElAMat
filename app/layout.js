@@ -54,7 +54,7 @@ export default function RootLayout({ children }) {
 
         {/* ✅ منطق الإغلاق والفتح */}
         {isClosed ? (
-          // 🛑 تصميم شاشة الصيانة
+          // 🎨 الخيار 1: تصميم حديث مع خلفية متدرجة
           <div style={{
             height: '100vh',
             width: '100%',
@@ -62,26 +62,32 @@ export default function RootLayout({ children }) {
             flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
-            backgroundColor: '#111', // خلفية سوداء
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // خلفية موف وأزرق
             color: 'white',
             textAlign: 'center',
             padding: '20px',
-            boxSizing: 'border-box'
+            fontFamily: 'sans-serif'
           }}>
-            <h1 style={{ fontSize: '4rem', margin: '0 0 20px 0' }}>🚧</h1>
-            <h2 style={{ fontSize: '2rem', margin: '0 0 15px 0', fontWeight: 'bold' }}>الموقع تحت الصيانة</h2>
-            <p style={{ color: '#aaa', fontSize: '1.2rem', maxWidth: '500px', lineHeight: '1.6' }}>
-              نقوم حالياً ببعض التحديثات والتحسينات لتقديم تجربة أفضل.
+            <div style={{ fontSize: '5rem', marginBottom: '20px', animation: 'bounce 2s infinite' }}>🚀</div>
+            <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '10px' }}>جاري تجهيز الانطلاق</h1>
+            <p style={{ fontSize: '1.2rem', opacity: '0.9', maxWidth: '600px', lineHeight: '1.8' }}>
+              نقوم بإضافة ملخصات ومواد جديدة لتكون جاهزة لك.
               <br />
-              سنعود للعمل قريباً جداً!
+       عد إلينا قريباً !
             </p>
+            {/* زر وهمي للشكل الجمالي */}
+            <div style={{ marginTop: '30px', padding: '10px 25px', background: 'rgba(255,255,255,0.2)', borderRadius: '50px', backdropFilter: 'blur(5px)' }}>
+              قريباً جداً...
+            </div>
+            
+            {/* كود الحركة البسيطة */}
+            <style>{`
+              @keyframes bounce {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-20px); }
+              }
+            `}</style>
           </div>
         ) : (
-          // 🟢 عرض الموقع الطبيعي
           children
         )}
-
-      </body>
-    </html>
-  );
-  }
