@@ -24,7 +24,7 @@ export default function RootLayout({ children }) {
   // 🔒 للتحكم في حالة الموقع:
   // اجعليها true لإغلاق الموقع وإظهار شاشة الصيانة السوداء
   // اجعليها false لإعادة فتح الموقع للطلاب
-  const isClosed = true; 
+  const isClosed = false; 
 
   const GA_MEASUREMENT_ID = ''; 
 
