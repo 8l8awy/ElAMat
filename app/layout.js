@@ -1,5 +1,6 @@
 import "./globals.css";
 import Script from "next/script";
+// 👇 تأكدي من المسار
 import { AuthProvider } from "@/context/AuthContext"; 
 
 export const metadata = {
@@ -18,12 +19,10 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  // 🔒 للتحكم في الموقع:
-  // true  = الموقع مغلق (شاشة الموت الزرقاء تظهر)
-  // false = الموقع مفتوح (الموقع يعمل بشكل طبيعي)
-  const isClosed = true; 
+  // 🔒 للتحكم في الموقع
+  const isClosed = true; // true = شاشة زرقاء، false = الموقع يعمل
 
-  const GA_MEASUREMENT_ID = ''; // ضعي معرف جوجل هنا إن وجد
+  const GA_MEASUREMENT_ID = ''; 
 
   return (
     <html lang="ar">
@@ -47,48 +46,53 @@ export default function RootLayout({ children }) {
           </>
         )}
 
-        {/* ✅ منطق الإغلاق والفتح */}
-        {isClosed ? (
-          // 💻 شاشة الموت الزرقاء (BSOD)
-          <div style={{
-            height: '100vh',
-            width: '100vw', 
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'flex-start',
-            backgroundColor: '#0078d7',
-            color: 'white',
-            padding: '50px',
-            boxSizing: 'border-box',
-            fontFamily: '"Segoe UI", Tahoma, sans-serif',
-            direction: 'ltr' 
-          }}>
-            <h1 style={{ fontSize: '6rem', margin: 0, fontWeight: 'normal' }}>:(</h1>
-            <h2 style={{ fontSize: '2rem', marginTop: '20px', fontWeight: 'normal' }}>
-              Your PC ran into a problem... just kidding!
-            </h2>
-            <p style={{ fontSize: '1.5rem', marginTop: '20px' }}>
-              We are just updating "El Agamy Materials" database.
-              <br />
-              <span style={{ fontSize: '1rem', opacity: 0.8 }}>Error Code: UPGRADING_SYSTEM_TO_V2</span>
-            </p>
-            <div style={{ marginTop: '40px' }}>
-              <p>0% complete __________ 100%</p>
-            </div>
-            
-            <div style={{ position: 'absolute', bottom: '20px', right: '30px', direction: 'rtl', fontSize: '14px', opacity: 0.7 }}>
-              جاري تحديث السيرفرات...
-            </div>
-          </div>
-        ) : (
-          // 🟢 الموقع الطبيعي
-          <div dir="rtl">
-            <AuthProvider>
-              {children}
-            </AuthProvider>
-          </div>
-        )}
+        {/* ✅ التعديل الجوهري: AuthProvider يغلف الكل دائماً */}
+        {/* هذا يمنع خطأ "user is undefined" أثناء الـ Build */}
+        <div dir="rtl">
+          <AuthProvider>
+            {isClosed ? (
+              // 💻 حالة الإغلاق: نظهر شاشة الموت الزرقاء
+              <div style={{
+                height: '100vh',
+                width: '100vw',
+                position: 'fixed', // لضمان تغطية الشاشة بالكامل
+                top: 0,
+                left: 0,
+                zIndex: 9999,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'flex-start',
+                backgroundColor: '#0078d7',
+                color: 'white',
+                padding: '50px',
+                boxSizing: 'border-box',
+                fontFamily: '"Segoe UI", Tahoma, sans-serif',
+                direction: 'ltr' // الشاشة الزرقاء دائماً إنجليزي
+              }}>
+                <h1 style={{ fontSize: '6rem', margin: 0, fontWeight: 'normal' }}>:(</h1>
+                <h2 style={{ fontSize: '2rem', marginTop: '20px', fontWeight: 'normal' }}>
+                  Your PC ran into a problem... just kidding!
+                </h2>
+                <p style={{ fontSize: '1.5rem', marginTop: '20px' }}>
+                  We are just updating "El Agamy Materials" database.
+                  <br />
+                  <span style={{ fontSize: '1rem', opacity: 0.8 }}>Error Code: UPGRADING_SYSTEM_TO_V2</span>
+                </p>
+                <div style={{ marginTop: '40px' }}>
+                  <p>0% complete __________ 100%</p>
+                </div>
+                
+                <div style={{ position: 'absolute', bottom: '20px', right: '30px', direction: 'rtl', fontSize: '14px', opacity: 0.7 }}>
+                  جاري تحديث السيرفرات...
+                </div>
+              </div>
+            ) : (
+              // 🟢 حالة الفتح: نعرض محتوى الموقع
+              children
+            )}
+          </AuthProvider>
+        </div>
 
       </body>
     </html>
