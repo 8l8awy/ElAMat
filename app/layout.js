@@ -1,6 +1,5 @@
 import "./globals.css";
 import Script from "next/script";
-// 👇 هام: تأكدي أن هذا المسار صحيح لملف AuthContext الخاص بك
 import { AuthProvider } from "@/context/AuthContext"; 
 
 export const metadata = {
@@ -22,15 +21,15 @@ export default function RootLayout({ children }) {
   // 🔒 للتحكم في الموقع:
   // true  = الموقع مغلق (شاشة الموت الزرقاء تظهر)
   // false = الموقع مفتوح (الموقع يعمل بشكل طبيعي)
-  const isClosed = true; // 👈 غيري هذه القيمة إلى false لفتح الموقع
+  const isClosed = true; 
 
-  const GA_MEASUREMENT_ID = ''; // 👈 ضعي معرف جوجل أناليتكس هنا إذا توفر لديك
+  const GA_MEASUREMENT_ID = ''; // ضعي معرف جوجل هنا إن وجد
 
   return (
     <html lang="ar">
       <body style={{ margin: 0, padding: 0 }}>
         
-        {/* أكواد جوجل (اختياري) - تعمل فقط إذا وضعتي المعرف */}
+        {/* أكواد جوجل */}
         {GA_MEASUREMENT_ID && (
           <>
             <Script
@@ -50,20 +49,20 @@ export default function RootLayout({ children }) {
 
         {/* ✅ منطق الإغلاق والفتح */}
         {isClosed ? (
-          // 💻 الخيار 1: شاشة الموت الزرقاء (BSOD)
+          // 💻 شاشة الموت الزرقاء (BSOD)
           <div style={{
             height: '100vh',
-            width: '100vw', // تأكيد العرض الكامل
+            width: '100vw', 
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            alignItems: 'flex-start', // النص يبدأ من اليسار
-            backgroundColor: '#0078d7', // أزرق ويندوز
+            alignItems: 'flex-start',
+            backgroundColor: '#0078d7',
             color: 'white',
             padding: '50px',
-            boxSizing: 'border-box', // لمنع مشاكل الـ Padding
+            boxSizing: 'border-box',
             fontFamily: '"Segoe UI", Tahoma, sans-serif',
-            direction: 'ltr' // مهم: النص بالإنجليزي من اليسار لليمين
+            direction: 'ltr' 
           }}>
             <h1 style={{ fontSize: '6rem', margin: 0, fontWeight: 'normal' }}>:(</h1>
             <h2 style={{ fontSize: '2rem', marginTop: '20px', fontWeight: 'normal' }}>
@@ -78,13 +77,12 @@ export default function RootLayout({ children }) {
               <p>0% complete __________ 100%</p>
             </div>
             
-            {/* رسالة مخفية صغيرة بالعربي في الأسفل لطمأنة الزوار */}
             <div style={{ position: 'absolute', bottom: '20px', right: '30px', direction: 'rtl', fontSize: '14px', opacity: 0.7 }}>
               جاري تحديث السيرفرات...
             </div>
           </div>
         ) : (
-          // 🟢 الموقع الطبيعي (عندما isClosed = false)
+          // 🟢 الموقع الطبيعي
           <div dir="rtl">
             <AuthProvider>
               {children}
