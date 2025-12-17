@@ -20,14 +20,20 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   // 🔒 للتحكم في الموقع:
-  // true  = الموقع مغلق (شاشة الموت الزرقاء)
-  // false = الموقع مفتوح (مع تفعيل المصادقة)
-{isClosed ? (
-          // ⚪ الخيار 3: صفحة 404 كلاسيكية
+  // true  = الموقع مغلق (شاشة الصيانة/404)
+  // false = الموقع مفتوح (يعمل بشكل طبيعي)
+  const isClosed = false; // 👈 غيري هذه القيمة للتحكم في الموقع
+
+  return (
+    <html lang="ar" dir="rtl">
+      <body>
+        {isClosed ? (
+          // ⚪ وضع الصيانة (الشاشة المغلقة)
           <div style={{
             height: '100vh',
             display: 'flex',
             flexDirection: 'column',
+            justifyعتContent: 'center', // تصحيح: justifyContent
             justifyContent: 'center',
             alignItems: 'center',
             backgroundColor: '#fff',
@@ -37,10 +43,18 @@ export default function RootLayout({ children }) {
             <h1 style={{ fontSize: '8rem', fontWeight: '900', margin: 0, letterSpacing: '-5px' }}>404</h1>
             <div style={{ width: '50px', height: '5px', background: 'black', margin: '20px 0' }}></div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 'normal' }}>Page Not Found... For Now.</h2>
-            <p style={{ color: '#666', marginTop: '10px' }}>
+            <p style={{ color: '#666', marginTop: '10px', textAlign: 'center' }}>
               نحن نقوم بتحديث السيرفرات. سنعود خلال ساعات.
             </p>
           </div>
         ) : (
-          children
+          // 🟢 الوضع الطبيعي (الموقع يعمل)
+          // قمنا بإحاطة المحتوى بـ AuthProvider هنا ليعمل فقط عندما يكون الموقع مفتوحاً
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         )}
+      </body>
+    </html>
+  );
+}
