@@ -1,6 +1,5 @@
 import "./globals.css";
-import Script from "next/script";
-// 👇 هام: تأكدي أن هذا المسار صحيح لملف AuthContext الخاص بك
+// import Script from "next/script"; // 👈 قمنا بإلغائه لأنه غير مستخدم
 import { AuthProvider } from "@/context/AuthContext"; 
 
 export const metadata = {
@@ -20,9 +19,9 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   // 🔒 للتحكم في الموقع:
-  // true  = الموقع مغلق (شاشة الصيانة/404)
+  // true  = الموقع مغلق (شاشة الصيانة 404)
   // false = الموقع مفتوح (يعمل بشكل طبيعي)
-  const isClosed = false; // 👈 غيري هذه القيمة للتحكم في الموقع
+  const isClosed = true; 
 
   return (
     <html lang="ar" dir="rtl">
@@ -33,8 +32,7 @@ export default function RootLayout({ children }) {
             height: '100vh',
             display: 'flex',
             flexDirection: 'column',
-            justifyعتContent: 'center', // تصحيح: justifyContent
-            justifyContent: 'center',
+            justifyContent: 'center', // ✅ تم التصحيح (حذفنا السطر الخطأ)
             alignItems: 'center',
             backgroundColor: '#fff',
             color: '#000',
@@ -48,8 +46,7 @@ export default function RootLayout({ children }) {
             </p>
           </div>
         ) : (
-          // 🟢 الوضع الطبيعي (الموقع يعمل)
-          // قمنا بإحاطة المحتوى بـ AuthProvider هنا ليعمل فقط عندما يكون الموقع مفتوحاً
+          // 🟢 الوضع الطبيعي
           <AuthProvider>
             {children}
           </AuthProvider>
