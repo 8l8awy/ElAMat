@@ -1,19 +1,30 @@
-
 "use client";
 import { createContext, useContext, useState, useEffect } from "react";
-import { db } from "../lib/firebase";
+import { db } from "@/lib/firebase"; // 👈 تأكدي من المسار (غالباً @/lib/firebase أفضل)
 import { collection, query, where, getDocs } from "firebase/firestore";
 
-const AuthContext = createContext();
+// ✅ التعديل 1: إضافة قيم افتراضية للسياق
+// هذا يمنع الانهيار إذا تم استدعاء السياق بدون Provider (في وضع الصيانة)
+const AuthContext = createContext({
+  user: null,
+  loading: true,
+  login: () => {},
+  logout: () => {},
+});
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem("userEmail");
-    if (savedEmail) {
-      checkUser(savedEmail);
+    // التأكد من وجود window/localStorage (لتجنب أخطاء السيرفر)
+    if (typeof window !== "undefined") {
+      const savedEmail = localStorage.getItem("userEmail");
+      if (savedEmail) {
+        checkUser(savedEmail);
+      } else {
+        setLoading(false);
+      }
     } else {
       setLoading(false);
     }
@@ -21,6 +32,12 @@ export const AuthProvider = ({ children }) => {
 
   const checkUser = async (email) => {
     try {
+      // حماية إضافية في حال لم يتم تهيئة db
+      if (!db) { 
+          setLoading(false);
+          return; 
+      }
+
       const codesRef = collection(db, "allowedCodes");
       const q = query(codesRef, where("code", "==", email));
       const querySnapshot = await getDocs(q);
@@ -38,7 +55,7 @@ export const AuthProvider = ({ children }) => {
          }
       }
     } catch (error) {
-      console.error(error);
+      console.error("Auth check error:", error);
     } finally {
       setLoading(false);
     }
@@ -61,4 +78,20 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+// ✅ التعديل 2: دالة useAuth الآمنة
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  
+  // إذا لم نجد السياق (لأن الموقع مغلق والـ Provider غير موجود)
+  // نعيد كائن وهمي بدلاً من undefined
+  if (!context) {
+    return { 
+      user: null, 
+      loading: true, 
+      login: () => {}, 
+      logout: () => {} 
+    };
+  }
+  
+  return context;
+};
