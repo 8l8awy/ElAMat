@@ -20,72 +20,40 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   // 🔒 للتحكم في الموقع:
-  // true  = الموقع مغلق (شاشة الموت الزرقاء)
-  // false = الموقع مفتوح (مع تفعيل المصادقة)
-  const isClosed = true; 
-
-  const GA_MEASUREMENT_ID = ''; 
+  // true  = الموقع مغلق (شاشة الصيانة/404)
+  // false = الموقع مفتوح (يعمل بشكل طبيعي)
+  const isClosed = false; // 👈 غيري هذه القيمة للتحكم في الموقع
 
   return (
-    <html lang="ar">
-      <body style={{ margin: 0, padding: 0 }}>
-        
-        {/* أكواد جوجل (اختياري) */}
-        {GA_MEASUREMENT_ID && (
-          <>
-            <Script
-              strategy="afterInteractive"
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-            />
-            <Script id="google-analytics" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${GA_MEASUREMENT_ID}');
-              `}
-            </Script>
-          </>
-        )}
-
-        {/* ✅ منطق الإغلاق والفتح */}
+    <html lang="ar" dir="rtl">
+      <body>
         {isClosed ? (
-          // 💻 الخيار 1: شاشة الموت الزرقاء (BSOD)
+          // ⚪ وضع الصيانة (الشاشة المغلقة)
           <div style={{
             height: '100vh',
             display: 'flex',
             flexDirection: 'column',
+            justifyعتContent: 'center', // تصحيح: justifyContent
             justifyContent: 'center',
-            alignItems: 'flex-start', // النص يبدأ من اليسار
-            backgroundColor: '#0078d7', // أزرق ويندوز
-            color: 'white',
-            padding: '50px',
-            fontFamily: 'Segoe UI, Tahoma, sans-serif',
-            direction: 'ltr' // مهم: النص بالإنجليزي من اليسار لليمين
+            alignItems: 'center',
+            backgroundColor: '#fff',
+            color: '#000',
+            fontFamily: '-apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto',
           }}>
-            <h1 style={{ fontSize: '6rem', margin: 0 }}>:(</h1>
-            <h2 style={{ fontSize: '2rem', marginTop: '20px' }}>
-              Your PC ran into a problem... just kidding!
-            </h2>
-            <p style={{ fontSize: '1.5rem', marginTop: '20px' }}>
-              We are just updating "El Agamy Materials" database.
-              <br />
-              <span style={{ fontSize: '1rem', opacity: 0.8 }}>Error Code: UPGRADING_SYSTEM_TO_V2</span>
+            <h1 style={{ fontSize: '8rem', fontWeight: '900', margin: 0, letterSpacing: '-5px' }}>404</h1>
+            <div style={{ width: '50px', height: '5px', background: 'black', margin: '20px 0' }}></div>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'normal' }}>Page Not Found... For Now.</h2>
+            <p style={{ color: '#666', marginTop: '10px', textAlign: 'center' }}>
+              نحن نقوم بتحديث السيرفرات. سنعود خلال ساعات.
             </p>
-            <div style={{ marginTop: '40px' }}>
-              <p>0% complete __________ 100%</p>
-            </div>
           </div>
         ) : (
-          // 🟢 الموقع الطبيعي
-          // 👇 هنا أضفنا AuthProvider لحل مشكلة البناء السابقة
-          <div dir="rtl">
-            <AuthProvider>
-              {children}
-            </AuthProvider>
-          </div>
+          // 🟢 الوضع الطبيعي (الموقع يعمل)
+          // قمنا بإحاطة المحتوى بـ AuthProvider هنا ليعمل فقط عندما يكون الموقع مفتوحاً
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         )}
-
       </body>
     </html>
   );
