@@ -20,7 +20,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   // 🔒 للتحكم في الموقع
-  const isClosed = true; // true = شاشة زرقاء، false = الموقع يعمل
+  const isClosed = false; // true = شاشة زرقاء، false = الموقع يعمل
 
   const GA_MEASUREMENT_ID = ''; 
 
