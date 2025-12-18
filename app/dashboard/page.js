@@ -1,427 +1,128 @@
 "use client";
+import { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { db } from "../../lib/firebase";
+import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore";
+// استخدام مكتبة الأيقونات التي قمنا بتثبيتها
+import { FaUsers, FaFileAlt, FaClipboardList, FaLayerGroup } from "react-icons/fa"; 
 
+export default function Dashboard() {
+  const { user } = useAuth();
+  // حالة لحفظ الإحصائيات
+  const [stats, setStats] = useState({ users: 0, summaries: 0, assignments: 0, total: 0 });
+  // حالة لحفظ الإعلانات
+  const [announcements, setAnnouncements] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-
-import { useState } from "react";
-
-import { useAuth } from "@/context/AuthContext";
-
-import { db } from "@/lib/firebase"; 
-
-import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
-
-import { Mail, Lock, ArrowLeft, BookOpen, ShieldCheck, GraduationCap, Lightbulb } from "lucide-react"; // استبدلنا ArrowRight بـ ArrowLeft
-
-
-
-export default function LoginPage() {
-
-  const { login } = useAuth(); 
-
-  
-
-  const [isLogin, setIsLogin] = useState(true);
-
-  const [loading, setLoading] = useState(false);
-
-  const [error, setError] = useState("");
-
-
-
-  const [name, setName] = useState("");      
-
-  const [email, setEmail] = useState("");    
-
-  const [password, setPassword] = useState(""); 
-
-
-
-  const forceRedirect = (userData) => {
-
-    localStorage.setItem("user", JSON.stringify(userData));
-
-    login(userData);
-
-    console.log("🚀 إجبار المتصفح على الانتقال...");
-
-    setTimeout(() => {
-
-        if (userData.isAdmin) {
-
-            window.location.href = "/dashboard/admin"; 
-
-        } else {
-
-            window.location.href = "/dashboard"; 
-
-        }
-
-    }, 500);
-
+  // دالة مساعدة لتوحيد أنواع الملفات (نفس المنطق من الكود القديم)
+  const normalizeType = (type) => {
+    if (!type) return "";
+    type = type.toString().trim();
+    const summaryList = ["summary", "ملخص", "ملخصات", "تلخيص"];
+    const assignmentList = ["assignment", "تكليف", "تكاليف", "واجب"];
+    if (summaryList.includes(type)) return "summary";
+    if (assignmentList.includes(type)) return "assignment";
+    return type;
   };
 
+  useEffect(() => {
+    async function fetchData() {
+      if (!user) return;
+      
+      try {
+        // 1. جلب عدد الطلاب (المسجلين + الأكواد المسموحة)
+        const usersSnap = await getDocs(collection(db, "users"));
+        const codesSnap = await getDocs(collection(db, "allowedCodes"));
+        const usersCount = usersSnap.size + codesSnap.size;
 
+        // 2. جلب إحصائيات المواد (الملخصات والتكاليف)
+        const materialsQuery = query(collection(db, "materials"), where("status", "==", "approved"));
+        const materialsSnap = await getDocs(materialsQuery);
+        
+        let summariesCount = 0;
+        let assignmentsCount = 0;
 
-  const handleLogin = async (e) => {
+        materialsSnap.forEach((doc) => {
+           const type = normalizeType(doc.data().type);
+           if (type === "summary") summariesCount++;
+           if (type === "assignment") assignmentsCount++;
+        });
 
-    e.preventDefault();
+        setStats({
+          users: usersCount,
+          summaries: summariesCount,
+          assignments: assignmentsCount,
+          total: materialsSnap.size
+        });
 
-    setError("");
+        // 3. جلب آخر 3 إعلانات
+        const annQuery = query(collection(db, "announcements"), orderBy("date", "desc"), limit(3));
+        const annSnap = await getDocs(annQuery);
+        const annList = annSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setAnnouncements(annList);
 
-    setLoading(true);
-
-
-
-    try {
-
-      const codesRef = collection(db, "allowedCodes");
-
-      const qCode = query(codesRef, where("code", "==", email.trim()));
-
-      const codeSnap = await getDocs(qCode);
-
-
-
-      if (!codeSnap.empty) {
-
-        const data = codeSnap.docs[0].data();
-
-        const userData = { name: data.name || "User", email: email, isAdmin: data.admin || false };
-
-        forceRedirect(userData); 
-
-        return;
-
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
       }
-
-
-
-      const usersRef = collection(db, "users");
-
-      const qUser = query(usersRef, where("email", "==", email.toLowerCase().trim()));
-
-      const userSnap = await getDocs(qUser);
-
-
-
-      if (!userSnap.empty) {
-
-        const data = userSnap.docs[0].data();
-
-        if (data.password === password) {
-
-          const userData = { ...data, isAdmin: data.isAdmin || false };
-
-          forceRedirect(userData);
-
-        } else {
-
-          setError("كلمة المرور غير صحيحة");
-
-          setLoading(false);
-
-        }
-
-      } else {
-
-        setError("الكود أو البريد الإلكتروني غير موجود");
-
-        setLoading(false);
-
-      }
-
-    } catch (err) {
-
-      console.error(err);
-
-      setError("حدث خطأ: " + err.message);
-
-      setLoading(false);
-
     }
 
-  };
+    fetchData();
+  }, [user]);
 
-
-
-  const handleRegister = async (e) => {
-
-    e.preventDefault();
-
-    setError("");
-
-    setLoading(true);
-
-
-
-    if (!name || !email || !password) {
-
-        setError("الرجاء ملء جميع الحقول");
-
-        setLoading(false);
-
-        return;
-
-    }
-
-
-
-    try {
-
-        const usersRef = collection(db, "users");
-
-        const q = query(usersRef, where("email", "==", email.toLowerCase().trim()));
-
-        const snap = await getDocs(q);
-
-
-
-        if (!snap.empty) {
-
-            setError("البريد الإلكتروني مستخدم بالفعل");
-
-            setLoading(false);
-
-            return;
-
-        }
-
-
-
-        const newUser = {
-
-            name: name,
-
-            email: email.toLowerCase().trim(),
-
-            password: password,
-
-            isAdmin: false,
-
-            createdAt: new Date().toISOString()
-
-        };
-
-
-
-        await addDoc(usersRef, newUser);
-
-        forceRedirect(newUser); 
-
-
-
-    } catch (err) {
-
-        console.error(err);
-
-        setError("فشل إنشاء الحساب: " + err.message);
-
-        setLoading(false);
-
-    }
-
-  };
-
-
+  if (loading) return <div style={{textAlign: 'center', padding: '50px', color: '#fff'}}>جاري تحميل البيانات...</div>;
 
   return (
-
-    // تم تغيير dir إلى rtl لدعم العربية
-
-    <div className="min-h-screen w-full bg-[#0b0c15] flex items-center justify-center relative overflow-hidden text-white font-sans" dir="rtl">
-
-      
-
-      {/* خلفية جمالية */}
-
-      <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-
-      <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-900/10 rounded-full blur-[120px] pointer-events-none"></div>
-
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none"></div>
-
-
-
-      {/* الشعار في الزاوية العلوية اليمنى */}
-
-      <div className="absolute top-8 right-8 flex items-center gap-2 font-semibold text-gray-300">
-
-          <div className="bg-blue-600 rounded-lg p-1.5"><BookOpen size={16} className="text-white" /></div>
-
-          <span>El Agamy Materials </span>
-
-      </div>
-
-
-
-      {/* ================= بطاقة التسجيل ================= */}
-
-      <div className="w-full max-w-[450px] bg-[#12141c] border border-gray-800/50 p-8 rounded-3xl shadow-2xl relative z-10 mx-4 backdrop-blur-sm">
-
+    <div id="homePage">
+        <h2 className="page-title" style={{ color: 'white', fontSize: '2.5em', margin: '30px 0', fontWeight: '900' }}>لوحة المعلومات</h2>
         
+        {/* شبكة الإحصائيات */}
+        <div className="stats-grid">
+          <div className="stat-card">
+            <h3>{stats.users}</h3>
+            <p><FaUsers style={{marginLeft:'8px', display:'inline'}}/> الطلاب</p>
+          </div>
+          <div className="stat-card">
+            <h3>{stats.summaries}</h3>
+            <p><FaFileAlt style={{marginLeft:'8px', display:'inline'}}/> ملخصات</p>
+          </div>
+          <div className="stat-card">
+            <h3>{stats.assignments}</h3>
+            <p><FaClipboardList style={{marginLeft:'8px', display:'inline'}}/> تكاليف</p>
+          </div>
+          <div className="stat-card">
+            <h3>{stats.total}</h3>
+            <p><FaLayerGroup style={{marginLeft:'8px', display:'inline'}}/> الإجمالي</p>
+          </div>
+        </div>
 
-        {/* الشعار والأيقونة */}
-
-        <div className="flex flex-col items-center mb-8">
-
-            <div className="flex items-center gap-2 font-semibold text-gray-300 mb-6 bg-gray-900/50 px-4 py-1.5 rounded-full border border-gray-800">
-
-               <BookOpen size={16} className="text-blue-500" />
-
-               <span className="text-sm">El Agamy Materials</span>
-
-            </div>
-
-
-
-            <div className="relative mb-2">
-
-                <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full"></div>
-
-                <div className="relative">
-
-                    <GraduationCap className="w-16 h-16 text-white drop-shadow-md" strokeWidth={1.5} />
-
-                    <Lightbulb className="w-6 h-6 text-yellow-400 absolute -top-2 -right-1 animate-bounce" fill="currentColor" />
-
+        {/* قسم الإعلانات الأخيرة */}
+        <div className="admin-panel" style={{marginTop: '40px'}}> 
+          <h3 style={{color: '#fff', fontSize: '2em', marginBottom: '20px', fontWeight: '800'}}>الإعلانات الأخيرة</h3>
+          
+          <div id="recentAnnouncements">
+            {announcements.length === 0 ? (
+              <p style={{color:'#94a3b8', textAlign:'center'}}>لا توجد إعلانات</p>
+            ) : (
+              announcements.map(ann => (
+                <div key={ann.id} style={{
+                    background:'#1a1a1a', // لون خلفية داكن يناسب التصميم
+                    padding:'20px', 
+                    borderRadius:'15px', 
+                    marginBottom:'15px', 
+                    border: '1px solid #333'
+                }}>
+                  <h4 style={{fontSize:'1.2em', marginBottom:'8px', color:'#fff', fontWeight:'700'}}>{ann.title}</h4>
+                  <p style={{fontSize:'1em', marginBottom:'10px', color:'#ccc', lineHeight: '1.6'}}>{ann.content}</p>
+                  <span style={{display:'block', fontSize:'0.9em', color:'#666', textAlign:'left', direction: 'ltr'}}>
+                    {new Date(ann.date).toLocaleDateString("ar-EG")}
+                  </span>
                 </div>
-
-            </div>
-
-            
-
-            <h2 className="text-2xl font-bold text-white mt-4">
-
-              {isLogin ? "مرحباً بك مجدداً" : "ابدأ رحلة التعلم"}
-
-            </h2>
-
-            <p className="text-gray-500 text-sm mt-1">
-
-              {isLogin ? "سجل الدخول للوصول إلى الملخصات " : "أنشئ حسابك الجديد الآن"}
-
-            </p>
-
-        </div>
-
-
-
-        {/* أزرار التبديل */}
-
-        <div className="bg-[#0b0c15] p-1.5 rounded-xl flex gap-3 relative border border-gray-800 mb-6">
-
-          <button type="button" onClick={() => { setIsLogin(true); setError(""); }} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${isLogin ? "bg-blue-600 text-white shadow-lg" : "text-gray-500 bg-[#151720] hover:bg-[#1a1d26] hover:text-white"}`}>تسجيل دخول</button>
-
-          <button type="button" onClick={() => { setIsLogin(false); setError(""); }} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${!isLogin ? "bg-blue-600 text-white shadow-lg" : "text-gray-500 bg-[#151720] hover:bg-[#1a1d26] hover:text-white"}`}>إنشاء حساب</button>
-
-        </div>
-
-
-
-        <form onSubmit={isLogin ? handleLogin : handleRegister} className="space-y-4">
-
-          {!isLogin && (
-
-            <div className="space-y-1.5 animate-fadeIn">
-
-              <label className="text-xs font-medium text-gray-400 mr-1">الاسم</label>
-
-              <div className="relative group">
-
-                {/* تعديل مكان الأيقونة لليمين */}
-
-                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none"><ShieldCheck className="h-5 w-5 text-gray-500 group-focus-within:text-blue-500 transition-colors" /></div>
-
-                {/* تعديل الـ padding للنص */}
-
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-[#0b0c15] border border-gray-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-500/50 block pr-12 p-3.5 outline-none transition-all placeholder-gray-600" placeholder="الاسم" />
-
-              </div>
-
-            </div>
-
-          )}
-
-          
-
-          <div className="space-y-1.5">
-
-            <label className="text-xs font-medium text-gray-400 mr-1">البريد الإلكتروني أو الكود</label>
-
-            <div className="relative group">
-
-              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none"><Mail className="h-5 w-5 text-gray-500 group-focus-within:text-blue-500 transition-colors" /></div>
-
-              <input type="text" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#0b0c15] border border-gray-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-500/50 block pr-12 p-3.5 outline-none transition-all placeholder-gray-600" placeholder="البريد أو الكود" />
-
-            </div>
-
+              ))
+            )}
           </div>
-
-          
-
-          <div className="space-y-1.5">
-
-            <label className="text-xs font-medium text-gray-400 mr-1">كلمة المرور</label>
-
-            <div className="relative group">
-
-              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none"><Lock className="h-5 w-5 text-gray-500 group-focus-within:text-blue-500 transition-colors" /></div>
-
-              <input 
-
-                type="text" 
-
-                value={password} 
-
-                onChange={(e) => setPassword(e.target.value)} 
-
-                className="w-full bg-[#0b0c15] border border-gray-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-500/50 block pr-12 pl-4 p-3.5 outline-none transition-all placeholder-gray-600" 
-
-                placeholder="أدخل كلمة المرور" 
-
-              />
-
-            </div>
-
-          </div>
-
-
-
-          {error && <div className="text-red-500 text-xs text-center bg-red-500/10 p-2 rounded-lg border border-red-500/20">{error}</div>}
-
-
-
-          <button type="submit" disabled={loading} className="w-full mt-2 relative group overflow-hidden bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3.5 rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] transform hover:-translate-y-0.5 disabled:opacity-50">
-
-            <div className="flex items-center justify-center gap-2">
-
-               <span>{loading ? "جاري المعالجة..." : (isLogin ? "دخول" : "إنشاء الحساب")}</span>
-
-               {/* استخدام سهم لليسار ليتناسب مع العربية */}
-
-               {!loading && <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />}
-
-            </div>
-
-          </button>
-
-        </form>
-
-
-
-        <div className="mt-8 text-center text-[10px] text-gray-600">
-
-           © 2025 محمد علي . <span className="underline cursor-pointer hover:text-gray-400">سياسة الخصوصية</span>
-
         </div>
-
-
-
       </div>
-
-    </div>
-
   );
-
 }
