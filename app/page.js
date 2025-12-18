@@ -409,7 +409,6 @@ export default function LoginPage() {
         </form>
 
 
-
         <div className="mt-8 text-center text-[10px] text-gray-600">
 
            © 2025 محمد علي . <span className="underline cursor-pointer hover:text-gray-400">سياسة الخصوصية</span>
