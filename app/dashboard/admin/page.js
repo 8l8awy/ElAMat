@@ -1,14 +1,13 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/context/AuthContext"; // ✅ ربطنا الكود بنظام الدخول الجديد
-import { db } from "@/lib/firebase"; 
+import { db } from "../../../lib/firebase"; 
+// ✅ أضفنا updateDoc لتحديث الحالة
+import { useAuth } from "@/context/AuthContext";
 import { collection, addDoc, deleteDoc, updateDoc, doc, getDocs, query, where, serverTimestamp, orderBy, onSnapshot } from "firebase/firestore";
-import { FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaLock, FaCheck, FaTimes, FaCloudUploadAlt } from "react-icons/fa";
+import { FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaLock, FaSignOutAlt, FaCheck, FaTimes } from "react-icons/fa";
 
 export default function AdminPage() {
-  const { user } = useAuth(); // استدعاء المستخدم المسجل
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -30,25 +29,19 @@ export default function AdminPage() {
   const [type, setType] = useState("summary");
   const [files, setFiles] = useState([]); 
   
-  // القوائم
-  const [materialsList, setMaterialsList] = useState([]);
-  const [pendingList, setPendingList] = useState([]);     
+  // ✅ قوائم منفصلة للمنشورات والطلبات المعلقة
+  const [materialsList, setMaterialsList] = useState([]); // الملفات المقبولة
+  const [pendingList, setPendingList] = useState([]);     // طلبات الطلاب المعلقة
   
+  const [loadingList, setLoadingList] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
 
   const subjects = ["مبادئ الاقتصاد", "لغة اجنبية (1)", "مبادئ المحاسبة المالية", "مبادئ القانون", "مبادئ ادارة الاعمال"];
 
-  // ✅ 1. الفحص الذكي (تم التعديل ليفهم تسجيل الدخول الجديد)
+  // ✅ 1. الفحص الذكي عند فتح الصفحة
   useEffect(() => {
     const checkAccess = async () => {
-      // أولوية 1: هل المستخدم مسجل دخول من الصفحة الرئيسية؟
-      if (user) {
-        await verifyCode(user.email, true);
-        return;
-      }
-
-      // أولوية 2: هل هناك كود محفوظ في المتصفح (للطريقة القديمة)؟
       const savedCode = localStorage.getItem("adminCode");
       const isSecretMode = searchParams.get("mode") === "login";
 
@@ -64,44 +57,31 @@ export default function AdminPage() {
     };
 
     checkAccess();
-  }, [user]); // يعيد الفحص بمجرد تحميل بيانات المستخدم
+  }, []);
 
-  // دالة التحقق من الكود (معدلة لتقبل الأكواد والإيميلات)
-  const verifyCode = async (identifier, isAutoCheck = false) => {
+  // دالة التحقق من الكود
+  const verifyCode = async (codeToVerify, isAutoCheck = false) => {
     if (!isAutoCheck) setCheckingCode(true);
 
     try {
-      let isAdminFound = false;
-
-      // 1. البحث في الأكواد المسموحة
       const codesRef = collection(db, "allowedCodes");
-      const qCode = query(codesRef, where("code", "==", identifier.trim()));
-      const codeSnap = await getDocs(qCode);
+      const q = query(codesRef, where("code", "==", codeToVerify.trim()));
+      const querySnapshot = await getDocs(q);
 
-      if (!codeSnap.empty && codeSnap.docs[0].data().admin === true) {
-        isAdminFound = true;
-      }
-
-      // 2. البحث في جدول المستخدمين (users) إذا لم نجده في الأكواد
-      if (!isAdminFound) {
-        const usersRef = collection(db, "users");
-        const qUser = query(usersRef, where("email", "==", identifier.trim()));
-        const userSnap = await getDocs(qUser);
-        
-        if (!userSnap.empty && userSnap.docs[0].data().isAdmin === true) {
-            isAdminFound = true;
+      if (!querySnapshot.empty) {
+        const userData = querySnapshot.docs[0].data();
+        if (userData.admin === true) {
+          setIsAuthenticated(true);
+          setShowFake404(false);
+          localStorage.setItem("adminCode", codeToVerify); 
+        } else {
+          if (!isAutoCheck) alert("⛔ هذا الكود ليس لمشرف (Admin)");
+          if (isAutoCheck) handleLoginFail();
         }
-      }
-
-      if (isAdminFound) {
-        setIsAuthenticated(true);
-        setShowFake404(false);
-        localStorage.setItem("adminCode", identifier); // نحفظه للمستقبل
       } else {
-        if (!isAutoCheck) alert("⛔ ليس لديك صلاحية أدمن");
+        if (!isAutoCheck) alert("⛔ الكود غير صحيح");
         if (isAutoCheck) handleLoginFail();
       }
-
     } catch (error) {
       console.error(error);
       if (!isAutoCheck) alert("خطأ في الاتصال");
@@ -122,123 +102,117 @@ export default function AdminPage() {
     await verifyCode(inputCode);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("adminCode");
+    setIsAuthenticated(false);
+    setShowFake404(true);
+    setInputCode("");
+    router.push("/");
+  };
+
   // ✅ جلب البيانات وفصلها (مقبولة vs معلقة)
   useEffect(() => {
     if (!isAuthenticated) return;
     
-    const q = query(collection(db, "materials"), orderBy("createdAt", "desc"));
+    // نجلب كل المواد ونرتبها حسب التاريخ
+    const q = query(collection(db, "materials"), orderBy("date", "desc"));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const allData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
-      // فصل البيانات حسب الحالة (إذا لم توجد حالة نعتبرها approved للأقدمية)
-      const approved = allData.filter(item => !item.status || item.status === "approved");
-      const pending = allData.filter(item => item.status === "pending");
+      // نفصل البيانات هنا
+      const approved = allData.filter(item => item.status === "approved");
+      const pending = allData.filter(item => item.status === "pending"); // تأكد أن الطلاب يرفعون بحالة pending
       
       setMaterialsList(approved);
       setPendingList(pending);
+      setLoadingList(false);
     });
     
     return () => unsubscribe();
   }, [isAuthenticated]);
 
-  // ✅ العمليات (حذف / قبول / رفع)
-  const handleDelete = async (id, title) => { 
-      if (confirm(`حذف "${title}" نهائياً؟`)) await deleteDoc(doc(db, "materials", id)); 
-  };
+  // ✅ دوال التعامل مع الطلبات (حذف / قبول)
+  const handleDelete = async (id, title) => { if (confirm(`حذف "${title}" نهائياً؟`)) await deleteDoc(doc(db, "materials", id)); };
   
   const handleApprove = async (id, title) => {
     if (confirm(`هل تريد قبول ونشر "${title}"؟`)) {
       await updateDoc(doc(db, "materials", id), {
         status: "approved"
       });
-      setMessage(`✅ تم نشر "${title}" بنجاح`);
+      setMessage(`تم نشر "${title}" بنجاح`);
       setTimeout(() => setMessage(""), 3000);
     }
   };
 
   const handleFileChange = (e) => { if (e.target.files) setFiles(Array.from(e.target.files)); };
   
+  const uploadToCloudinary = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, { method: "POST", body: formData });
+    const data = await res.json();
+    return data.secure_url;
+  };
+
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!files.length || !title) return alert("البيانات ناقصة");
-    
-    setUploading(true); 
-    setMessage("⏳ جاري الرفع...");
-    
+    setUploading(true); setMessage("جاري الرفع...");
     const uploadedFilesData = [];
     try {
       for (let file of files) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("upload_preset", UPLOAD_PRESET);
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: "POST", body: formData });
-        const data = await res.json();
-        if(data.secure_url) {
-            uploadedFilesData.push({ 
-                name: file.name, 
-                url: data.secure_url, 
-                type: file.type,
-                size: (file.size / 1024 / 1024).toFixed(2) + " MB"
-            });
-        }
+        const url = await uploadToCloudinary(file);
+        uploadedFilesData.push({ name: file.name, url: url, type: file.type });
       }
-      
       await addDoc(collection(db, "materials"), {
-        title, 
-        description: desc, // تأكدنا من توحيد الأسماء (description بدل desc في بعض الأكواد)
-        subject, 
-        type, 
-        files: uploadedFilesData,
-        uploader: user?.email || "Admin",
-        createdAt: serverTimestamp(),
-        status: "approved", // الأدمن يرفع مباشرة
-        viewCount: 0, 
-        downloadCount: 0
+        title, desc, subject, type, files: uploadedFilesData,
+        date: new Date().toISOString(), 
+        status: "approved", // الأدمن يرفع مباشرة بحالة approved
+        viewCount: 0, downloadCount: 0, createdAt: serverTimestamp(),
       });
-
-      setUploading(false); 
-      setTitle(""); setDesc(""); setFiles([]); 
-      setMessage("🎉 تم الرفع بنجاح!");
+      setUploading(false); setTitle(""); setDesc(""); setFiles([]); setMessage("تم الرفع بنجاح! ");
       setTimeout(() => setMessage(""), 3000);
-
-    } catch (error) { 
-        console.error(error);
-        setUploading(false); 
-        alert("خطأ في الرفع"); 
-    }
+    } catch (error) { setUploading(false); alert("خطأ في الرفع"); }
   };
 
-  // === الواجهات ===
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-white"><FaSpinner className="animate-spin text-4xl text-gray-800" /></div>;
-  }
-
-  // واجهة 404 الوهمية (للحماية)
-  if (showFake404) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center font-sans text-center">
-        <h1 className="text-4xl font-semibold mb-2">404</h1>
-        <h2 className="text-sm font-normal text-gray-500">This page could not be found.</h2>
+      <div style={{height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#fff'}}>
+        <FaSpinner className="fa-spin" size={40} color="#333" />
       </div>
     );
   }
 
-  // واجهة الدخول اليدوي (إذا فشل التعرف التلقائي)
+  if (showFake404) {
+    return (
+      <div style={{
+        height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        fontFamily: '-apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Fira Sans", Avenir, "Helvetica Neue", "Lucida Grande", sans-serif'
+      }}>
+        <h1 style={{fontSize: '2rem', fontWeight: '600', margin: '0 0 10px 0'}}>404</h1>
+        <h2 style={{fontSize: '14px', fontWeight: 'normal', margin: 0}}>This page could not be found.</h2>
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white font-sans p-4">
-        <div className="bg-white/5 p-10 rounded-3xl border border-gray-800 shadow-2xl w-full max-w-md text-center backdrop-blur-sm">
-          <h1 className="text-2xl font-bold mb-2">لوحة الأدمن</h1>
-          <p className="text-gray-400 mb-8 text-sm">أدخل كود المرور للمتابعة</p>
+      <div style={{
+        height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#000', color: 'white', fontFamily: 'sans-serif'
+      }}>
+        <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '50px 40px', borderRadius: '20px', textAlign: 'center', border: '1px solid #333', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', width: '100%', maxWidth: '400px' }}>
+          <h1 style={{fontSize: '1.8rem', marginBottom: '10px', fontWeight: 'bold'}}>Admin Access</h1>
+          <p style={{color: '#888', marginBottom: '30px', fontSize: '0.9rem'}}>Please enter your code</p>
           <form onSubmit={handleManualLogin}>
-            <div className="relative mb-6">
-                <FaLock className="absolute left-4 top-4 text-gray-500" />
-                <input type="password" placeholder="كود الحماية" value={inputCode} onChange={(e) => setInputCode(e.target.value)}
-                    className="w-full p-3.5 pl-12 rounded-xl border border-gray-700 bg-[#111] text-white focus:border-blue-500 outline-none transition" />
+            <div style={{marginBottom: '20px', position: 'relative'}}>
+                <FaLock style={{position: 'absolute', left: '15px', top: '15px', color: '#666'}} />
+                <input type="password" placeholder="Security Code" value={inputCode} onChange={(e) => setInputCode(e.target.value)}
+                    style={{ width: '100%', padding: '15px 15px 15px 45px', borderRadius: '10px', border: '1px solid #444', background: '#111', color: 'white', fontSize: '1rem', outline: 'none' }} />
             </div>
-            <button type="submit" disabled={checkingCode} className="w-full bg-white text-black py-3.5 rounded-xl font-bold hover:bg-gray-200 transition disabled:opacity-70">
-              {checkingCode ? "جاري التحقق..." : "دخول"}
+            <button type="submit" disabled={checkingCode} style={{ background: 'white', color: 'black', border: 'none', padding: '15px', borderRadius: '10px', fontWeight: 'bold', fontSize: '1rem', width: '100%', cursor: 'pointer', opacity: checkingCode ? 0.7 : 1 }}>
+              {checkingCode ? "Verifying..." : "Login"}
             </button>
           </form>
         </div>
@@ -246,71 +220,50 @@ export default function AdminPage() {
     );
   }
 
-  // ✅ واجهة لوحة التحكم (التصميم الذي تحبه)
   return (
-    <div className="min-h-screen bg-[#0b0c15] text-white p-4 md:p-8 font-sans" dir="rtl">
-      
-      {/* رأس الصفحة */}
-      <div className="flex justify-between items-center mb-8 bg-[#151720] p-4 rounded-2xl border border-gray-800">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">لوحة التحكم 🚀</h1>
-        <button onClick={() => window.location.href = '/'} className="bg-red-500/10 text-red-500 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-500/20 transition">خروج</button>
+    <div className="admin-container">
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px'}}>
+        <h1 style={{color: 'white', fontSize: '2rem'}}>لوحة التحكم 🚀</h1>
+        {/* زر الخروج محذوف حسب طلبك */}
       </div>
 
-      {message && <div className="bg-green-500/20 text-green-400 p-4 rounded-xl text-center mb-6 border border-green-500/30 flex justify-center items-center gap-2"><FaCheckCircle /> {message}</div>}
+      {message && <div style={{background: 'rgba(0, 242, 96, 0.2)', color: '#00f260', padding: '15px', borderRadius: '10px', textAlign: 'center', marginBottom: '20px', border: '1px solid #00f260'}}><FaCheckCircle /> {message}</div>}
 
-      {/* فورم الرفع */}
-      <form onSubmit={handleUpload} className="bg-[#151720] p-6 rounded-3xl border border-gray-800 mb-8 shadow-lg">
-        <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><FaCloudUploadAlt className="text-blue-500" /> رفع محتوى جديد</h3>
-        
-        <div className="mb-4">
-            <label className="block text-sm text-gray-400 mb-1">العنوان</label>
-            <input type="text" className="w-full bg-[#0b0c15] border border-gray-700 rounded-xl p-3 text-white focus:border-blue-500 outline-none" value={title} onChange={(e)=>setTitle(e.target.value)} required />
+      <form onSubmit={handleUpload} style={{borderBottom: '1px solid #333', paddingBottom: '30px', marginBottom: '30px'}}>
+        <div className="form-group"><label>العنوان</label><input type="text" className="form-input" value={title} onChange={(e)=>setTitle(e.target.value)} required /></div>
+        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
+            <div className="form-group"><label>المادة</label><select className="form-select" value={subject} onChange={(e)=>setSubject(e.target.value)}>{subjects.map((s,i)=><option key={i} value={s}>{s}</option>)}</select></div>
+            <div className="form-group"><label>النوع</label><select className="form-select" value={type} onChange={(e)=>setType(e.target.value)}><option value="summary">ملخص</option><option value="assignment">تكليف</option></select></div>
         </div>
-        
-        <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-                <label className="block text-sm text-gray-400 mb-1">المادة</label>
-                <select className="w-full bg-[#0b0c15] border border-gray-700 rounded-xl p-3 text-white focus:border-blue-500 outline-none" value={subject} onChange={(e)=>setSubject(e.target.value)}>{subjects.map((s,i)=><option key={i} value={s}>{s}</option>)}</select>
-            </div>
-            <div>
-                <label className="block text-sm text-gray-400 mb-1">النوع</label>
-                <select className="w-full bg-[#0b0c15] border border-gray-700 rounded-xl p-3 text-white focus:border-blue-500 outline-none" value={type} onChange={(e)=>setType(e.target.value)}><option value="summary">ملخص</option><option value="assignment">تكليف</option></select>
-            </div>
-        </div>
-        
-        <div className="mb-6">
-            <label className="block text-sm text-gray-400 mb-1">الملفات</label>
-            <div className="border-2 border-dashed border-gray-700 rounded-xl p-6 text-center hover:border-blue-500 transition cursor-pointer relative bg-[#0b0c15]/50">
-                <input type="file" onChange={handleFileChange} accept=".pdf,image/*" multiple className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                {files.length > 0 ? <p className="text-green-400 font-bold">{files.length} ملفات جاهزة للرفع</p> : <p className="text-gray-500">اضغط لاختيار الملفات أو اسحبها هنا</p>}
-            </div>
-        </div>
-
-        <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled={uploading}>
-            {uploading ? "جاري الرفع..." : "نشر المادة"}
-        </button>
+        <div className="form-group"><label>الملفات</label><div className="upload-area" style={{padding: '20px'}}><input type="file" onChange={handleFileChange} accept=".pdf,image/*" multiple />{files.length > 0 ? <p style={{color: '#00f260'}}>{files.length} ملفات</p> : <p style={{color: '#888'}}>اختر ملفات</p>}</div></div>
+        <button type="submit" className="submit-btn" disabled={uploading}>{uploading ? "جاري الرفع..." : "رفع "}</button>
       </form>
 
-      {/* ✅ قسم طلبات الطلاب المعلقة */}
+      {/* ✅ قسم طلبات الطلاب الجديدة */}
       {pendingList.length > 0 && (
-        <div className="mb-8 border border-yellow-600/30 rounded-3xl p-6 bg-yellow-500/5">
-          <h2 className="text-yellow-500 text-lg font-bold mb-4 flex items-center gap-2">⚠️ طلبات قيد الانتظار ({pendingList.length})</h2>
-          <div className="space-y-3">
+        <div style={{marginBottom: '40px', border: '1px solid #eab308', borderRadius: '15px', padding: '20px', background: 'rgba(234, 179, 8, 0.05)'}}>
+          <h2 style={{color: '#eab308', marginTop: 0, display: 'flex', alignItems: 'center', gap: '10px'}}>
+             ⚠️ طلبات قيد الانتظار ({pendingList.length})
+          </h2>
+          <div style={{display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px'}}>
             {pendingList.map((item) => (
-                <div key={item.id} className="bg-[#151720] border border-gray-800 rounded-xl p-4 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="flex-1">
-                        <h4 className="font-bold text-white flex items-center gap-2">
-                            <FaFilePdf className="text-gray-400" /> {item.title} 
-                            <span className="text-xs bg-gray-800 px-2 py-1 rounded text-gray-300">طالب</span>
+                <div key={item.id} style={{background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                        <h4 style={{color: 'white', margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                            <FaFilePdf style={{color: '#ccc'}} /> {item.title} 
+                            <span style={{fontSize: '0.8rem', background: '#333', padding: '2px 6px', borderRadius: '4px'}}>طالب</span>
                         </h4>
-                        <div className="flex gap-2 text-xs mt-1 text-gray-500">
-                            <span>📌 {item.subject}</span>
-                            <span>👤 {item.uploader}</span>
+                        <div style={{display: 'flex', gap: '10px', fontSize: '0.85rem'}}>
+                            <span style={{color: '#ccc'}}>📌 {item.subject}</span>
                         </div>
                     </div>
-                    <div className="flex gap-2">
-                        <button onClick={() => handleApprove(item.id, item.title)} className="bg-green-500 hover:bg-green-400 text-black px-4 py-2 rounded-lg font-bold flex items-center gap-1 transition text-sm">قبول <FaCheck /></button>
-                        <button onClick={() => handleDelete(item.id, item.title)} className="bg-red-500/10 text-red-500 border border-red-500/20 px-4 py-2 rounded-lg font-bold flex items-center gap-1 hover:bg-red-500 hover:text-white transition text-sm">رفض <FaTimes /></button>
+                    <div style={{display: 'flex', gap: '10px'}}>
+                        <button onClick={() => handleApprove(item.id, item.title)} style={{background: '#00f260', color: '#000', border: 'none', padding: '8px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold'}}>
+                            قبول <FaCheck />
+                        </button>
+                        <button onClick={() => handleDelete(item.id, item.title)} style={{background: 'rgba(255, 77, 77, 0.2)', color: '#ff4d4d', border: '1px solid rgba(255, 77, 77, 0.3)', padding: '8px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px'}}>
+                            رفض <FaTimes />
+                        </button>
                     </div>
                 </div>
             ))}
@@ -320,26 +273,22 @@ export default function AdminPage() {
 
       {/* قسم الملفات المنشورة */}
       <div>
-        <h2 className="text-white text-xl font-bold mb-4 border-r-4 border-green-500 pr-3">الملفات المنشورة ({materialsList.length})</h2>
-        <div className="space-y-3">
+        <h2 style={{color: 'white', borderRight: '4px solid #00f260', paddingRight: '10px'}}>الملفات المنشورة ({materialsList.length})</h2>
+        <div style={{display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px'}}>
             {materialsList.map((item) => (
-                <div key={item.id} className="bg-[#151720] border border-gray-800 rounded-xl p-4 flex justify-between items-center group hover:border-blue-500/30 transition">
-                    <div>
-                        <h4 className="font-bold text-white flex items-center gap-2 text-lg">
-                            <FaFilePdf className={item.type === 'summary' ? 'text-green-500' : 'text-orange-500'} /> 
-                            {item.title}
-                        </h4>
-                        <div className="flex gap-2 text-xs mt-1">
-                            <span className="text-gray-400 bg-white/5 px-2 py-0.5 rounded">📌 {item.subject}</span>
-                            <span className={item.type === 'summary' ? 'text-green-400 bg-green-500/10 px-2 py-0.5 rounded' : 'text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded'}>{item.type === 'assignment' ? 'تكليف' : 'ملخص'}</span>
+                <div key={item.id} style={{background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                        <h4 style={{color: 'white', margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px'}}><FaFilePdf style={{color: item.type === 'summary' ? '#00f260' : '#ff9f43'}} /> {item.title}</h4>
+                        <div style={{display: 'flex', gap: '10px', fontSize: '0.85rem'}}>
+                            <span style={{color: '#ccc', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '6px'}}>📌 {item.subject}</span>
+                            <span style={{color: item.type === 'summary' ? '#00f260' : '#ff9f43', background: item.type === 'summary' ? 'rgba(0, 242, 96, 0.1)' : 'rgba(255, 159, 67, 0.1)', padding: '2px 8px', borderRadius: '6px'}}>{item.type === 'assignment' ? 'تكليف' : 'ملخص'}</span>
                         </div>
                     </div>
-                    <button onClick={() => handleDelete(item.id, item.title)} className="text-gray-600 hover:text-red-500 p-2 rounded-lg transition group-hover:bg-red-500/10"><FaTrash /></button>
+                    <button onClick={() => handleDelete(item.id, item.title)} style={{background: 'transparent', color: '#ff4d4d', border: '1px solid rgba(255, 77, 77, 0.3)', width: '35px', height: '35px', borderRadius: '8px', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center'}}><FaTrash size={14} /></button>
                 </div>
             ))}
         </div>
       </div>
-
     </div>
   );
 }
