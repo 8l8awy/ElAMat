@@ -1,100 +1,100 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "../context/AuthContext";
-import { db } from "../lib/firebase";
-import { collection, getDocs, query, where, addDoc } from "firebase/firestore";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { Eye, EyeOff, Mail, Lock, GraduationCap, ArrowRight, User, Loader2, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
+  // === 1. تعريف الحالات (State) ===
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   
-  // Login State
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
+  const [name, setName] = useState("");      
+  const [email, setEmail] = useState("");    
+  const [password, setPassword] = useState(""); 
   
-  // Register State
-  const [regName, setRegName] = useState("");
-  const [regEmail, setRegEmail] = useState("");
-  const [regPassword, setRegPassword] = useState("");
-
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   
-  const { login, user } = useAuth();
+  const { login } = useAuth();
   const router = useRouter();
 
-  // إذا كان المستخدم مسجلاً بالفعل، حوله للوحة التحكم
-  useEffect(() => {
-    if (user) router.push("/dashboard");
-  }, [user, router]);
+  // === 2. دالة التوجيه ===
+  const forceRedirect = (userData) => {
+    localStorage.setItem("user", JSON.stringify(userData));
+    if (login) login(userData);
+    
+    setTimeout(() => {
+        if (userData.isAdmin) {
+            window.location.href = "/dashboard/admin"; 
+        } else {
+            window.location.href = "/dashboard"; 
+        }
+    }, 500);
+  };
 
-  // --- دالة تسجيل الدخول ---
+  // === 3. تسجيل الدخول ===
   const handleLogin = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
+      // أ) البحث في الأكواد (للأدمن)
       const codesRef = collection(db, "allowedCodes");
-      const qCode = query(codesRef, where("code", "==", loginEmail));
+      const qCode = query(codesRef, where("code", "==", email.trim()));
       const codeSnap = await getDocs(qCode);
 
       if (!codeSnap.empty) {
         const data = codeSnap.docs[0].data();
-        login({ 
-            name: data.name || "User", 
-            email: loginEmail, 
-            isAdmin: data.admin || false
-        });
-        router.push("/dashboard");
+        const userData = { name: data.name || "User", email: email, isAdmin: data.admin || false };
+        forceRedirect(userData);
         return;
       }
 
+      // ب) البحث في المستخدمين (للطلاب)
       const usersRef = collection(db, "users");
-      const qUser = query(usersRef, where("email", "==", loginEmail));
+      const qUser = query(usersRef, where("email", "==", email.toLowerCase().trim()));
       const userSnap = await getDocs(qUser);
 
       if (!userSnap.empty) {
         const data = userSnap.docs[0].data();
-        if (data.password === loginPassword) {
-          login({ 
-              ...data, 
-              isAdmin: data.isAdmin || false 
-          });
-          router.push("/dashboard");
+        if (data.password === password) {
+          const userData = { ...data, isAdmin: data.isAdmin || false };
+          forceRedirect(userData);
         } else {
           setError("كلمة المرور غير صحيحة");
+          setLoading(false);
         }
       } else {
         setError("الكود أو البريد الإلكتروني غير موجود");
+        setLoading(false);
       }
-
     } catch (err) {
       console.error(err);
       setError("حدث خطأ في الاتصال: " + err.message);
-    } finally {
       setLoading(false);
     }
   };
 
-  // --- دالة إنشاء حساب جديد ---
+  // === 4. إنشاء حساب ===
   const handleRegister = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setError("");
-    setLoading(true);
 
-    if (!regName || !regEmail || !regPassword) {
+    if (!name || !email || !password) {
         setError("الرجاء ملء جميع الحقول");
-        setLoading(false);
         return;
     }
 
+    setLoading(true);
+
     try {
         const usersRef = collection(db, "users");
-        const q = query(usersRef, where("email", "==", regEmail));
+        const q = query(usersRef, where("email", "==", email.toLowerCase().trim()));
         const snap = await getDocs(q);
 
         if (!snap.empty) {
@@ -104,21 +104,19 @@ export default function LoginPage() {
         }
 
         const newUser = {
-            name: regName,
-            email: regEmail,
-            password: regPassword,
+            name: name,
+            email: email.toLowerCase().trim(),
+            password: password,
             isAdmin: false,
             createdAt: new Date().toISOString()
         };
 
         await addDoc(usersRef, newUser);
-        login(newUser);
-        router.push("/dashboard");
+        forceRedirect(newUser);
 
     } catch (err) {
         console.error(err);
-        setError("فشل إنشاء الحساب");
-    } finally {
+        setError("فشل إنشاء الحساب: " + err.message);
         setLoading(false);
     }
   };
@@ -218,8 +216,8 @@ export default function LoginPage() {
                       <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
                       <input 
                         type="text" 
-                        value={loginEmail} 
-                        onChange={(e) => setLoginEmail(e.target.value)} 
+                        value={email} 
+                        onChange={(e) => setEmail(e.target.value)} 
                         onKeyDown={handleKeyPress}
                         className="w-full pr-12 pl-4 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
                         placeholder="example@gmail.com"
@@ -234,8 +232,8 @@ export default function LoginPage() {
                       <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
                       <input 
                         type={showPassword ? 'text' : 'password'} 
-                        value={loginPassword} 
-                        onChange={(e) => setLoginPassword(e.target.value)} 
+                        value={password} 
+                        onChange={(e) => setPassword(e.target.value)} 
                         onKeyDown={handleKeyPress}
                         className="w-full pr-12 pl-12 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
                         placeholder="••••••••"
@@ -259,8 +257,8 @@ export default function LoginPage() {
                       <User className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
                       <input 
                         type="text" 
-                        value={regName} 
-                        onChange={(e) => setRegName(e.target.value)} 
+                        value={name} 
+                        onChange={(e) => setName(e.target.value)} 
                         onKeyDown={handleKeyPress}
                         className="w-full pr-12 pl-4 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
                         placeholder="محمد أحمد"
@@ -275,8 +273,8 @@ export default function LoginPage() {
                       <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
                       <input 
                         type="email" 
-                        value={regEmail} 
-                        onChange={(e) => setRegEmail(e.target.value)} 
+                        value={email} 
+                        onChange={(e) => setEmail(e.target.value)} 
                         onKeyDown={handleKeyPress}
                         className="w-full pr-12 pl-4 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
                         placeholder="example@gmail.com"
@@ -291,8 +289,8 @@ export default function LoginPage() {
                       <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
                       <input 
                         type={showPassword ? 'text' : 'password'} 
-                        value={regPassword} 
-                        onChange={(e) => setRegPassword(e.target.value)} 
+                        value={password} 
+                        onChange={(e) => setPassword(e.target.value)} 
                         onKeyDown={handleKeyPress}
                         className="w-full pr-12 pl-12 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
                         placeholder="••••••••"
