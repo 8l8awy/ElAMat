@@ -1,435 +1,357 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../context/AuthContext";
+import { db } from "../lib/firebase";
+import { collection, getDocs, query, where, addDoc } from "firebase/firestore";
 import { Eye, EyeOff, Mail, Lock, GraduationCap, ArrowRight, User, Loader2, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
-  // === 1. تعريف الحالات (State) ===
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   
-  const [name, setName] = useState("");      
-  const [email, setEmail] = useState("");    
-  const [password, setPassword] = useState(""); 
+  // Login State
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   
-  const [loading, setLoading] = useState(false);
+  // Register State
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+
   const [error, setError] = useState("");
-  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  
+  const { login, user } = useAuth();
+  const router = useRouter();
 
-  // === 2. محاكاة Firebase (للعرض التوضيحي فقط) ===
-  const mockFirebaseLogin = async (email, password) => {
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    if (email && password) {
-      return {
-        name: name || "مستخدم تجريبي",
-        email: email,
-        isAdmin: email.includes("admin"),
-        success: true
-      };
-    }
-    throw new Error("بيانات غير صحيحة");
-  };
+  // إذا كان المستخدم مسجلاً بالفعل، حوله للوحة التحكم
+  useEffect(() => {
+    if (user) router.push("/dashboard");
+  }, [user, router]);
 
-  const mockFirebaseRegister = async (name, email, password) => {
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    if (name && email && password) {
-      return {
-        name: name,
-        email: email,
-        isAdmin: false,
-        success: true
-      };
-    }
-    throw new Error("فشل التسجيل");
-  };
-
-  // === 3. دالة تسجيل الدخول ===
-  const handleLogin = async () => {
+  // --- دالة تسجيل الدخول ---
+  const handleLogin = async (e) => {
+    e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      /* في المشروع الحقيقي استخدم هذا الكود:
-      
-      import { db } from '@/lib/firebase';
-      import { collection, query, where, getDocs } from 'firebase/firestore';
-      
-      // أ) البحث في الأكواد (للأدمن)
       const codesRef = collection(db, "allowedCodes");
-      const qCode = query(codesRef, where("code", "==", email.trim()));
+      const qCode = query(codesRef, where("code", "==", loginEmail));
       const codeSnap = await getDocs(qCode);
 
       if (!codeSnap.empty) {
         const data = codeSnap.docs[0].data();
-        const userData = { name: data.name || "User", email: email, isAdmin: data.admin || false };
-        setUser(userData);
-        localStorage.setItem("user", JSON.stringify(userData));
+        login({ 
+            name: data.name || "User", 
+            email: loginEmail, 
+            isAdmin: data.admin || false
+        });
+        router.push("/dashboard");
         return;
       }
 
-      // ب) البحث في المستخدمين (للطلاب)
       const usersRef = collection(db, "users");
-      const qUser = query(usersRef, where("email", "==", email.toLowerCase().trim()));
+      const qUser = query(usersRef, where("email", "==", loginEmail));
       const userSnap = await getDocs(qUser);
 
       if (!userSnap.empty) {
         const data = userSnap.docs[0].data();
-        if (data.password === password) {
-          const userData = { ...data, isAdmin: data.isAdmin || false };
-          setUser(userData);
-          localStorage.setItem("user", JSON.stringify(userData));
+        if (data.password === loginPassword) {
+          login({ 
+              ...data, 
+              isAdmin: data.isAdmin || false 
+          });
+          router.push("/dashboard");
         } else {
           setError("كلمة المرور غير صحيحة");
         }
       } else {
         setError("الكود أو البريد الإلكتروني غير موجود");
       }
-      */
 
-      const userData = await mockFirebaseLogin(email, password);
-      setUser(userData);
-      
     } catch (err) {
       console.error(err);
-      setError(err.message || "حدث خطأ في تسجيل الدخول");
+      setError("حدث خطأ في الاتصال: " + err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // === 4. دالة إنشاء الحساب ===
-  const handleRegister = async () => {
+  // --- دالة إنشاء حساب جديد ---
+  const handleRegister = async (e) => {
+    e.preventDefault();
     setError("");
+    setLoading(true);
 
-    if (!name || !email || !password) {
+    if (!regName || !regEmail || !regPassword) {
         setError("الرجاء ملء جميع الحقول");
+        setLoading(false);
         return;
     }
 
-    setLoading(true);
-
     try {
-      /* في المشروع الحقيقي استخدم هذا الكود:
-      
-      import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
-      
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", email.toLowerCase().trim()));
-      const snap = await getDocs(q);
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("email", "==", regEmail));
+        const snap = await getDocs(q);
 
-      if (!snap.empty) {
-          setError("البريد الإلكتروني مستخدم بالفعل");
-          return;
-      }
+        if (!snap.empty) {
+            setError("البريد الإلكتروني مستخدم بالفعل");
+            setLoading(false);
+            return;
+        }
 
-      const newUser = {
-          name: name,
-          email: email.toLowerCase().trim(),
-          password: password,
-          isAdmin: false,
-          createdAt: new Date().toISOString()
-      };
+        const newUser = {
+            name: regName,
+            email: regEmail,
+            password: regPassword,
+            isAdmin: false,
+            createdAt: new Date().toISOString()
+        };
 
-      await addDoc(usersRef, newUser);
-      setUser(newUser);
-      localStorage.setItem("user", JSON.stringify(newUser));
-      */
-
-      const userData = await mockFirebaseRegister(name, email, password);
-      setUser(userData);
+        await addDoc(usersRef, newUser);
+        login(newUser);
+        router.push("/dashboard");
 
     } catch (err) {
         console.error(err);
-        setError(err.message || "فشل إنشاء الحساب");
+        setError("فشل إنشاء الحساب");
     } finally {
         setLoading(false);
     }
   };
 
-  // === 5. دالة تسجيل الخروج ===
-  const handleSignOut = () => {
-    setUser(null);
-    setName("");
-    setEmail("");
-    setPassword("");
-    setError("");
-  };
-
-  // === 6. معالجة Enter key ===
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !loading) {
-      if (isLogin) {
-        handleLogin();
-      } else {
-        handleRegister();
-      }
+      isLogin ? handleLogin(e) : handleRegister(e);
     }
   };
 
-  // === 7. إذا كان المستخدم مسجل دخول ===
-  if (user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-blue-950 text-white flex items-center justify-center p-8">
-        <div className="max-w-2xl w-full text-center">
-          <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-full flex items-center justify-center shadow-2xl shadow-blue-500/50">
-            <GraduationCap className="w-20 h-20 text-white" />
-          </div>
-          
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
-            مرحباً في منصة العجمي!
-          </h1>
-          
-          <p className="text-xl text-gray-300 mb-3">
-            مسجل دخول باسم: <span className="text-blue-400 font-semibold">{user.name}</span>
-          </p>
-          
-          <p className="text-md text-gray-400 mb-8">
-            البريد: <span className="text-cyan-400">{user.email}</span>
-          </p>
-
-          {user.isAdmin && (
-            <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
-              <p className="text-yellow-400 font-semibold">🔑 أنت مشرف (Admin)</p>
-            </div>
-          )}
-          
-          <button 
-            onClick={handleSignOut}
-            className="py-4 px-8 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02] transition-all duration-300"
-          >
-            تسجيل خروج
-          </button>
-
-          <div className="mt-8 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
-            <p className="text-sm text-gray-400 mb-2">💡 ملاحظة للتطوير:</p>
-            <p className="text-xs text-gray-500 leading-relaxed">
-              في المشروع الحقيقي، قم بإلغاء التعليق عن أكواد Firebase الموجودة في الدوال
-              <br />
-              واستيراد: import {'{db}'} from '@/lib/firebase'
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // === 8. صفحة تسجيل الدخول / التسجيل ===
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-blue-950 text-white font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 text-white font-sans relative overflow-hidden" dir="rtl">
       
+      {/* خلفية متحركة */}
+      <div className="fixed inset-0 opacity-10 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500 rounded-full filter blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500 rounded-full filter blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
+        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-purple-500 rounded-full filter blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
+      </div>
+
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 bg-black/30 backdrop-blur-md border-b border-blue-500/20">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <GraduationCap className="w-6 h-6 text-white" />
+      <header className="fixed top-0 left-0 right-0 z-50 px-8 py-5 bg-gradient-to-r from-black/40 via-blue-950/40 to-black/40 backdrop-blur-xl border-b border-blue-500/20 shadow-lg">
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-cyan-400 to-blue-600 rounded-xl flex items-center justify-center shadow-xl shadow-blue-500/30 animate-pulse">
+              <GraduationCap className="w-7 h-7 text-white" />
+            </div>
+            <span className="text-2xl font-black bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent">
+              El Agamy Materials
+            </span>
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
-            El Agamy Materials
-          </span>
         </div>
-        <button className="text-blue-300 hover:text-blue-200 transition-colors text-sm font-medium">
-          مساعدة
-        </button>
       </header>
 
       <div className="flex min-h-screen pt-20">
         
-        {/* Left Side - Info */}
-        <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-cyan-600/10 backdrop-blur-3xl"></div>
+        {/* Left Side - معلومات */}
+        <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12 relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-cyan-600/5"></div>
           
           <div className="relative z-10 max-w-lg text-center">
-            <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-500/50 animate-pulse">
-              <GraduationCap className="w-20 h-20 text-white" />
+            <div className="w-40 h-40 mx-auto mb-10 bg-gradient-to-br from-blue-500 via-cyan-400 to-purple-500 rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-blue-500/50" style={{animation: 'float 3s ease-in-out infinite'}}>
+              <GraduationCap className="w-24 h-24 text-white" />
             </div>
             
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-400 bg-clip-text text-transparent leading-tight">
-              طور مستواك الدراسي
+            <h1 className="text-6xl font-black mb-8 bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-400 bg-clip-text text-transparent leading-tight">
+              رحلة التفوق تبدأ هنا
             </h1>
             
-            <p className="text-xl text-gray-300 leading-relaxed font-light">
-              احصل على الملخصات، شارك الملاحظات، وتعاون مع زملائك في منصة العجمي التعليمية.
+            <p className="text-2xl text-gray-300 leading-relaxed font-light">
+              انضم لآلاف الطلاب المتميزين
               <br />
-              <span className="text-blue-300 font-medium mt-2 block">المعرفة تنمو بالمشاركة.</span>
+              <span className="text-cyan-400 font-bold mt-3 block text-3xl">احصل على أعلى الدرجات 📚</span>
             </p>
           </div>
         </div>
 
-        {/* Right Side - Login Form */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-8">
+        {/* Right Side - النموذج */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-8 relative z-10">
           <div className="w-full max-w-md">
             
-            <div className="text-center mb-10">
-              <h2 className="text-4xl font-bold mb-3 bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
-                {isLogin ? "مرحباً بعودتك" : "انضم إلينا الآن"}
+            <div className="text-center mb-12">
+              <h2 className="text-5xl font-black mb-4 bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent">
+                {isLogin ? "أهلاً بك مجدداً" : "ابدأ رحلتك"}
               </h2>
-              <p className="text-gray-400">
-                {isLogin ? "أدخل بياناتك للدخول إلى المنصة" : "أنشئ حسابك لبدء رحلة التعلم"}
+              <p className="text-gray-400 text-lg">
+                {isLogin ? "سجل دخولك لمتابعة تفوقك" : "سجل حساب جديد الآن"}
               </p>
             </div>
 
-            {/* Tab Buttons */}
-            <div className="flex gap-4 mb-8 bg-gray-900/50 p-1 rounded-full border border-gray-700/50">
+            {/* Tabs */}
+            <div className="flex gap-3 mb-10 bg-slate-900/50 p-2 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
               <button 
-                onClick={() => { setIsLogin(true); setError(""); }}
-                disabled={loading}
-                className={`flex-1 py-3 px-6 rounded-full font-semibold transition-all duration-300 ${isLogin ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/30" : "text-gray-400 hover:text-white"}`}
+                onClick={() => { setIsLogin(true); setError(""); }} 
+                disabled={loading} 
+                className={`flex-1 py-4 px-6 rounded-xl font-bold transition-all duration-300 ${isLogin ? "bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 text-white shadow-xl shadow-blue-500/30 scale-105" : "text-gray-400 hover:text-white hover:bg-slate-800/50"}`}
               >
                 تسجيل دخول
               </button>
               <button 
-                onClick={() => { setIsLogin(false); setError(""); }}
-                disabled={loading}
-                className={`flex-1 py-3 px-6 rounded-full font-semibold transition-all duration-300 ${!isLogin ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/30" : "text-gray-400 hover:text-white"}`}
+                onClick={() => { setIsLogin(false); setError(""); }} 
+                disabled={loading} 
+                className={`flex-1 py-4 px-6 rounded-xl font-bold transition-all duration-300 ${!isLogin ? "bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 text-white shadow-xl shadow-blue-500/30 scale-105" : "text-gray-400 hover:text-white hover:bg-slate-800/50"}`}
               >
                 إنشاء حساب
               </button>
             </div>
 
-            <div>
-                
-                {/* Name Input (Only Register) */}
-                {!isLogin && (
-                    <div className="mb-5">
-                      <label className="block text-sm font-medium mb-2 text-gray-300">الاسم الكامل</label>
-                      <div className="relative">
-                          <User className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                          <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            onKeyPress={handleKeyPress}
-                            className="w-full pr-12 pl-4 py-4 bg-gray-900/50 border border-gray-700 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-white placeholder-gray-600"
-                            placeholder="أدخل اسمك الكامل"
-                          />
-                      </div>
-                    </div>
-                )}
-
-                {/* Email Input */}
-                <div className="mb-5">
-                  <label className="block text-sm font-medium mb-2 text-gray-300">
-                      {isLogin ? "البريد الإلكتروني أو الكود" : "البريد الإلكتروني"}
-                  </label>
-                  <div className="relative">
-                      <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                      <input
-                        type="text"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        className="w-full pr-12 pl-4 py-4 bg-gray-900/50 border border-gray-700 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-white placeholder-gray-600"
+            <div className="space-y-6">
+              
+              {/* نموذج تسجيل الدخول */}
+              {isLogin ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-bold mb-3 text-gray-300">البريد أو الكود</label>
+                    <div className="relative group">
+                      <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
+                      <input 
+                        type="text" 
+                        value={loginEmail} 
+                        onChange={(e) => setLoginEmail(e.target.value)} 
+                        onKeyDown={handleKeyPress}
+                        className="w-full pr-12 pl-4 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
                         placeholder="example@gmail.com"
+                        required
                       />
+                    </div>
                   </div>
-                </div>
 
-                {/* Password Input */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm font-medium text-gray-300">كلمة المرور</label>
-                      {isLogin && (
-                        <button 
-                          type="button"
-                          onClick={() => alert("ميزة استعادة كلمة المرور قريباً")}
-                          className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-                        >
-                          نسيت كلمة المرور؟
-                        </button>
-                      )}
-                  </div>
-                  <div className="relative">
-                      <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        className="w-full pr-12 pl-12 py-4 bg-gray-900/50 border border-gray-700 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-white placeholder-gray-600"
+                  <div>
+                    <label className="block text-sm font-bold mb-3 text-gray-300">كلمة المرور</label>
+                    <div className="relative group">
+                      <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
+                      <input 
+                        type={showPassword ? 'text' : 'password'} 
+                        value={loginPassword} 
+                        onChange={(e) => setLoginPassword(e.target.value)} 
+                        onKeyDown={handleKeyPress}
+                        className="w-full pr-12 pl-12 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
                         placeholder="••••••••"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-cyan-400 transition-colors"
                       >
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
-                  </div>
-                </div>
-
-                {/* Error Message */}
-                {error && (
-                    <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3 text-red-400 text-sm">
-                        <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                        <span>{error}</span>
                     </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* نموذج التسجيل */}
+                  <div>
+                    <label className="block text-sm font-bold mb-3 text-gray-300">الاسم الكامل</label>
+                    <div className="relative group">
+                      <User className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
+                      <input 
+                        type="text" 
+                        value={regName} 
+                        onChange={(e) => setRegName(e.target.value)} 
+                        onKeyDown={handleKeyPress}
+                        className="w-full pr-12 pl-4 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
+                        placeholder="محمد أحمد"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold mb-3 text-gray-300">البريد الإلكتروني</label>
+                    <div className="relative group">
+                      <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
+                      <input 
+                        type="email" 
+                        value={regEmail} 
+                        onChange={(e) => setRegEmail(e.target.value)} 
+                        onKeyDown={handleKeyPress}
+                        className="w-full pr-12 pl-4 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
+                        placeholder="example@gmail.com"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold mb-3 text-gray-300">كلمة المرور</label>
+                    <div className="relative group">
+                      <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
+                      <input 
+                        type={showPassword ? 'text' : 'password'} 
+                        value={regPassword} 
+                        onChange={(e) => setRegPassword(e.target.value)} 
+                        onKeyDown={handleKeyPress}
+                        className="w-full pr-12 pl-12 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
+                        placeholder="••••••••"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-cyan-400 transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* رسالة الخطأ */}
+              {error && (
+                <div className="p-4 bg-gradient-to-r from-red-500/10 to-pink-500/10 border border-red-500/30 rounded-xl flex items-center gap-3 text-red-400 backdrop-blur-sm">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-semibold">{error}</span>
+                </div>
+              )}
+
+              {/* زر الإرسال */}
+              <button 
+                onClick={isLogin ? handleLogin : handleRegister} 
+                disabled={loading} 
+                className="w-full py-5 bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 rounded-xl font-black text-lg text-white shadow-2xl shadow-blue-500/50 hover:shadow-cyan-500/50 hover:scale-105 transition-all duration-500 flex items-center justify-center gap-3 disabled:opacity-50 disabled:hover:scale-100 group"
+              >
+                {loading ? (
+                  <Loader2 className="animate-spin w-7 h-7" />
+                ) : (
+                  <>
+                    {isLogin ? "دخول الآن" : "إنشاء الحساب"}
+                    <ArrowRight className="w-6 h-6 rotate-180 group-hover:-translate-x-2 transition-transform" />
+                  </>
                 )}
-
-                {/* Submit Button */}
-                <button 
-                    onClick={isLogin ? handleLogin : handleRegister}
-                    disabled={loading}
-                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl font-bold text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.01] transition-all duration-300 flex items-center justify-center gap-2 group disabled:opacity-70 disabled:hover:scale-100 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <Loader2 className="animate-spin w-6 h-6" />
-                  ) : (
-                    <>
-                      {isLogin ? "دخول" : "إنشاء حساب"}
-                      <ArrowRight className="w-5 h-5 group-hover:-translate-x-1 transition-transform rotate-180" />
-                    </>
-                  )}
-                </button>
-            </div>
-
-            {/* Social Login */}
-            <div className="mt-8">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-700"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-gradient-to-br from-black via-gray-900 to-blue-950 text-gray-400">
-                    أو استمر بـ
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-4">
-                <button 
-                  onClick={() => alert("تسجيل الدخول بـ Google قريباً")}
-                  className="py-3 px-4 bg-gray-900/50 border border-gray-700 rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-2 text-sm font-medium"
-                >
-                  <div className="w-5 h-5 bg-white rounded"></div>
-                  Google
-                </button>
-                <button 
-                  onClick={() => alert("تسجيل الدخول بـ Microsoft قريباً")}
-                  className="py-3 px-4 bg-gray-900/50 border border-gray-700 rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-2 text-sm font-medium"
-                >
-                  <div className="w-5 h-5 bg-gradient-to-r from-blue-500 to-cyan-400 rounded"></div>
-                  Microsoft
-                </button>
-              </div>
+              </button>
             </div>
 
             {/* Footer */}
             <div className="mt-12 text-center text-sm text-gray-500">
-              © 2025 El Agamy Materials.{' '}
-              <button 
-                onClick={() => alert("سياسة الخصوصية")}
-                className="text-blue-400 hover:text-blue-300 transition-colors underline"
-              >
-                سياسة الخصوصية
-              </button>
+              تحت إشراف <span className="text-cyan-400 font-bold">محمد علي</span>
+              <br />
+              © 2025 El Agamy Materials
             </div>
 
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+      `}</style>
     </div>
   );
 }
