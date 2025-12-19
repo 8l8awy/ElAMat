@@ -1,70 +1,80 @@
 "use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
-import { Eye, EyeOff, Mail, Lock, GraduationCap, ArrowRight, User, Loader2, AlertCircle } from 'lucide-react';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, query, where, addDoc } from "firebase/firestore";
+// تأكدي من تثبيت الأيقونات: npm install lucide-react
+import { Mail, Lock, User, ArrowLeft, BookOpen, GraduationCap, Lightbulb, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { login } = useAuth(); 
-
-  // === الحالات (States) ===
   const [isLogin, setIsLogin] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
   
-  const [name, setName] = useState("");      
-  const [email, setEmail] = useState("");    
-  const [password, setPassword] = useState(""); 
+  // Login State
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  // Register State
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
 
-  // === دالة التوجيه ===
-  const forceRedirect = (userData) => {
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  
+  const { login } = useAuth();
+  const router = useRouter();
+
+  // --- دالة التوجيه الذكي (حسب الصلاحية) ---
+  const handleRedirect = (userData) => {
+    login(userData);
+    // حفظ البيانات لضمان بقاء المستخدم مسجلاً
     localStorage.setItem("user", JSON.stringify(userData));
-    if (login) login(userData);
-    
-    setTimeout(() => {
-        if (userData.isAdmin) {
-            router.push("/dashboard/admin"); 
-        } else {
-            router.push("/dashboard"); 
-        }
-    }, 500);
+
+    if (userData.isAdmin) {
+        router.push("/dashboard/admin");
+    } else {
+        router.push("/dashboard");
+    }
   };
 
-  // === دالة تسجيل الدخول ===
+  // --- دالة تسجيل الدخول ---
   const handleLogin = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
+    e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      // البحث في الأكواد (للأدمن)
+      // 1. التحقق من الأكواد (Allowed Codes)
       const codesRef = collection(db, "allowedCodes");
-      const qCode = query(codesRef, where("code", "==", email.trim()));
+      const qCode = query(codesRef, where("code", "==", loginEmail.trim()));
       const codeSnap = await getDocs(qCode);
 
       if (!codeSnap.empty) {
         const data = codeSnap.docs[0].data();
-        const userData = { name: data.name || "User", email: email, isAdmin: data.admin || false };
-        forceRedirect(userData);
+        const userData = { 
+            name: data.name || "Admin", 
+            email: loginEmail, 
+            isAdmin: data.admin || false 
+        };
+        handleRedirect(userData);
         return;
       }
 
-      // البحث في المستخدمين (للطلاب)
+      // 2. التحقق من المستخدمين (Users)
       const usersRef = collection(db, "users");
-      const qUser = query(usersRef, where("email", "==", email.toLowerCase().trim()));
+      const qUser = query(usersRef, where("email", "==", loginEmail.toLowerCase().trim()));
       const userSnap = await getDocs(qUser);
 
       if (!userSnap.empty) {
         const data = userSnap.docs[0].data();
-        if (data.password === password) {
-          const userData = { ...data, isAdmin: data.isAdmin || false };
-          forceRedirect(userData);
+        if (data.password === loginPassword) {
+          const userData = { 
+              ...data, 
+              isAdmin: data.isAdmin || false 
+          };
+          handleRedirect(userData);
         } else {
           setError("كلمة المرور غير صحيحة");
           setLoading(false);
@@ -73,28 +83,29 @@ export default function LoginPage() {
         setError("الكود أو البريد الإلكتروني غير موجود");
         setLoading(false);
       }
+
     } catch (err) {
       console.error(err);
-      setError("حدث خطأ: " + err.message);
+      setError("حدث خطأ في الاتصال: " + err.message);
       setLoading(false);
     }
   };
 
-  // === دالة إنشاء الحساب ===
+  // --- دالة إنشاء حساب جديد ---
   const handleRegister = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
+    e.preventDefault();
     setError("");
+    setLoading(true);
 
-    if (!name || !email || !password) {
+    if (!regName || !regEmail || !regPassword) {
         setError("الرجاء ملء جميع الحقول");
+        setLoading(false);
         return;
     }
 
-    setLoading(true);
-
     try {
         const usersRef = collection(db, "users");
-        const q = query(usersRef, where("email", "==", email.toLowerCase().trim()));
+        const q = query(usersRef, where("email", "==", regEmail.toLowerCase().trim()));
         const snap = await getDocs(q);
 
         if (!snap.empty) {
@@ -104,251 +115,113 @@ export default function LoginPage() {
         }
 
         const newUser = {
-            name: name,
-            email: email.toLowerCase().trim(),
-            password: password,
+            name: regName,
+            email: regEmail.toLowerCase().trim(),
+            password: regPassword,
             isAdmin: false,
             createdAt: new Date().toISOString()
         };
 
         await addDoc(usersRef, newUser);
-        forceRedirect(newUser);
+        handleRedirect(newUser);
 
     } catch (err) {
         console.error(err);
-        setError("فشل إنشاء الحساب: " + err.message);
+        setError("فشل إنشاء الحساب");
         setLoading(false);
     }
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !loading) {
-      isLogin ? handleLogin(e) : handleRegister(e);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 text-white font-sans relative overflow-hidden" dir="rtl">
+    <div className="flex min-h-screen w-full bg-[#0b0c15] overflow-hidden font-sans" dir="rtl">
       
-      {/* خلفية متحركة */}
-      <div className="fixed inset-0 opacity-10 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500 rounded-full filter blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500 rounded-full filter blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
-        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-purple-500 rounded-full filter blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
-      </div>
-
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-8 py-5 bg-gradient-to-r from-black/40 via-blue-950/40 to-black/40 backdrop-blur-xl border-b border-blue-500/20 shadow-lg">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-cyan-400 to-blue-600 rounded-xl flex items-center justify-center shadow-xl shadow-blue-500/30 animate-pulse">
-              <GraduationCap className="w-7 h-7 text-white" />
-            </div>
-            <span className="text-2xl font-black bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent">
-              El Agamy Materials
-            </span>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex min-h-screen pt-20">
+      {/* ================= القسم الأيمن: الفورم (الأسود) ================= */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 bg-[#0b0c15] relative z-20">
         
-        {/* Left Side - معلومات */}
-        <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12 relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-cyan-600/5"></div>
-          
-          <div className="relative z-10 max-w-lg text-center">
-            <div className="w-40 h-40 mx-auto mb-10 bg-gradient-to-br from-blue-500 via-cyan-400 to-purple-500 rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-blue-500/50" style={{animation: 'float 3s ease-in-out infinite'}}>
-              <GraduationCap className="w-24 h-24 text-white" />
-            </div>
-            
-            <h1 className="text-6xl font-black mb-8 bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-400 bg-clip-text text-transparent leading-tight">
-              رحلة التفوق تبدأ هنا
-            </h1>
-            
-            <p className="text-2xl text-gray-300 leading-relaxed font-light">
-              انضم لآلاف الطلاب المتميزين
-              <br />
-              <span className="text-cyan-400 font-bold mt-3 block text-3xl">احصل على أعلى الدرجات 📚</span>
-            </p>
-          </div>
+        {/* الشعار */}
+        <div className="absolute top-8 right-8 flex items-center gap-2 font-semibold text-gray-300">
+           <div className="bg-blue-600 rounded-lg p-1.5"><BookOpen size={18} className="text-white" /></div>
+           <span className="text-lg tracking-wide">El Agamy Materials</span>
         </div>
+        
+        <div className="w-full max-w-[420px]">
+          
+          <div className="text-center mb-10 space-y-2">
+            <h1 className="text-4xl font-bold text-white">منصة المواد الدراسية</h1>
+            <p className="text-gray-500">قم بتسجيل الدخول للمتابعة</p>
+          </div>
 
-        {/* Right Side - النموذج */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-8 relative z-10">
-          <div className="w-full max-w-md">
-            
-            <div className="text-center mb-12">
-              <h2 className="text-5xl font-black mb-4 bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent">
-                {isLogin ? "أهلاً بك مجدداً" : "ابدأ رحلتك"}
-              </h2>
-              <p className="text-gray-400 text-lg">
-                {isLogin ? "سجل دخولك لمتابعة تفوقك" : "سجل حساب جديد الآن"}
-              </p>
-            </div>
+          {/* أزرار التبديل */}
+          <div className="bg-[#151720] p-1.5 rounded-xl flex gap-3 border border-gray-800 mb-8">
+            <button type="button" onClick={() => { setIsLogin(true); setError(""); }} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all duration-300 ${isLogin ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" : "text-gray-400 hover:text-white hover:bg-white/5"}`}>تسجيل الدخول</button>
+            <button type="button" onClick={() => { setIsLogin(false); setError(""); }} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all duration-300 ${!isLogin ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" : "text-gray-400 hover:text-white hover:bg-white/5"}`}>إنشاء حساب</button>
+          </div>
 
-            {/* Tabs */}
-            <div className="flex gap-3 mb-10 bg-slate-900/50 p-2 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
-              <button 
-                onClick={() => { setIsLogin(true); setError(""); }} 
-                disabled={loading} 
-                className={`flex-1 py-4 px-6 rounded-xl font-bold transition-all duration-300 ${isLogin ? "bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 text-white shadow-xl shadow-blue-500/30 scale-105" : "text-gray-400 hover:text-white hover:bg-slate-800/50"}`}
-              >
-                تسجيل دخول
-              </button>
-              <button 
-                onClick={() => { setIsLogin(false); setError(""); }} 
-                disabled={loading} 
-                className={`flex-1 py-4 px-6 rounded-xl font-bold transition-all duration-300 ${!isLogin ? "bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 text-white shadow-xl shadow-blue-500/30 scale-105" : "text-gray-400 hover:text-white hover:bg-slate-800/50"}`}
-              >
-                إنشاء حساب
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              
-              {/* نموذج تسجيل الدخول */}
-              {isLogin ? (
-                <>
-                  <div>
-                    <label className="block text-sm font-bold mb-3 text-gray-300">البريد أو الكود</label>
-                    <div className="relative group">
-                      <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
-                      <input 
-                        type="text" 
-                        value={email} 
-                        onChange={(e) => setEmail(e.target.value)} 
-                        onKeyDown={handleKeyPress}
-                        className="w-full pr-12 pl-4 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
-                        placeholder="example@gmail.com"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold mb-3 text-gray-300">كلمة المرور</label>
-                    <div className="relative group">
-                      <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
-                      <input 
-                        type={showPassword ? 'text' : 'password'} 
-                        value={password} 
-                        onChange={(e) => setPassword(e.target.value)} 
-                        onKeyDown={handleKeyPress}
-                        className="w-full pr-12 pl-12 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
-                        placeholder="••••••••"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-cyan-400 transition-colors"
-                      >
-                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                      </button>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* نموذج التسجيل */}
-                  <div>
-                    <label className="block text-sm font-bold mb-3 text-gray-300">الاسم الكامل</label>
-                    <div className="relative group">
-                      <User className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
-                      <input 
-                        type="text" 
-                        value={name} 
-                        onChange={(e) => setName(e.target.value)} 
-                        onKeyDown={handleKeyPress}
-                        className="w-full pr-12 pl-4 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
-                        placeholder="محمد أحمد"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold mb-3 text-gray-300">البريد الإلكتروني</label>
-                    <div className="relative group">
-                      <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
-                      <input 
-                        type="email" 
-                        value={email} 
-                        onChange={(e) => setEmail(e.target.value)} 
-                        onKeyDown={handleKeyPress}
-                        className="w-full pr-12 pl-4 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
-                        placeholder="example@gmail.com"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold mb-3 text-gray-300">كلمة المرور</label>
-                    <div className="relative group">
-                      <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
-                      <input 
-                        type={showPassword ? 'text' : 'password'} 
-                        value={password} 
-                        onChange={(e) => setPassword(e.target.value)} 
-                        onKeyDown={handleKeyPress}
-                        className="w-full pr-12 pl-12 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
-                        placeholder="••••••••"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-cyan-400 transition-colors"
-                      >
-                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* رسالة الخطأ */}
-              {error && (
-                <div className="p-4 bg-gradient-to-r from-red-500/10 to-pink-500/10 border border-red-500/30 rounded-xl flex items-center gap-3 text-red-400 backdrop-blur-sm">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                  <span className="font-semibold">{error}</span>
+          <form onSubmit={isLogin ? handleLogin : handleRegister} className="space-y-5">
+            {!isLogin && (
+              <div className="space-y-1.5 animate-fadeIn">
+                <label className="text-xs font-medium text-gray-400 mr-1">الاسم بالكامل</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-blue-500 transition-colors"><User size={18} /></div>
+                  <input type="text" value={regName} onChange={(e) => setRegName(e.target.value)} className="w-full bg-[#151720] border border-gray-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-600/30 block pr-12 p-3.5 outline-none transition-all placeholder-gray-600" placeholder="الاسم" />
                 </div>
-              )}
-
-              {/* زر الإرسال */}
-              <button 
-                onClick={isLogin ? handleLogin : handleRegister} 
-                disabled={loading} 
-                className="w-full py-5 bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 rounded-xl font-black text-lg text-white shadow-2xl shadow-blue-500/50 hover:shadow-cyan-500/50 hover:scale-105 transition-all duration-500 flex items-center justify-center gap-3 disabled:opacity-50 disabled:hover:scale-100 group"
-              >
-                {loading ? (
-                  <Loader2 className="animate-spin w-7 h-7" />
-                ) : (
-                  <>
-                    {isLogin ? "دخول الآن" : "إنشاء الحساب"}
-                    <ArrowRight className="w-6 h-6 rotate-180 group-hover:-translate-x-2 transition-transform" />
-                  </>
-                )}
-              </button>
+              </div>
+            )}
+            
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-400 mr-1">البريد الإلكتروني أو الكود</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-blue-500 transition-colors"><Mail size={18} /></div>
+                <input 
+                    type="text" 
+                    value={isLogin ? loginEmail : regEmail} 
+                    onChange={(e) => isLogin ? setLoginEmail(e.target.value) : setRegEmail(e.target.value)} 
+                    className="w-full bg-[#151720] border border-gray-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-600/30 block pr-12 p-3.5 outline-none transition-all placeholder-gray-600" 
+                    placeholder="البريد أو الكود" 
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-400 mr-1">كلمة المرور</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-blue-500 transition-colors"><Lock size={18} /></div>
+                <input 
+                    type="password" 
+                    value={isLogin ? loginPassword : regPassword} 
+                    onChange={(e) => isLogin ? setLoginPassword(e.target.value) : setRegPassword(e.target.value)} 
+                    className="w-full bg-[#151720] border border-gray-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-600/30 block pr-12 pl-4 p-3.5 outline-none transition-all placeholder-gray-600" 
+                    placeholder="كلمة المرور" 
+                />
+              </div>
             </div>
 
-            {/* Footer */}
-            <div className="mt-12 text-center text-sm text-gray-500">
-              تحت إشراف <span className="text-cyan-400 font-bold">محمد علي</span>
-              <br />
-              © 2025 El Agamy Materials
-            </div>
+            {error && <div className="text-red-500 text-xs text-center bg-red-500/10 p-2 rounded-lg border border-red-500/20">{error}</div>}
 
+            <button type="submit" disabled={loading} className="w-full mt-2 relative group overflow-hidden bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] transform hover:-translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-2">
+               {loading ? <Loader2 className="animate-spin" size={20} /> : ( <><span>{isLogin ? "دخول" : "تسجيل"}</span><ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /></> )}
+            </button>
+          </form>
+
+          <div className="mt-10 pt-6 border-t border-gray-800 text-center">
+             <p className="text-gray-500 text-xs">تحت إشراف <span className="text-blue-400 font-bold">محمد علي</span></p>
           </div>
         </div>
       </div>
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-      `}</style>
+
+      {/* ================= القسم الأيسر: الصورة والأيقونة (الأزرق) ================= */}
+      <div className="hidden lg:flex w-1/2 relative flex-col justify-center items-center p-12 overflow-hidden bg-gradient-to-bl from-blue-900 via-blue-950 to-[#0b0c15]">
+        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="relative z-10 flex flex-col items-center animate-pulse-slow">
+            <div className="relative">
+                <GraduationCap className="w-64 h-64 text-white drop-shadow-[0_0_30px_rgba(59,130,246,0.6)]" strokeWidth={1} />
+                <Lightbulb className="w-24 h-24 text-yellow-300 absolute -top-8 -right-4 drop-shadow-[0_0_20px_rgba(253,224,71,0.8)] animate-bounce" fill="currentColor" />
+            </div>
+            <h2 className="mt-8 text-4xl font-bold text-white tracking-wide text-center leading-relaxed">مستقبلك يبدأ من هنا</h2>
+            <p className="text-blue-200/80 mt-2 text-lg font-light">أفضل منصة للملخصات والمواد الدراسية</p>
+        </div>
+      </div>
     </div>
   );
 }
