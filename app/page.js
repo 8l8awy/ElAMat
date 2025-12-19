@@ -1,6 +1,12 @@
 "use client";
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+// استيراد أدوات Firebase الحقيقية
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import { useAuth } from '@/context/AuthContext';
+// مكتبة الأيقونات
 import { Eye, EyeOff, Mail, Lock, GraduationCap, ArrowRight, User, Loader2, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
@@ -14,46 +20,36 @@ export default function LoginPage() {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [user, setUser] = useState(null);
+  
+  const { login } = useAuth(); // استخدام الكونتكست لتحديث حالة التطبيق
+  const router = useRouter();  // للتوجيه بين الصفحات
 
-  // === 2. محاكاة Firebase (للعرض التوضيحي فقط) ===
-  const mockFirebaseLogin = async (email, password) => {
-    await new Promise(resolve => setTimeout(resolve, 1500));
+  // === 2. دالة التوجيه والحفظ (Logic) ===
+  const forceRedirect = (userData) => {
+    // حفظ البيانات في LocalStorage لضمان بقاء الدخول عند تحديث الصفحة
+    localStorage.setItem("user", JSON.stringify(userData));
+    // تحديث حالة التطبيق
+    login(userData);
     
-    if (email && password) {
-      return {
-        name: name || "مستخدم تجريبي",
-        email: email,
-        isAdmin: email.includes("admin"),
-        success: true
-      };
-    }
-    throw new Error("بيانات غير صحيحة");
+    // التوجيه بناءً على الصلاحية
+    setTimeout(() => {
+        if (userData.isAdmin) {
+            router.push("/dashboard/admin"); 
+        } else {
+            router.push("/dashboard"); 
+        }
+    }, 500);
   };
 
-  const mockFirebaseRegister = async (name, email, password) => {
-    await new Promise(resolve => setTimeout(resolve, 1500));
+  // === 3. دالة تسجيل الدخول الحقيقية ===
+  const handleLogin = async (e) => {
+    // (إذا تم استدعاؤها من الزر مباشرة بدون event، نتخطى preventDefault)
+    if (e && e.preventDefault) e.preventDefault();
     
-    if (name && email && password) {
-      return {
-        name: name,
-        email: email,
-        isAdmin: false,
-        success: true
-      };
-    }
-    throw new Error("فشل التسجيل");
-  };
-
-  // === 3. دالة تسجيل الدخول ===
-  const handleLogin = async () => {
     setError("");
     setLoading(true);
 
-    try {      
-      import { db } from '@/lib/firebase';
-      import { collection, query, where, getDocs } from 'firebase/firestore';
-      
+    try {
       // أ) البحث في الأكواد (للأدمن)
       const codesRef = collection(db, "allowedCodes");
       const qCode = query(codesRef, where("code", "==", email.trim()));
@@ -62,8 +58,7 @@ export default function LoginPage() {
       if (!codeSnap.empty) {
         const data = codeSnap.docs[0].data();
         const userData = { name: data.name || "User", email: email, isAdmin: data.admin || false };
-        setUser(userData);
-        localStorage.setItem("user", JSON.stringify(userData));
+        forceRedirect(userData);
         return;
       }
 
@@ -76,29 +71,26 @@ export default function LoginPage() {
         const data = userSnap.docs[0].data();
         if (data.password === password) {
           const userData = { ...data, isAdmin: data.isAdmin || false };
-          setUser(userData);
-          localStorage.setItem("user", JSON.stringify(userData));
+          forceRedirect(userData);
         } else {
           setError("كلمة المرور غير صحيحة");
+          setLoading(false);
         }
       } else {
         setError("الكود أو البريد الإلكتروني غير موجود");
+        setLoading(false);
       }
-      
 
-      const userData = await mockFirebaseLogin(email, password);
-      setUser(userData);
-      
     } catch (err) {
       console.error(err);
-      setError(err.message || "حدث خطأ في تسجيل الدخول");
-    } finally {
+      setError("حدث خطأ في الاتصال: " + err.message);
       setLoading(false);
     }
   };
 
-  // === 4. دالة إنشاء الحساب ===
-  const handleRegister = async () => {
+  // === 4. دالة إنشاء الحساب الحقيقية ===
+  const handleRegister = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
     setError("");
 
     if (!name || !email || !password) {
@@ -109,15 +101,14 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      
-      import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
-      
       const usersRef = collection(db, "users");
+      // التأكد من عدم تكرار الإيميل
       const q = query(usersRef, where("email", "==", email.toLowerCase().trim()));
       const snap = await getDocs(q);
 
       if (!snap.empty) {
           setError("البريد الإلكتروني مستخدم بالفعل");
+          setLoading(false);
           return;
       }
 
@@ -129,92 +120,31 @@ export default function LoginPage() {
           createdAt: new Date().toISOString()
       };
 
+      // إضافة المستخدم لقاعدة البيانات
       await addDoc(usersRef, newUser);
-      setUser(newUser);
-      localStorage.setItem("user", JSON.stringify(newUser));
-      
-
-      const userData = await mockFirebaseRegister(name, email, password);
-      setUser(userData);
+      forceRedirect(newUser);
 
     } catch (err) {
         console.error(err);
-        setError(err.message || "فشل إنشاء الحساب");
-    } finally {
+        setError("فشل إنشاء الحساب: " + err.message);
         setLoading(false);
     }
   };
 
-  // === 5. دالة تسجيل الخروج ===
-  const handleSignOut = () => {
-    setUser(null);
-    setName("");
-    setEmail("");
-    setPassword("");
-    setError("");
-  };
-
-  // === 6. معالجة Enter key ===
+  // === 5. معالجة مفتاح Enter ===
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !loading) {
       if (isLogin) {
-        handleLogin();
+        handleLogin(e);
       } else {
-        handleRegister();
+        handleRegister(e);
       }
     }
   };
 
-  // === 7. إذا كان المستخدم مسجل دخول ===
-  if (user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-blue-950 text-white flex items-center justify-center p-8">
-        <div className="max-w-2xl w-full text-center">
-          <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-full flex items-center justify-center shadow-2xl shadow-blue-500/50">
-            <GraduationCap className="w-20 h-20 text-white" />
-          </div>
-          
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
-            مرحباً في منصة العجمي!
-          </h1>
-          
-          <p className="text-xl text-gray-300 mb-3">
-            مسجل دخول باسم: <span className="text-blue-400 font-semibold">{user.name}</span>
-          </p>
-          
-          <p className="text-md text-gray-400 mb-8">
-            البريد: <span className="text-cyan-400">{user.email}</span>
-          </p>
-
-          {user.isAdmin && (
-            <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
-              <p className="text-yellow-400 font-semibold">🔑 أنت مشرف (Admin)</p>
-            </div>
-          )}
-          
-          <button 
-            onClick={handleSignOut}
-            className="py-4 px-8 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02] transition-all duration-300"
-          >
-            تسجيل خروج
-          </button>
-
-          <div className="mt-8 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
-            <p className="text-sm text-gray-400 mb-2">💡 ملاحظة للتطوير:</p>
-            <p className="text-xs text-gray-500 leading-relaxed">
-              في المشروع الحقيقي، قم بإلغاء التعليق عن أكواد Firebase الموجودة في الدوال
-              <br />
-              واستيراد: import {'{db}'} from '@/lib/firebase'
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // === 8. صفحة تسجيل الدخول / التسجيل ===
+  // === 6. واجهة المستخدم (UI) ===
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-blue-950 text-white font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-blue-950 text-white font-sans" dir="rtl">
       
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 bg-black/30 backdrop-blur-md border-b border-blue-500/20">
@@ -286,10 +216,9 @@ export default function LoginPage() {
             </div>
 
             <div>
-                
                 {/* Name Input (Only Register) */}
                 {!isLogin && (
-                    <div className="mb-5">
+                    <div className="mb-5 animate-fadeIn">
                       <label className="block text-sm font-medium mb-2 text-gray-300">الاسم الكامل</label>
                       <div className="relative">
                           <User className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
@@ -297,7 +226,7 @@ export default function LoginPage() {
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            onKeyPress={handleKeyPress}
+                            onKeyDown={handleKeyPress}
                             className="w-full pr-12 pl-4 py-4 bg-gray-900/50 border border-gray-700 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-white placeholder-gray-600"
                             placeholder="أدخل اسمك الكامل"
                           />
@@ -316,7 +245,7 @@ export default function LoginPage() {
                         type="text"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        onKeyPress={handleKeyPress}
+                        onKeyDown={handleKeyPress}
                         className="w-full pr-12 pl-4 py-4 bg-gray-900/50 border border-gray-700 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-white placeholder-gray-600"
                         placeholder="example@gmail.com"
                       />
@@ -327,15 +256,6 @@ export default function LoginPage() {
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-2">
                       <label className="text-sm font-medium text-gray-300">كلمة المرور</label>
-                      {isLogin && (
-                        <button 
-                          type="button"
-                          onClick={() => alert("ميزة استعادة كلمة المرور قريباً")}
-                          className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-                        >
-                          نسيت كلمة المرور؟
-                        </button>
-                      )}
                   </div>
                   <div className="relative">
                       <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
@@ -343,7 +263,7 @@ export default function LoginPage() {
                         type={showPassword ? 'text' : 'password'}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        onKeyPress={handleKeyPress}
+                        onKeyDown={handleKeyPress}
                         className="w-full pr-12 pl-12 py-4 bg-gray-900/50 border border-gray-700 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all text-white placeholder-gray-600"
                         placeholder="••••••••"
                       />
@@ -397,14 +317,16 @@ export default function LoginPage() {
 
               <div className="mt-6 grid grid-cols-2 gap-4">
                 <button 
-                  onClick={() => alert("تسجيل الدخول بـ Google قريباً")}
+                  type="button"
+                  onClick={() => alert("قريباً")}
                   className="py-3 px-4 bg-gray-900/50 border border-gray-700 rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-2 text-sm font-medium"
                 >
                   <div className="w-5 h-5 bg-white rounded"></div>
                   Google
                 </button>
                 <button 
-                  onClick={() => alert("تسجيل الدخول بـ Microsoft قريباً")}
+                  type="button"
+                  onClick={() => alert("قريباً")}
                   className="py-3 px-4 bg-gray-900/50 border border-gray-700 rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-2 text-sm font-medium"
                 >
                   <div className="w-5 h-5 bg-gradient-to-r from-blue-500 to-cyan-400 rounded"></div>
@@ -417,7 +339,6 @@ export default function LoginPage() {
             <div className="mt-12 text-center text-sm text-gray-500">
               © 2025 El Agamy Materials.{' '}
               <button 
-                onClick={() => alert("سياسة الخصوصية")}
                 className="text-blue-400 hover:text-blue-300 transition-colors underline"
               >
                 سياسة الخصوصية
