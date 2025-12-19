@@ -1,238 +1,292 @@
 "use client";
-
 import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { db } from "@/lib/firebase";
-import { 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  addDoc, 
-  deleteDoc, 
-  doc, 
-  serverTimestamp, 
-  onSnapshot, 
-  orderBy 
-} from "firebase/firestore";
-// تأكدي من تثبيت المكتبات: npm install lucide-react react-icons
-import { FaCloudUploadAlt, FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaSignOutAlt, FaPlus, FaLayerGroup } from "react-icons/fa";
-
-// إعدادات Cloudinary
-const CLOUD_NAME = "dhj0extnk";
-const UPLOAD_PRESET = "ml_default";
+import { useRouter, useSearchParams } from "next/navigation";
+import { db } from "../../../lib/firebase"; 
+// ✅ أضفنا updateDoc لتحديث الحالة
+import { collection, addDoc, deleteDoc, updateDoc, doc, getDocs, query, where, serverTimestamp, orderBy, onSnapshot } from "firebase/firestore";
+import { FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaLock, FaSignOutAlt, FaCheck, FaTimes } from "react-icons/fa";
 
 export default function AdminPage() {
-  const { user } = useAuth();
-  
-  // === حالات النظام ===
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // === متغيرات الفورم ===
+  // ☁️ بيانات Cloudinary
+  const CLOUD_NAME = "dhj0extnk"; 
+  const UPLOAD_PRESET = "ml_default"; 
+
+  // حالات النظام
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showFake404, setShowFake404] = useState(true);
+  const [inputCode, setInputCode] = useState("");
+  const [checkingCode, setCheckingCode] = useState(false);
+
+  // متغيرات لوحة التحكم
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
-  const [subject, setSubject] = useState("عام");
+  const [subject, setSubject] = useState("مبادئ الاقتصاد");
   const [type, setType] = useState("summary");
-  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [files, setFiles] = useState([]); 
+  
+  // ✅ قوائم منفصلة للمنشورات والطلبات المعلقة
+  const [materialsList, setMaterialsList] = useState([]); // الملفات المقبولة
+  const [pendingList, setPendingList] = useState([]);     // طلبات الطلاب المعلقة
+  
+  const [loadingList, setLoadingList] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState("");
 
-  // === قائمة المواد (من التصميم القديم) ===
-  const [materialsList, setMaterialsList] = useState([]);
+  const subjects = ["مبادئ الاقتصاد", "لغة اجنبية (1)", "مبادئ المحاسبة المالية", "مبادئ القانون", "مبادئ ادارة الاعمال"];
 
-  // 1️⃣ التحقق من الصلاحية (الكود الجديد)
+  // ✅ 1. الفحص الذكي عند فتح الصفحة
   useEffect(() => {
-    async function checkPermission() {
-      if (!user) return;
-      try {
-        let adminFound = false;
-        // البحث في الأكواد
-        const codesRef = collection(db, "allowedCodes");
-        const qCode = query(codesRef, where("code", "==", user.email));
-        const codeSnap = await getDocs(qCode);
-        if (!codeSnap.empty && codeSnap.docs[0].data().admin === true) adminFound = true;
+    const checkAccess = async () => {
+      const savedCode = localStorage.getItem("adminCode");
+      const isSecretMode = searchParams.get("mode") === "login";
 
-        // البحث في المستخدمين
-        if (!adminFound) {
-           const usersRef = collection(db, "users");
-           const qUser = query(usersRef, where("email", "==", user.email));
-           const userSnap = await getDocs(qUser);
-           if (!userSnap.empty && userSnap.docs[0].data().isAdmin === true) adminFound = true;
-        }
-
-        if (adminFound) setIsAdmin(true);
-      } catch (err) {
-        console.error("Auth Error:", err);
-      } finally {
+      if (savedCode) {
+        await verifyCode(savedCode, true);
+      } else if (isSecretMode) {
         setIsLoading(false);
+        setShowFake404(false);
+      } else {
+        setIsLoading(false);
+        setShowFake404(true);
       }
-    }
-    checkPermission();
-  }, [user]);
+    };
 
-  // 2️⃣ جلب المواد (Live Data) - ميزة التصميم القديم
-  useEffect(() => {
-    if (!isAdmin) return;
+    checkAccess();
+  }, []);
+
+  // دالة التحقق من الكود
+  const verifyCode = async (codeToVerify, isAutoCheck = false) => {
+    if (!isAutoCheck) setCheckingCode(true);
+
+    try {
+      const codesRef = collection(db, "allowedCodes");
+      const q = query(codesRef, where("code", "==", codeToVerify.trim()));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const userData = querySnapshot.docs[0].data();
+        if (userData.admin === true) {
+          setIsAuthenticated(true);
+          setShowFake404(false);
+          localStorage.setItem("adminCode", codeToVerify); 
+        } else {
+          if (!isAutoCheck) alert("⛔ هذا الكود ليس لمشرف (Admin)");
+          if (isAutoCheck) handleLoginFail();
+        }
+      } else {
+        if (!isAutoCheck) alert("⛔ الكود غير صحيح");
+        if (isAutoCheck) handleLoginFail();
+      }
+    } catch (error) {
+      console.error(error);
+      if (!isAutoCheck) alert("خطأ في الاتصال");
+    }
     
-    const q = query(collection(db, "materials"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setMaterialsList(data);
-    });
-
-    return () => unsubscribe();
-  }, [isAdmin]);
-
-  // 3️⃣ رفع الملفات
-  const handleFileUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-    setIsUploading(true);
-    const newFiles = [];
-
-    for (const file of files) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("upload_preset", UPLOAD_PRESET);
-
-        try {
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
-                method: "POST",
-                body: formData
-            });
-            const data = await res.json();
-            if (data.secure_url) {
-                newFiles.push({ name: file.name, url: data.secure_url, type: file.type, size: (file.size / 1024 / 1024).toFixed(2) + " MB" });
-            }
-        } catch (err) {
-            console.error("Upload Error:", err);
-        }
-    }
-    setUploadedFiles(prev => [...prev, ...newFiles]);
-    setIsUploading(false);
+    setIsLoading(false);
+    if (!isAutoCheck) setCheckingCode(false);
   };
 
-  // 4️⃣ نشر المادة
-  const handleSubmit = async (e) => {
+  const handleLoginFail = () => {
+    localStorage.removeItem("adminCode");
+    setIsAuthenticated(false);
+    setShowFake404(true);
+  };
+
+  const handleManualLogin = async (e) => {
     e.preventDefault();
-    if (!title || !subject) return alert("يرجى ملء البيانات الأساسية");
+    await verifyCode(inputCode);
+  };
 
-    if (confirm("هل أنت متأكد من النشر؟")) {
-        try {
-            await addDoc(collection(db, "materials"), {
-                title, description: desc, subject, type, files: uploadedFiles,
-                uploader: user.email, createdAt: serverTimestamp(), isHidden: false
-            });
-            alert("تم النشر بنجاح! 🎉");
-            setTitle(""); setDesc(""); setUploadedFiles([]);
-        } catch (err) {
-            alert("حدث خطأ أثناء النشر");
-        }
+  const handleLogout = () => {
+    localStorage.removeItem("adminCode");
+    setIsAuthenticated(false);
+    setShowFake404(true);
+    setInputCode("");
+    router.push("/");
+  };
+
+  // ✅ جلب البيانات وفصلها (مقبولة vs معلقة)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    // نجلب كل المواد ونرتبها حسب التاريخ
+    const q = query(collection(db, "materials"), orderBy("date", "desc"));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const allData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // نفصل البيانات هنا
+      const approved = allData.filter(item => item.status === "approved");
+      const pending = allData.filter(item => item.status === "pending"); // تأكد أن الطلاب يرفعون بحالة pending
+      
+      setMaterialsList(approved);
+      setPendingList(pending);
+      setLoadingList(false);
+    });
+    
+    return () => unsubscribe();
+  }, [isAuthenticated]);
+
+  // ✅ دوال التعامل مع الطلبات (حذف / قبول)
+  const handleDelete = async (id, title) => { if (confirm(`حذف "${title}" نهائياً؟`)) await deleteDoc(doc(db, "materials", id)); };
+  
+  const handleApprove = async (id, title) => {
+    if (confirm(`هل تريد قبول ونشر "${title}"؟`)) {
+      await updateDoc(doc(db, "materials", id), {
+        status: "approved"
+      });
+      setMessage(`تم نشر "${title}" بنجاح`);
+      setTimeout(() => setMessage(""), 3000);
     }
   };
 
-  // 5️⃣ حذف مادة (ميزة التصميم القديم)
-  const handleDelete = async (id) => {
-    if (confirm("هل أنت متأكد من حذف هذه المادة نهائياً؟")) {
-      try {
-        await deleteDoc(doc(db, "materials", id));
-      } catch (err) {
-        alert("فشل الحذف");
+  const handleFileChange = (e) => { if (e.target.files) setFiles(Array.from(e.target.files)); };
+  
+  const uploadToCloudinary = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, { method: "POST", body: formData });
+    const data = await res.json();
+    return data.secure_url;
+  };
+
+  const handleUpload = async (e) => {
+    e.preventDefault();
+    if (!files.length || !title) return alert("البيانات ناقصة");
+    setUploading(true); setMessage("جاري الرفع...");
+    const uploadedFilesData = [];
+    try {
+      for (let file of files) {
+        const url = await uploadToCloudinary(file);
+        uploadedFilesData.push({ name: file.name, url: url, type: file.type });
       }
-    }
+      await addDoc(collection(db, "materials"), {
+        title, desc, subject, type, files: uploadedFilesData,
+        date: new Date().toISOString(), 
+        status: "approved", // الأدمن يرفع مباشرة بحالة approved
+        viewCount: 0, downloadCount: 0, createdAt: serverTimestamp(),
+      });
+      setUploading(false); setTitle(""); setDesc(""); setFiles([]); setMessage("تم الرفع بنجاح! ");
+      setTimeout(() => setMessage(""), 3000);
+    } catch (error) { setUploading(false); alert("خطأ في الرفع"); }
   };
 
-  if (isLoading) return <div className="min-h-screen bg-black flex items-center justify-center text-white"><FaSpinner className="animate-spin text-4xl text-blue-500" /></div>;
-  if (!isAdmin) return <div className="min-h-screen flex items-center justify-center bg-black text-white"><h1>404 - غير مصرح لك</h1></div>;
+  if (isLoading) {
+    return (
+      <div style={{height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#fff'}}>
+        <FaSpinner className="fa-spin" size={40} color="#333" />
+      </div>
+    );
+  }
+
+  if (showFake404) {
+    return (
+      <div style={{
+        height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        fontFamily: '-apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Fira Sans", Avenir, "Helvetica Neue", "Lucida Grande", sans-serif'
+      }}>
+        <h1 style={{fontSize: '2rem', fontWeight: '600', margin: '0 0 10px 0'}}>404</h1>
+        <h2 style={{fontSize: '14px', fontWeight: 'normal', margin: 0}}>This page could not be found.</h2>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div style={{
+        height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#000', color: 'white', fontFamily: 'sans-serif'
+      }}>
+        <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '50px 40px', borderRadius: '20px', textAlign: 'center', border: '1px solid #333', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', width: '100%', maxWidth: '400px' }}>
+          <h1 style={{fontSize: '1.8rem', marginBottom: '10px', fontWeight: 'bold'}}>Admin Access</h1>
+          <p style={{color: '#888', marginBottom: '30px', fontSize: '0.9rem'}}>Please enter your code</p>
+          <form onSubmit={handleManualLogin}>
+            <div style={{marginBottom: '20px', position: 'relative'}}>
+                <FaLock style={{position: 'absolute', left: '15px', top: '15px', color: '#666'}} />
+                <input type="password" placeholder="Security Code" value={inputCode} onChange={(e) => setInputCode(e.target.value)}
+                    style={{ width: '100%', padding: '15px 15px 15px 45px', borderRadius: '10px', border: '1px solid #444', background: '#111', color: 'white', fontSize: '1rem', outline: 'none' }} />
+            </div>
+            <button type="submit" disabled={checkingCode} style={{ background: 'white', color: 'black', border: 'none', padding: '15px', borderRadius: '10px', fontWeight: 'bold', fontSize: '1rem', width: '100%', cursor: 'pointer', opacity: checkingCode ? 0.7 : 1 }}>
+              {checkingCode ? "Verifying..." : "Login"}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#0b0c15] text-white font-sans p-4 md:p-8" dir="rtl">
-      
-      {/* Header */}
-      <header className="flex justify-between items-center mb-8 bg-[#151720] p-4 rounded-2xl border border-gray-800">
-        <div>
-            <h1 className="text-2xl font-bold text-blue-500">لوحة التحكم</h1>
-            <p className="text-gray-400 text-sm">أهلاً بك، {user.email}</p>
-        </div>
-        <button onClick={() => window.location.href = '/'} className="flex items-center gap-2 text-red-400 hover:text-red-300 transition text-sm font-bold">
-            <FaSignOutAlt /> خروج
-        </button>
-      </header>
+    <div className="admin-container">
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px'}}>
+        <h1 style={{color: 'white', fontSize: '2rem'}}>لوحة التحكم 🚀</h1>
+        {/* زر الخروج محذوف حسب طلبك */}
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* === القسم الأيمن: نموذج الإضافة === */}
-        <div className="lg:col-span-1">
-            <div className="bg-[#151720] p-6 rounded-3xl border border-gray-800 shadow-xl sticky top-8">
-                <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><FaPlus className="text-blue-500" /> إضافة محتوى</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-[#0b0c15] border border-gray-700 rounded-xl p-3 text-white focus:border-blue-500 outline-none" placeholder="عنوان المحتوى..." />
-                    <textarea value={desc} onChange={(e) => setDesc(e.target.value)} className="w-full bg-[#0b0c15] border border-gray-700 rounded-xl p-3 text-white focus:border-blue-500 outline-none h-20 resize-none" placeholder="وصف قصير..." />
-                    <select value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full bg-[#0b0c15] border border-gray-700 rounded-xl p-3 text-white focus:border-blue-500 outline-none">
-                        <option value="عام">عام</option>
-                        <option value="اقتصاد">مبادئ اقتصاد</option>
-                        <option value="محاسبة">محاسبة مالية</option>
-                        <option value="إدارة">إدارة أعمال</option>
-                        <option value="لغة إنجليزية">لغة إنجليزية</option>
-                    </select>
-                    <div className="border-2 border-dashed border-gray-700 rounded-xl p-4 text-center hover:border-blue-500 transition relative">
-                        <input type="file" multiple onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" disabled={isUploading} />
-                        {isUploading ? <FaSpinner className="animate-spin text-2xl text-blue-500 mx-auto" /> : <FaCloudUploadAlt className="text-3xl text-gray-500 mx-auto" />}
-                        <p className="text-xs text-gray-400 mt-2">{isUploading ? "جاري الرفع..." : "اختر الملفات"}</p>
+      {message && <div style={{background: 'rgba(0, 242, 96, 0.2)', color: '#00f260', padding: '15px', borderRadius: '10px', textAlign: 'center', marginBottom: '20px', border: '1px solid #00f260'}}><FaCheckCircle /> {message}</div>}
+
+      <form onSubmit={handleUpload} style={{borderBottom: '1px solid #333', paddingBottom: '30px', marginBottom: '30px'}}>
+        <div className="form-group"><label>العنوان</label><input type="text" className="form-input" value={title} onChange={(e)=>setTitle(e.target.value)} required /></div>
+        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
+            <div className="form-group"><label>المادة</label><select className="form-select" value={subject} onChange={(e)=>setSubject(e.target.value)}>{subjects.map((s,i)=><option key={i} value={s}>{s}</option>)}</select></div>
+            <div className="form-group"><label>النوع</label><select className="form-select" value={type} onChange={(e)=>setType(e.target.value)}><option value="summary">ملخص</option><option value="assignment">تكليف</option></select></div>
+        </div>
+        <div className="form-group"><label>الملفات</label><div className="upload-area" style={{padding: '20px'}}><input type="file" onChange={handleFileChange} accept=".pdf,image/*" multiple />{files.length > 0 ? <p style={{color: '#00f260'}}>{files.length} ملفات</p> : <p style={{color: '#888'}}>اختر ملفات</p>}</div></div>
+        <button type="submit" className="submit-btn" disabled={uploading}>{uploading ? "جاري الرفع..." : "رفع "}</button>
+      </form>
+
+      {/* ✅ قسم طلبات الطلاب الجديدة */}
+      {pendingList.length > 0 && (
+        <div style={{marginBottom: '40px', border: '1px solid #eab308', borderRadius: '15px', padding: '20px', background: 'rgba(234, 179, 8, 0.05)'}}>
+          <h2 style={{color: '#eab308', marginTop: 0, display: 'flex', alignItems: 'center', gap: '10px'}}>
+             ⚠️ طلبات قيد الانتظار ({pendingList.length})
+          </h2>
+          <div style={{display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px'}}>
+            {pendingList.map((item) => (
+                <div key={item.id} style={{background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                        <h4 style={{color: 'white', margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                            <FaFilePdf style={{color: '#ccc'}} /> {item.title} 
+                            <span style={{fontSize: '0.8rem', background: '#333', padding: '2px 6px', borderRadius: '4px'}}>طالب</span>
+                        </h4>
+                        <div style={{display: 'flex', gap: '10px', fontSize: '0.85rem'}}>
+                            <span style={{color: '#ccc'}}>📌 {item.subject}</span>
+                        </div>
                     </div>
-                    
-                    {/* عرض الملفات المرفوعة مؤقتاً */}
-                    {uploadedFiles.length > 0 && (
-                        <div className="space-y-1">
-                            {uploadedFiles.map((f, i) => (
-                                <div key={i} className="flex justify-between bg-[#0b0c15] p-2 rounded text-xs border border-gray-800">
-                                    <span className="truncate max-w-[150px]">{f.name}</span>
-                                    <button type="button" onClick={() => setUploadedFiles(prev => prev.filter((_, idx) => idx !== i))} className="text-red-500"><FaTrash /></button>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    <button type="submit" disabled={isUploading || uploadedFiles.length === 0} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition shadow-lg disabled:opacity-50 flex justify-center items-center gap-2">
-                        {isUploading ? "انتظر..." : <> <FaCheckCircle /> نشر </>}
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        {/* === القسم الأيسر: قائمة المواد (التصميم القديم) === */}
-        <div className="lg:col-span-2 space-y-4">
-            <h2 className="text-xl font-bold flex items-center gap-2 mb-4"><FaLayerGroup className="text-green-500" /> المواد المنشورة ({materialsList.length})</h2>
-            
-            {materialsList.length === 0 ? (
-                <div className="text-center py-10 text-gray-500 bg-[#151720] rounded-3xl border border-gray-800">لا توجد مواد منشورة حتى الآن</div>
-            ) : (
-                <div className="space-y-3">
-                    {materialsList.map((item) => (
-                        <div key={item.id} className="bg-[#151720] p-4 rounded-2xl border border-gray-800 flex justify-between items-start hover:border-blue-500/30 transition group">
-                            <div>
-                                <h3 className="font-bold text-white text-lg">{item.title}</h3>
-                                <p className="text-sm text-gray-400">{item.subject} • {item.type}</p>
-                                <div className="flex gap-2 mt-2">
-                                    {item.files?.map((f, i) => (
-                                        <a key={i} href={f.url} target="_blank" rel="noopener noreferrer" className="text-xs bg-blue-500/10 text-blue-400 px-2 py-1 rounded border border-blue-500/20 hover:bg-blue-500 hover:text-white transition">
-                                            ملف {i + 1}
-                                        </a>
-                                    ))}
-                                </div>
-                            </div>
-                            <button onClick={() => handleDelete(item.id)} className="text-gray-600 hover:text-red-500 p-2 transition bg-black/20 rounded-lg group-hover:bg-red-500/10">
-                                <FaTrash size={16} />
-                            </button>
-                        </div>
-                    ))}
+                    <div style={{display: 'flex', gap: '10px'}}>
+                        <button onClick={() => handleApprove(item.id, item.title)} style={{background: '#00f260', color: '#000', border: 'none', padding: '8px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold'}}>
+                            قبول <FaCheck />
+                        </button>
+                        <button onClick={() => handleDelete(item.id, item.title)} style={{background: 'rgba(255, 77, 77, 0.2)', color: '#ff4d4d', border: '1px solid rgba(255, 77, 77, 0.3)', padding: '8px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px'}}>
+                            رفض <FaTimes />
+                        </button>
+                    </div>
                 </div>
-            )}
+            ))}
+          </div>
         </div>
+      )}
 
+      {/* قسم الملفات المنشورة */}
+      <div>
+        <h2 style={{color: 'white', borderRight: '4px solid #00f260', paddingRight: '10px'}}>الملفات المنشورة ({materialsList.length})</h2>
+        <div style={{display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px'}}>
+            {materialsList.map((item) => (
+                <div key={item.id} style={{background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                        <h4 style={{color: 'white', margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px'}}><FaFilePdf style={{color: item.type === 'summary' ? '#00f260' : '#ff9f43'}} /> {item.title}</h4>
+                        <div style={{display: 'flex', gap: '10px', fontSize: '0.85rem'}}>
+                            <span style={{color: '#ccc', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '6px'}}>📌 {item.subject}</span>
+                            <span style={{color: item.type === 'summary' ? '#00f260' : '#ff9f43', background: item.type === 'summary' ? 'rgba(0, 242, 96, 0.1)' : 'rgba(255, 159, 67, 0.1)', padding: '2px 8px', borderRadius: '6px'}}>{item.type === 'assignment' ? 'تكليف' : 'ملخص'}</span>
+                        </div>
+                    </div>
+                    <button onClick={() => handleDelete(item.id, item.title)} style={{background: 'transparent', color: '#ff4d4d', border: '1px solid rgba(255, 77, 77, 0.3)', width: '35px', height: '35px', borderRadius: '8px', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center'}}><FaTrash size={14} /></button>
+                </div>
+            ))}
+        </div>
       </div>
     </div>
   );
