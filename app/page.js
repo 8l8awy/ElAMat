@@ -1,101 +1,100 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "../context/AuthContext";
-import { db } from "../lib/firebase";
-import { collection, getDocs, query, where, addDoc } from "firebase/firestore";
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import { Eye, EyeOff, Mail, Lock, GraduationCap, ArrowRight, User, Loader2, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
-  const [isLogin, setIsLogin] = useState(true);
-  
-  // Login State
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  
-  // Register State
-  const [regName, setRegName] = useState("");
-  const [regEmail, setRegEmail] = useState("");
-  const [regPassword, setRegPassword] = useState("");
-
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  
-  const { login, user } = useAuth();
   const router = useRouter();
+  const { login } = useAuth(); 
 
-  // إذا كان المستخدم مسجلاً بالفعل، حوله للوحة التحكم
-  useEffect(() => {
-    if (user) router.push("/dashboard");
-  }, [user, router]);
+  // === الحالات (States) ===
+  const [isLogin, setIsLogin] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  
+  const [name, setName] = useState("");      
+  const [email, setEmail] = useState("");    
+  const [password, setPassword] = useState(""); 
+  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // --- دالة تسجيل الدخول ---
+  // === دالة التوجيه ===
+  const forceRedirect = (userData) => {
+    localStorage.setItem("user", JSON.stringify(userData));
+    if (login) login(userData);
+    
+    setTimeout(() => {
+        if (userData.isAdmin) {
+            router.push("/dashboard/admin"); 
+        } else {
+            router.push("/dashboard"); 
+        }
+    }, 500);
+  };
+
+  // === دالة تسجيل الدخول ===
   const handleLogin = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      // 1. التحقق أولاً من الأكواد المسموحة (allowedCodes)
-      // في كودك القديم، كان الكود يُستخدم كـ "email" في الفورم
+      // البحث في الأكواد (للأدمن)
       const codesRef = collection(db, "allowedCodes");
-      const qCode = query(codesRef, where("code", "==", loginEmail));
+      const qCode = query(codesRef, where("code", "==", email.trim()));
       const codeSnap = await getDocs(qCode);
 
       if (!codeSnap.empty) {
         const data = codeSnap.docs[0].data();
-        // تسجيل الدخول بنجاح كطالب أو أدمن
-        login({ 
-            name: data.name || "User", 
-            email: loginEmail, 
-            isAdmin: data.admin || false // هنا يتم تحديد الأدمن
-        });
-        router.push("/dashboard");
+        const userData = { name: data.name || "User", email: email, isAdmin: data.admin || false };
+        forceRedirect(userData);
         return;
       }
 
-      // 2. إذا لم يكن كود، تحقق من المستخدمين المسجلين (users)
+      // البحث في المستخدمين (للطلاب)
       const usersRef = collection(db, "users");
-      const qUser = query(usersRef, where("email", "==", loginEmail));
+      const qUser = query(usersRef, where("email", "==", email.toLowerCase().trim()));
       const userSnap = await getDocs(qUser);
 
       if (!userSnap.empty) {
         const data = userSnap.docs[0].data();
-        if (data.password === loginPassword) {
-          login({ 
-              ...data, 
-              isAdmin: data.isAdmin || false 
-          });
-          router.push("/dashboard");
+        if (data.password === password) {
+          const userData = { ...data, isAdmin: data.isAdmin || false };
+          forceRedirect(userData);
         } else {
           setError("كلمة المرور غير صحيحة");
+          setLoading(false);
         }
       } else {
         setError("الكود أو البريد الإلكتروني غير موجود");
+        setLoading(false);
       }
-
     } catch (err) {
       console.error(err);
-      setError("حدث خطأ في الاتصال: " + err.message);
-    } finally {
+      setError("حدث خطأ: " + err.message);
       setLoading(false);
     }
   };
 
-  // --- دالة إنشاء حساب جديد ---
+  // === دالة إنشاء الحساب ===
   const handleRegister = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setError("");
-    setLoading(true);
 
-    if (!regName || !regEmail || !regPassword) {
+    if (!name || !email || !password) {
         setError("الرجاء ملء جميع الحقول");
-        setLoading(false);
         return;
     }
 
+    setLoading(true);
+
     try {
         const usersRef = collection(db, "users");
-        const q = query(usersRef, where("email", "==", regEmail));
+        const q = query(usersRef, where("email", "==", email.toLowerCase().trim()));
         const snap = await getDocs(q);
 
         if (!snap.empty) {
@@ -105,74 +104,251 @@ export default function LoginPage() {
         }
 
         const newUser = {
-            name: regName,
-            email: regEmail,
-            password: regPassword,
+            name: name,
+            email: email.toLowerCase().trim(),
+            password: password,
             isAdmin: false,
             createdAt: new Date().toISOString()
         };
 
         await addDoc(usersRef, newUser);
-        
-        // تسجيل الدخول مباشرة بعد الإنشاء
-        login(newUser);
-        router.push("/dashboard");
+        forceRedirect(newUser);
 
     } catch (err) {
         console.error(err);
-        setError("فشل إنشاء الحساب");
-    } finally {
+        setError("فشل إنشاء الحساب: " + err.message);
         setLoading(false);
     }
   };
 
-  return (
-    <div className="login-container">
-      <div className="login-box">
-        <h2>El Agamy Materials</h2>
-        <p>منصة المواد الدراسية</p>
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !loading) {
+      isLogin ? handleLogin(e) : handleRegister(e);
+    }
+  };
 
-        <div className="tab-buttons">
-          <button className={`tab-btn ${isLogin ? "active" : ""}`} onClick={() => {setIsLogin(true); setError("");}}>تسجيل الدخول</button>
-          <button className={`tab-btn ${!isLogin ? "active" : ""}`} onClick={() => {setIsLogin(false); setError("");}}>إنشاء حساب</button>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 text-white font-sans relative overflow-hidden" dir="rtl">
+      
+      {/* خلفية متحركة */}
+      <div className="fixed inset-0 opacity-10 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500 rounded-full filter blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500 rounded-full filter blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
+        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-purple-500 rounded-full filter blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
+      </div>
+
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 px-8 py-5 bg-gradient-to-r from-black/40 via-blue-950/40 to-black/40 backdrop-blur-xl border-b border-blue-500/20 shadow-lg">
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-cyan-400 to-blue-600 rounded-xl flex items-center justify-center shadow-xl shadow-blue-500/30 animate-pulse">
+              <GraduationCap className="w-7 h-7 text-white" />
+            </div>
+            <span className="text-2xl font-black bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent">
+              El Agamy Materials
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex min-h-screen pt-20">
+        
+        {/* Left Side - معلومات */}
+        <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12 relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-cyan-600/5"></div>
+          
+          <div className="relative z-10 max-w-lg text-center">
+            <div className="w-40 h-40 mx-auto mb-10 bg-gradient-to-br from-blue-500 via-cyan-400 to-purple-500 rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-blue-500/50" style={{animation: 'float 3s ease-in-out infinite'}}>
+              <GraduationCap className="w-24 h-24 text-white" />
+            </div>
+            
+            <h1 className="text-6xl font-black mb-8 bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-400 bg-clip-text text-transparent leading-tight">
+              رحلة التفوق تبدأ هنا
+            </h1>
+            
+            <p className="text-2xl text-gray-300 leading-relaxed font-light">
+              انضم لآلاف الطلاب المتميزين
+              <br />
+              <span className="text-cyan-400 font-bold mt-3 block text-3xl">احصل على أعلى الدرجات 📚</span>
+            </p>
+          </div>
         </div>
 
-        {isLogin ? (
-          <form onSubmit={handleLogin}>
-            <input 
-                type="text" 
-                value={loginEmail} 
-                onChange={(e) => setLoginEmail(e.target.value)} 
-                placeholder=" البريد الإلكتروني" 
-                required
-            />
-            <input 
-                type="password" 
-                value={loginPassword} 
-                onChange={(e) => setLoginPassword(e.target.value)} 
-                placeholder="كلمة المرور " 
-            />
-            <button type="submit" disabled={loading} className="btn">
-                {loading ? "جاري التحقق..." : "دخول"}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleRegister}>
-            <input type="text" value={regName} onChange={(e) => setRegName(e.target.value)} placeholder="الاسم" required />
-            <input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} placeholder="البريد الإلكتروني" required />
-            <input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} placeholder="كلمة المرور" required />
-            <button type="submit" disabled={loading} className="btn">
-                {loading ? "جاري الإنشاء..." : "إنشاء حساب"}
-            </button>
-          </form>
-        )}
-        
-        {error && <p className="error-msg">{error}</p>}
-        
-        <div className="dev-footer">
-            <p className="dev-text">تحت إشراف <strong>محمد علي</strong></p>
+        {/* Right Side - النموذج */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-8 relative z-10">
+          <div className="w-full max-w-md">
+            
+            <div className="text-center mb-12">
+              <h2 className="text-5xl font-black mb-4 bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent">
+                {isLogin ? "أهلاً بك مجدداً" : "ابدأ رحلتك"}
+              </h2>
+              <p className="text-gray-400 text-lg">
+                {isLogin ? "سجل دخولك لمتابعة تفوقك" : "سجل حساب جديد الآن"}
+              </p>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-3 mb-10 bg-slate-900/50 p-2 rounded-2xl border border-slate-700/50 backdrop-blur-sm">
+              <button 
+                onClick={() => { setIsLogin(true); setError(""); }} 
+                disabled={loading} 
+                className={`flex-1 py-4 px-6 rounded-xl font-bold transition-all duration-300 ${isLogin ? "bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 text-white shadow-xl shadow-blue-500/30 scale-105" : "text-gray-400 hover:text-white hover:bg-slate-800/50"}`}
+              >
+                تسجيل دخول
+              </button>
+              <button 
+                onClick={() => { setIsLogin(false); setError(""); }} 
+                disabled={loading} 
+                className={`flex-1 py-4 px-6 rounded-xl font-bold transition-all duration-300 ${!isLogin ? "bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 text-white shadow-xl shadow-blue-500/30 scale-105" : "text-gray-400 hover:text-white hover:bg-slate-800/50"}`}
+              >
+                إنشاء حساب
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              
+              {/* نموذج تسجيل الدخول */}
+              {isLogin ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-bold mb-3 text-gray-300">البريد أو الكود</label>
+                    <div className="relative group">
+                      <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
+                      <input 
+                        type="text" 
+                        value={email} 
+                        onChange={(e) => setEmail(e.target.value)} 
+                        onKeyDown={handleKeyPress}
+                        className="w-full pr-12 pl-4 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
+                        placeholder="example@gmail.com"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold mb-3 text-gray-300">كلمة المرور</label>
+                    <div className="relative group">
+                      <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
+                      <input 
+                        type={showPassword ? 'text' : 'password'} 
+                        value={password} 
+                        onChange={(e) => setPassword(e.target.value)} 
+                        onKeyDown={handleKeyPress}
+                        className="w-full pr-12 pl-12 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-cyan-400 transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* نموذج التسجيل */}
+                  <div>
+                    <label className="block text-sm font-bold mb-3 text-gray-300">الاسم الكامل</label>
+                    <div className="relative group">
+                      <User className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
+                      <input 
+                        type="text" 
+                        value={name} 
+                        onChange={(e) => setName(e.target.value)} 
+                        onKeyDown={handleKeyPress}
+                        className="w-full pr-12 pl-4 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
+                        placeholder="محمد أحمد"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold mb-3 text-gray-300">البريد الإلكتروني</label>
+                    <div className="relative group">
+                      <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
+                      <input 
+                        type="email" 
+                        value={email} 
+                        onChange={(e) => setEmail(e.target.value)} 
+                        onKeyDown={handleKeyPress}
+                        className="w-full pr-12 pl-4 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
+                        placeholder="example@gmail.com"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold mb-3 text-gray-300">كلمة المرور</label>
+                    <div className="relative group">
+                      <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
+                      <input 
+                        type={showPassword ? 'text' : 'password'} 
+                        value={password} 
+                        onChange={(e) => setPassword(e.target.value)} 
+                        onKeyDown={handleKeyPress}
+                        className="w-full pr-12 pl-12 py-4 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all text-white placeholder-gray-500 hover:bg-slate-900/70" 
+                        placeholder="••••••••"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-cyan-400 transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* رسالة الخطأ */}
+              {error && (
+                <div className="p-4 bg-gradient-to-r from-red-500/10 to-pink-500/10 border border-red-500/30 rounded-xl flex items-center gap-3 text-red-400 backdrop-blur-sm">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-semibold">{error}</span>
+                </div>
+              )}
+
+              {/* زر الإرسال */}
+              <button 
+                onClick={isLogin ? handleLogin : handleRegister} 
+                disabled={loading} 
+                className="w-full py-5 bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 rounded-xl font-black text-lg text-white shadow-2xl shadow-blue-500/50 hover:shadow-cyan-500/50 hover:scale-105 transition-all duration-500 flex items-center justify-center gap-3 disabled:opacity-50 disabled:hover:scale-100 group"
+              >
+                {loading ? (
+                  <Loader2 className="animate-spin w-7 h-7" />
+                ) : (
+                  <>
+                    {isLogin ? "دخول الآن" : "إنشاء الحساب"}
+                    <ArrowRight className="w-6 h-6 rotate-180 group-hover:-translate-x-2 transition-transform" />
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-12 text-center text-sm text-gray-500">
+              تحت إشراف <span className="text-cyan-400 font-bold">محمد علي</span>
+              <br />
+              © 2025 El Agamy Materials
+            </div>
+
+          </div>
         </div>
       </div>
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+      `}</style>
     </div>
   );
 }
