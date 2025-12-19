@@ -8,7 +8,10 @@ import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { Eye, EyeOff, Mail, Lock, GraduationCap, ArrowRight, User, Loader2, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
-  // === 1. تعريف الحالات (State) ===
+  const router = useRouter();
+  const { login } = useAuth(); 
+
+  // === الحالات (States) ===
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   
@@ -18,32 +21,28 @@ export default function LoginPage() {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
-  const { login } = useAuth();
-  const router = useRouter();
 
-  // === 2. دالة التوجيه ===
+  // === دالة التوجيه ===
   const forceRedirect = (userData) => {
     localStorage.setItem("user", JSON.stringify(userData));
     if (login) login(userData);
     
     setTimeout(() => {
         if (userData.isAdmin) {
-            window.location.href = "/dashboard/admin"; 
+            router.push("/dashboard/admin"); 
         } else {
-            window.location.href = "/dashboard"; 
+            router.push("/dashboard"); 
         }
     }, 500);
   };
 
-  // === 3. تسجيل الدخول ===
+  // === دالة تسجيل الدخول ===
   const handleLogin = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      // أ) البحث في الأكواد (للأدمن)
       const codesRef = collection(db, "allowedCodes");
       const qCode = query(codesRef, where("code", "==", email.trim()));
       const codeSnap = await getDocs(qCode);
@@ -55,7 +54,6 @@ export default function LoginPage() {
         return;
       }
 
-      // ب) البحث في المستخدمين (للطلاب)
       const usersRef = collection(db, "users");
       const qUser = query(usersRef, where("email", "==", email.toLowerCase().trim()));
       const userSnap = await getDocs(qUser);
@@ -75,12 +73,12 @@ export default function LoginPage() {
       }
     } catch (err) {
       console.error(err);
-      setError("حدث خطأ في الاتصال: " + err.message);
+      setError("حدث خطأ: " + err.message);
       setLoading(false);
     }
   };
 
-  // === 4. إنشاء حساب ===
+  // === دالة إنشاء الحساب ===
   const handleRegister = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     setError("");
@@ -343,7 +341,6 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-
       <style jsx>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
