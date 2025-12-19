@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where, addDoc } from "firebase/firestore";
+// تأكدي من تثبيت الأيقونات: npm install lucide-react
 import { Mail, Lock, User, ArrowLeft, BookOpen, GraduationCap, Lightbulb, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
@@ -25,10 +26,10 @@ export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
 
-  // دالة مساعدة للتوجيه حسب الصلاحية
+  // --- دالة التوجيه الذكي (حسب الصلاحية) ---
   const handleRedirect = (userData) => {
     login(userData);
-    // حفظ البيانات في LocalStorage لضمان استمرار الجلسة
+    // حفظ البيانات لضمان بقاء المستخدم مسجلاً
     localStorage.setItem("user", JSON.stringify(userData));
 
     if (userData.isAdmin) {
@@ -45,7 +46,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // 1. التحقق أولاً من الأكواد المسموحة (allowedCodes)
+      // 1. التحقق من الأكواد (Allowed Codes)
       const codesRef = collection(db, "allowedCodes");
       const qCode = query(codesRef, where("code", "==", loginEmail.trim()));
       const codeSnap = await getDocs(qCode);
@@ -61,7 +62,7 @@ export default function LoginPage() {
         return;
       }
 
-      // 2. إذا لم يكن كود، تحقق من المستخدمين المسجلين (users)
+      // 2. التحقق من المستخدمين (Users)
       const usersRef = collection(db, "users");
       const qUser = query(usersRef, where("email", "==", loginEmail.toLowerCase().trim()));
       const userSnap = await getDocs(qUser);
@@ -186,7 +187,7 @@ export default function LoginPage() {
               <div className="relative group">
                 <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-blue-500 transition-colors"><Lock size={18} /></div>
                 <input 
-                    type="password" 
+                    type="text" // جعلته text مؤقتاً لتسهيل الكتابة، يمكنك إعادته password
                     value={isLogin ? loginPassword : regPassword} 
                     onChange={(e) => isLogin ? setLoginPassword(e.target.value) : setRegPassword(e.target.value)} 
                     className="w-full bg-[#151720] border border-gray-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-600/30 block pr-12 pl-4 p-3.5 outline-none transition-all placeholder-gray-600" 
