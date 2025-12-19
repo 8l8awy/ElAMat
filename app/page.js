@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext"; // تأكدي من المسار
 import { db } from "@/lib/firebase"; 
 import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
 // تأكدي من تثبيت المكتبة: npm install lucide-react
@@ -9,7 +9,6 @@ import { Mail, Lock, User, ArrowLeft, BookOpen, GraduationCap, Lightbulb, Loader
 
 export default function LoginPage() {
   const { login } = useAuth(); 
-  
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -18,38 +17,35 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");    
   const [password, setPassword] = useState(""); 
 
+  // دالة التوجيه
   const forceRedirect = (userData) => {
     localStorage.setItem("user", JSON.stringify(userData));
     login(userData);
     
     setTimeout(() => {
-        if (userData.isAdmin) {
-            window.location.href = "/dashboard/admin"; 
-        } else {
-            window.location.href = "/dashboard"; 
-        }
+        window.location.href = userData.isAdmin ? "/dashboard/admin" : "/dashboard"; 
     }, 500);
   };
 
+  // تسجيل الدخول
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      // 1. البحث في الأكواد (للأدمن)
+      // 1. بحث في الأكواد
       const codesRef = collection(db, "allowedCodes");
       const qCode = query(codesRef, where("code", "==", email.trim()));
       const codeSnap = await getDocs(qCode);
 
       if (!codeSnap.empty) {
         const data = codeSnap.docs[0].data();
-        const userData = { name: data.name || "User", email: email, isAdmin: data.admin || false };
-        forceRedirect(userData); 
+        forceRedirect({ name: data.name || "User", email: email, isAdmin: data.admin || false });
         return;
       }
 
-      // 2. البحث في المستخدمين (للطلاب)
+      // 2. بحث في المستخدمين
       const usersRef = collection(db, "users");
       const qUser = query(usersRef, where("email", "==", email.toLowerCase().trim()));
       const userSnap = await getDocs(qUser);
@@ -57,8 +53,7 @@ export default function LoginPage() {
       if (!userSnap.empty) {
         const data = userSnap.docs[0].data();
         if (data.password === password) {
-          const userData = { ...data, isAdmin: data.isAdmin || false };
-          forceRedirect(userData);
+          forceRedirect({ ...data, isAdmin: data.isAdmin || false });
         } else {
           setError("كلمة المرور غير صحيحة");
           setLoading(false);
@@ -74,6 +69,7 @@ export default function LoginPage() {
     }
   };
 
+  // إنشاء حساب
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
@@ -115,28 +111,30 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-[#0b0c15] overflow-hidden font-sans" dir="rtl">
+    // استخدمنا Grid لضمان تقسيم الشاشة بشكل صحيح
+    <div className="grid min-h-screen w-full lg:grid-cols-2 bg-[#0b0c15] overflow-hidden font-sans" dir="rtl">
       
-      {/* ================= القسم الأيمن: الفورم (أسود) ================= */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 bg-[#0b0c15] relative z-20">
+      {/* ================= القسم الأيمن: الفورم ================= */}
+      <div className="flex flex-col justify-center items-center px-6 py-12 lg:px-20 relative z-20">
         
         {/* الشعار */}
-        <div className="absolute top-8 right-8 flex items-center gap-2 font-semibold text-gray-300">
+        <div className="absolute top-6 right-6 lg:top-10 lg:right-10 flex items-center gap-2 font-semibold text-gray-300">
            <div className="bg-blue-600 rounded-lg p-1.5"><BookOpen size={18} className="text-white" /></div>
-           <span className="text-lg tracking-wide">El Agamy Materials</span>
+           <span className="text-lg tracking-wide hidden sm:inline">El Agamy Materials</span>
         </div>
         
-        <div className="w-full max-w-[420px]">
+        {/* صندوق الفورم بحجم محدد لمنع التمدد */}
+        <div className="w-full max-w-md mx-auto space-y-8">
           
-          <div className="text-center mb-10 space-y-2">
-            <h1 className="text-4xl font-bold text-white">منصة المواد الدراسية</h1>
-            <p className="text-gray-500">سجل الدخول لبدء رحلة التعلم</p>
+          <div className="text-center space-y-2">
+            <h1 className="text-4xl font-bold text-white tracking-tight">مرحباً بك 👋</h1>
+            <p className="text-gray-500">منصة المواد الدراسية المتكاملة</p>
           </div>
 
           {/* أزرار التبديل */}
-          <div className="bg-[#151720] p-1.5 rounded-xl flex gap-3 border border-gray-800 mb-8">
-            <button type="button" onClick={() => { setIsLogin(true); setError(""); }} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all duration-300 ${isLogin ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" : "text-gray-400 hover:text-white hover:bg-white/5"}`}>تسجيل الدخول</button>
-            <button type="button" onClick={() => { setIsLogin(false); setError(""); }} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all duration-300 ${!isLogin ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" : "text-gray-400 hover:text-white hover:bg-white/5"}`}>إنشاء حساب</button>
+          <div className="bg-[#151720] p-1.5 rounded-xl flex border border-gray-800">
+            <button type="button" onClick={() => { setIsLogin(true); setError(""); }} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all duration-300 ${isLogin ? "bg-blue-600 text-white shadow-lg" : "text-gray-500 hover:text-gray-300"}`}>تسجيل الدخول</button>
+            <button type="button" onClick={() => { setIsLogin(false); setError(""); }} className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all duration-300 ${!isLogin ? "bg-blue-600 text-white shadow-lg" : "text-gray-500 hover:text-gray-300"}`}>إنشاء حساب</button>
           </div>
 
           <form onSubmit={isLogin ? handleLogin : handleRegister} className="space-y-5">
@@ -144,8 +142,8 @@ export default function LoginPage() {
               <div className="space-y-1.5 animate-fadeIn">
                 <label className="text-xs font-medium text-gray-400 mr-1">الاسم بالكامل</label>
                 <div className="relative group">
-                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-blue-500 transition-colors"><ShieldCheck size={18} /></div>
-                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-[#151720] border border-gray-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-600/30 block pr-12 p-3.5 outline-none transition-all placeholder-gray-600" placeholder="الاسم" />
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-500"><ShieldCheck size={18} /></div>
+                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-[#151720] border border-gray-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-600/50 block pr-12 p-3.5 outline-none transition-all placeholder-gray-600" placeholder="الاسم ثلاثي" />
                 </div>
               </div>
             )}
@@ -153,45 +151,52 @@ export default function LoginPage() {
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-400 mr-1">البريد الإلكتروني أو الكود</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-blue-500 transition-colors"><Mail size={18} /></div>
-                <input type="text" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#151720] border border-gray-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-600/30 block pr-12 p-3.5 outline-none transition-all placeholder-gray-600" placeholder="البريد أو الكود" />
+                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-500"><Mail size={18} /></div>
+                <input type="text" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#151720] border border-gray-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-600/50 block pr-12 p-3.5 outline-none transition-all placeholder-gray-600" placeholder="البريد أو الكود" />
               </div>
             </div>
             
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-400 mr-1">كلمة المرور</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-blue-500 transition-colors"><Lock size={18} /></div>
-                <input type="text" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#151720] border border-gray-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-600/30 block pr-12 pl-4 p-3.5 outline-none transition-all placeholder-gray-600" placeholder="كلمة المرور" />
+                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-500"><Lock size={18} /></div>
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#151720] border border-gray-800 text-white text-sm rounded-xl focus:ring-2 focus:ring-blue-600/50 block pr-12 pl-4 p-3.5 outline-none transition-all placeholder-gray-600" placeholder="••••••••" />
               </div>
             </div>
 
-            {error && <div className="text-red-500 text-xs text-center bg-red-500/10 p-2 rounded-lg border border-red-500/20">{error}</div>}
+            {error && <div className="text-red-400 text-xs text-center bg-red-500/10 p-3 rounded-lg border border-red-500/20">{error}</div>}
 
-            <button type="submit" disabled={loading} className="w-full mt-2 relative group overflow-hidden bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] transform hover:-translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-2">
-               {loading ? <Loader2 className="animate-spin" size={20} /> : ( <><span>{isLogin ? "دخول" : "تسجيل"}</span><ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /></> )}
+            <button type="submit" disabled={loading} className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-all duration-300 shadow-lg shadow-blue-900/20 hover:shadow-blue-900/40 transform hover:-translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-2">
+               {loading ? <Loader2 className="animate-spin" size={20} /> : ( <><span>{isLogin ? "دخول" : "تسجيل"}</span><ArrowLeft size={18} /></> )}
             </button>
           </form>
 
-          <div className="mt-10 pt-6 border-t border-gray-800 text-center">
-             <p className="text-gray-500 text-xs">تحت إشراف <span className="text-blue-400 font-bold">محمد علي</span></p>
+          <div className="pt-6 border-t border-gray-800 text-center">
+             <p className="text-gray-500 text-xs">تم التطوير بواسطة <span className="text-blue-400 font-bold hover:underline cursor-pointer">محمد علي</span></p>
           </div>
         </div>
       </div>
 
-      {/* ================= القسم الأيسر: الصورة والأيقونة (أزرق) ================= */}
-      <div className="hidden lg:flex w-1/2 relative flex-col justify-center items-center p-12 overflow-hidden bg-gradient-to-bl from-blue-900 via-blue-950 to-[#0b0c15]">
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px] pointer-events-none"></div>
-        <div className="relative z-10 flex flex-col items-center animate-pulse-slow">
-            <div className="relative">
-                <GraduationCap className="w-64 h-64 text-white drop-shadow-[0_0_30px_rgba(59,130,246,0.6)]" strokeWidth={1} />
-                <Lightbulb className="w-24 h-24 text-yellow-300 absolute -top-8 -right-4 drop-shadow-[0_0_20px_rgba(253,224,71,0.8)] animate-bounce" fill="currentColor" />
+      {/* ================= القسم الأيسر: الصورة (يظهر فقط في الشاشات الكبيرة) ================= */}
+      <div className="hidden lg:flex relative flex-col justify-center items-center p-12 overflow-hidden bg-gradient-to-br from-blue-900 via-[#0f172a] to-[#0b0c15]">
+        {/* تأثيرات الخلفية */}
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+        
+        {/* المحتوى */}
+        <div className="relative z-10 text-center space-y-6 max-w-lg">
+            <div className="relative inline-block">
+                <GraduationCap className="w-64 h-64 text-blue-100 drop-shadow-[0_0_30px_rgba(59,130,246,0.3)]" strokeWidth={0.8} />
+                <Lightbulb className="w-20 h-20 text-yellow-400 absolute -top-4 -right-4 animate-bounce drop-shadow-lg" fill="currentColor" />
             </div>
-            <h2 className="mt-8 text-4xl font-bold text-white tracking-wide text-center leading-relaxed">مستقبلك يبدأ من هنا</h2>
-            <p className="text-blue-200/80 mt-2 text-lg font-light">أفضل منصة للملخصات والمواد الدراسية</p>
+            
+            <div className="space-y-2">
+                <h2 className="text-4xl font-bold text-white tracking-wide leading-tight">مستقبلك يبدأ <br/><span className="text-blue-500">من هنا</span></h2>
+                <p className="text-blue-200/60 text-lg font-light leading-relaxed">أفضل منصة للملخصات والمواد الدراسية<br/>كل ما تحتاجه في مكان واحد</p>
+            </div>
         </div>
       </div>
+
     </div>
   );
 }
