@@ -2,51 +2,43 @@ import "./globals.css";
 import Script from "next/script";
 import { AuthProvider } from "@/context/AuthContext"; 
 
-// 1. تعريف الميتا داتا (كما فعلنا سابقاً)
+// 1. إعدادات الـ SEO (Metadata)
 export const metadata = {
   title: "El Agamy Materials | منصة العجمي التعليمية",
-  description: "أفضل منصة لتحميل الملخصات، المراجعات النهائية، وبنوك الأسئلة لطلاب جامعة العجمي.",
-  // لاحظ: إذا قمت بالخطوة 2 بوضع الملفات في مجلد app، لا تحتاج لإضافة icons هنا يدوياً
-  // ولكن للتأكيد يمكنك تركها هكذا إذا كان لديك ملف favicon.ico في مجلد public
-  // icons: {
-  //   icon: '/favicon.ico', 
-  // },
+  description: "أفضل منصة لتحميل الملخصات، المراجعات النهائية، وبنوك الأسئلة لطلاب جامعة العجمي. سجل الآن مجاناً وابدأ رحلة التفوق الدراسي.",
+  verification: {
+    google: "S5pMWU_XezcEhJnIRbN_jJI7KqHnvF050Ed5268sCa8",
+  },
   openGraph: {
-    title: "El Agamy Materials",
-    description: "منصة تعليمية متكاملة لطلاب العجمي.",
+    title: "El Agamy Materials | منصة العجمي التعليمية",
+    description: "كل ما يحتاجه طالب العجمي في مكان واحد: ملخصات، مراجعات، ومجتمع طلابي متكامل.",
     siteName: "El Agamy Materials",
     url: 'https://eamat.vercel.app',
     locale: 'ar_EG',
     type: 'website',
-    // يفضل إضافة صورة للـ Open Graph هنا أيضاً للمشاركة على السوشيال ميديا
-    // images: [{ url: 'https://eamat.vercel.app/og-image.png', width: 1200, height: 630 }],
   },
+  // ملاحظة: Next.js سيكتشف ملف icon.png تلقائياً من مجلد app
 };
 
 export default function RootLayout({ children }) {
-  const isClosed = false;
+  const isClosed = false; // التحكم في إغلاق الموقع
   const GA_MEASUREMENT_ID = ''; 
 
-  // 2. تجهيز البيانات المنظمة (Schema Markup)
-  // استبدل الرابط برابط اللوجو الحقيقي الخاص بك
+  // 2. بيانات جوجل المنظمة (Schema Markup) - اللوجو
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'El Agamy Materials',
     url: 'https://eamat.vercel.app',
-    logo: 'https://eamat.vercel.app/icon.png', // 👈👈 هام جداً: ضع رابط اللوجو المربع هنا
-    sameAs: [
-      // أضف روابط صفحاتك على السوشيال ميديا هنا إذا وجدت
-      // 'https://www.facebook.com/yourpage',
-      // 'https://twitter.com/yourhandle'
-    ]
+    logo: 'https://eamat.vercel.app/icon.png', // ✅ الرابط صحيح
+    sameAs: [] // يمكنك إضافة روابط فيسبوك أو تويتر هنا مستقبلاً
   }
 
   return (
     <html lang="ar">
       <body style={{ margin: 0, padding: 0 }}>
         
-        {/* 3. إضافة السكربت الخاص بالبيانات المنظمة */}
+        {/* 3. حقن كود بيانات اللوجو لـ جوجل */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -73,13 +65,45 @@ export default function RootLayout({ children }) {
         <div dir="rtl">
           <AuthProvider>
             {isClosed ? (
-              // ... (كود شاشة الإغلاق كما هو) ...
-              <div style={{ /* ... */ }}>...</div>
+              // شاشة الصيانة (Blue Screen)
+              <div style={{
+                height: '100vh',
+                width: '100vw',
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                zIndex: 9999,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'flex-start',
+                backgroundColor: '#0078d7',
+                color: 'white',
+                padding: '50px',
+                boxSizing: 'border-box',
+                fontFamily: '"Segoe UI", Tahoma, sans-serif',
+                direction: 'ltr'
+              }}>
+                <h1 style={{ fontSize: '6rem', margin: 0, fontWeight: 'normal' }}>:(</h1>
+                <h2 style={{ fontSize: '2rem', marginTop: '20px', fontWeight: 'normal' }}>
+                  Your PC ran into a problem... just kidding!
+                </h2>
+                <p style={{ fontSize: '1.5rem', marginTop: '20px' }}>
+                  We are just updating "El Agamy Materials" database.
+                  <br />
+                  <span style={{ fontSize: '1rem', opacity: 0.8 }}>Error Code: UPGRADING_SYSTEM_TO_V2</span>
+                </p>
+                <div style={{ marginTop: '40px' }}>
+                  <p>0% complete __________ 100%</p>
+                </div>
+              </div>
             ) : (
+              // الموقع يعمل
               children
             )}
           </AuthProvider>
         </div>
+
       </body>
     </html>
   );
