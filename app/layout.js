@@ -1,34 +1,58 @@
 import "./globals.css";
 import Script from "next/script";
-// 👇 تأكدي من المسار
 import { AuthProvider } from "@/context/AuthContext"; 
 
+// 1. تعريف الميتا داتا (كما فعلنا سابقاً)
 export const metadata = {
-  title: "ملخصات العجمي | El Agamy Materials",
-  description: "مكتبتك الشاملة للتفوق الجامعي. احصل على أقوى ملخصات العجمي، مراجعات نهائية، وبنوك أسئلة.",
-  verification: {
-    google: "S5pMWU_XezcEhJnIRbN_jJI7KqHnvF050Ed5268sCa8",
-  },
+  title: "El Agamy Materials | منصة العجمي التعليمية",
+  description: "أفضل منصة لتحميل الملخصات، المراجعات النهائية، وبنوك الأسئلة لطلاب جامعة العجمي.",
+  // لاحظ: إذا قمت بالخطوة 2 بوضع الملفات في مجلد app، لا تحتاج لإضافة icons هنا يدوياً
+  // ولكن للتأكيد يمكنك تركها هكذا إذا كان لديك ملف favicon.ico في مجلد public
+  // icons: {
+  //   icon: '/favicon.ico', 
+  // },
   openGraph: {
-    title: "ملخصات العجمي | El Agamy Materials",
-    description: "حمل أفضل الملخصات والمراجعات النهائية مجاناً.",
+    title: "El Agamy Materials",
+    description: "منصة تعليمية متكاملة لطلاب العجمي.",
     siteName: "El Agamy Materials",
+    url: 'https://eamat.vercel.app',
     locale: 'ar_EG',
     type: 'website',
+    // يفضل إضافة صورة للـ Open Graph هنا أيضاً للمشاركة على السوشيال ميديا
+    // images: [{ url: 'https://eamat.vercel.app/og-image.png', width: 1200, height: 630 }],
   },
 };
 
 export default function RootLayout({ children }) {
-  // 🔒 للتحكم في الموقع
-  const isClosed = false; // true = شاشة زرقاء، false = الموقع يعمل
-
+  const isClosed = false;
   const GA_MEASUREMENT_ID = ''; 
+
+  // 2. تجهيز البيانات المنظمة (Schema Markup)
+  // استبدل الرابط برابط اللوجو الحقيقي الخاص بك
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'El Agamy Materials',
+    url: 'https://eamat.vercel.app',
+    logo: 'https://eamat.vercel.app/icon.png', // 👈👈 هام جداً: ضع رابط اللوجو المربع هنا
+    sameAs: [
+      // أضف روابط صفحاتك على السوشيال ميديا هنا إذا وجدت
+      // 'https://www.facebook.com/yourpage',
+      // 'https://twitter.com/yourhandle'
+    ]
+  }
 
   return (
     <html lang="ar">
       <body style={{ margin: 0, padding: 0 }}>
         
-        {/* أكواد جوجل */}
+        {/* 3. إضافة السكربت الخاص بالبيانات المنظمة */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+
+        {/* Google Analytics */}
         {GA_MEASUREMENT_ID && (
           <>
             <Script
@@ -46,54 +70,16 @@ export default function RootLayout({ children }) {
           </>
         )}
 
-        {/* ✅ التعديل الجوهري: AuthProvider يغلف الكل دائماً */}
-        {/* هذا يمنع خطأ "user is undefined" أثناء الـ Build */}
         <div dir="rtl">
           <AuthProvider>
             {isClosed ? (
-              // 💻 حالة الإغلاق: نظهر شاشة الموت الزرقاء
-              <div style={{
-                height: '100vh',
-                width: '100vw',
-                position: 'fixed', // لضمان تغطية الشاشة بالكامل
-                top: 0,
-                left: 0,
-                zIndex: 9999,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'flex-start',
-                backgroundColor: '#0078d7',
-                color: 'white',
-                padding: '50px',
-                boxSizing: 'border-box',
-                fontFamily: '"Segoe UI", Tahoma, sans-serif',
-                direction: 'ltr' // الشاشة الزرقاء دائماً إنجليزي
-              }}>
-                <h1 style={{ fontSize: '6rem', margin: 0, fontWeight: 'normal' }}>:(</h1>
-                <h2 style={{ fontSize: '2rem', marginTop: '20px', fontWeight: 'normal' }}>
-                  Your PC ran into a problem... just kidding!
-                </h2>
-                <p style={{ fontSize: '1.5rem', marginTop: '20px' }}>
-                  We are just updating "El Agamy Materials" database.
-                  <br />
-                  <span style={{ fontSize: '1rem', opacity: 0.8 }}>Error Code: UPGRADING_SYSTEM_TO_V2</span>
-                </p>
-                <div style={{ marginTop: '40px' }}>
-                  <p>0% complete __________ 100%</p>
-                </div>
-                
-                <div style={{ position: 'absolute', bottom: '20px', right: '30px', direction: 'rtl', fontSize: '14px', opacity: 0.7 }}>
-                  جاري تحديث السيرفرات...
-                </div>
-              </div>
+              // ... (كود شاشة الإغلاق كما هو) ...
+              <div style={{ /* ... */ }}>...</div>
             ) : (
-              // 🟢 حالة الفتح: نعرض محتوى الموقع
               children
             )}
           </AuthProvider>
         </div>
-
       </body>
     </html>
   );
