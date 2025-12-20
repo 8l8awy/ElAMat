@@ -6,8 +6,7 @@ import { db } from "../../../lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { collection, addDoc, deleteDoc, updateDoc, doc, getDocs, query, where, serverTimestamp, orderBy, onSnapshot } from "firebase/firestore";
 import { FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaLock, FaSignOutAlt, FaCheck, FaTimes } from "react-icons/fa";
-import { saveAs } from 'file-saver';
-import JSZip from 'jszip';
+
 export default function AdminPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
