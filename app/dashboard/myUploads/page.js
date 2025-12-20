@@ -1,141 +1,108 @@
 "use client";
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { db } from '@/lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
-import { CldUploadButton } from 'next-cloudinary'; // مكتبة كلاودينري
-import { FaCloudUploadAlt, FaFilePdf, FaCheckCircle, FaArrowRight } from 'react-icons/fa';
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { FaCloudUploadAlt, FaCheckCircle, FaHourglassHalf, FaEye, FaDownload, FaFilePdf, FaImage, FaTimes } from "react-icons/fa";
+import { Loader2 } from "lucide-react";
+import Link from "next/link";
 
-export default function UploadPage() {
+export default function MyUploadsPage() {
   const { user } = useAuth();
-  const router = useRouter();
-  
-  const [title, setTitle] = useState("");
-  const [subject, setSubject] = useState("");
-  const [pdfUrl, setPdfUrl] = useState(""); 
-  const [loading, setLoading] = useState(false);
+  const [uploads, setUploads] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedFile, setSelectedFile] = useState(null); // للمعاينة
 
-  // دالة تعمل تلقائياً بعد نجاح الرفع على Cloudinary
-  const handleUploadSuccess = (result) => {
-    // result.info.secure_url هو رابط الملف المباشر
-    setPdfUrl(result.info.secure_url);
-  };
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    if (!pdfUrl || !title || !subject) return;
-
-    setLoading(true);
-
-    try {
-      // حفظ بيانات الملف في قاعدة البيانات
-      await addDoc(collection(db, "materials"), {
-        title: title,
-        subject: subject,
-        fileUrl: pdfUrl,
-        uploader: user.name, // لحفظ اسم الطالب الرافع
-        uploaderId: user.uid || "unknown",
-        date: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        type: "summary", // أو يمكنك عمل قائمة منسدلة لاختيار النوع
-        status: "pending", // الحالة الافتراضية "قيد المراجعة"
-        viewCount: 0,
-        downloadCount: 0
-      });
-
-      // توجيه الطالب لصفحة "ملخصاتي" بعد النجاح
-      router.push('/dashboard/my-uploads');
-
-    } catch (error) {
-      console.error("Error saving document:", error);
-      alert("حدث خطأ أثناء حفظ البيانات");
-      setLoading(false);
+  useEffect(() => {
+    async function fetchMyUploads() {
+      if (!user) return;
+      try {
+        const q = query(collection(db, "materials"), where("uploader", "==", user.name));
+        const snapshot = await getDocs(q);
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // ترتيب يدوي
+        data.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+        setUploads(data);
+      } catch (err) { console.error(err); } 
+      finally { setLoading(false); }
     }
-  };
+    fetchMyUploads();
+  }, [user]);
+
+  if (loading) return <div className="flex justify-center mt-20 text-blue-500"><Loader2 className="animate-spin w-10 h-10" /></div>;
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-4 md:p-8 flex items-center justify-center animate-fadeIn" dir="rtl">
-      <div className="max-w-lg w-full bg-gray-900 border border-gray-800 rounded-3xl p-8 shadow-2xl">
-        
-        <div className="flex items-center gap-4 mb-8">
-            <button onClick={() => router.back()} className="p-2 hover:bg-gray-800 rounded-full transition-colors">
-                <FaArrowRight />
-            </button>
-            <h1 className="text-2xl font-bold">رفع ملخص جديد</h1>
+    <div className="space-y-8 animate-fadeIn text-white">
+      <div className="flex items-center justify-between border-b border-gray-800 pb-6">
+        <div>
+            <h2 className="text-3xl font-bold mb-2">ملفاتي المرفوعة</h2>
+            <p className="text-gray-400">تابع حالة قبول ملخصاتك هنا</p>
         </div>
-
-        <form onSubmit={handleSave} className="space-y-6">
-          
-          {/* اسم الملخص */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-400">عنوان الملخص</label>
-            <input 
-              type="text" 
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-blue-500 transition-colors"
-              placeholder="مثال: ملخص المحاسبة - الفصل الأول"
-              required
-            />
-          </div>
-
-          {/* اسم المادة */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-400">اسم المادة</label>
-            <input 
-              type="text" 
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 focus:outline-none focus:border-blue-500 transition-colors"
-              placeholder="مثال: مبادئ اقتصاد"
-              required
-            />
-          </div>
-
-          {/* منطقة رفع الملف (Cloudinary) */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-400">ملف الـ PDF</label>
-            
-            {!pdfUrl ? (
-                // زر الرفع من كلاودينري
-                <div className="border-2 border-dashed border-gray-700 hover:border-blue-500 rounded-xl transition-colors bg-gray-800/50">
-                    <CldUploadButton 
-                        uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET} // تأكد من وضع هذا في ملف .env
-                        onSuccess={handleUploadSuccess}
-                        options={{ sources: ['local'], resourceType: 'raw' }} // 'raw' مهم لملفات PDF
-                        className="w-full h-32 flex flex-col items-center justify-center gap-3 cursor-pointer"
-                    >
-                        <FaCloudUploadAlt className="w-8 h-8 text-gray-400" />
-                        <span className="text-sm text-gray-400">اضغط هنا لاختيار ملف PDF</span>
-                    </CldUploadButton>
-                </div>
-            ) : (
-                // شكل الملف بعد الرفع
-                <div className="flex items-center justify-between bg-green-500/10 border border-green-500/20 p-4 rounded-xl">
-                    <div className="flex items-center gap-3">
-                        <FaFilePdf className="text-red-500 w-6 h-6" />
-                        <span className="text-green-400 text-sm font-medium">تم رفع الملف بنجاح</span>
-                    </div>
-                    <button type="button" onClick={() => setPdfUrl("")} className="text-xs text-gray-400 hover:text-white underline">
-                        تغيير
-                    </button>
-                </div>
-            )}
-          </div>
-
-          {/* زر الحفظ */}
-          <button 
-            type="submit" 
-            disabled={loading || !pdfUrl}
-            className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
-          >
-            {loading ? <Loader2 className="animate-spin" /> : "نشر الملخص"}
-          </button>
-
-        </form>
+        <Link href="/dashboard/upload">
+            <button className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2">
+                <FaCloudUploadAlt size={20} /> رفع جديد
+            </button>
+        </Link>
       </div>
+
+      {uploads.length === 0 ? (
+        <div className="text-center py-20 bg-gray-900/50 rounded-3xl border border-gray-800 border-dashed">
+            <p className="text-gray-400 text-xl mb-6">لم تقم برفع أي ملفات بعد</p>
+            <Link href="/dashboard/upload">
+                <button className="px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold rounded-xl">ارفع أول ملخص</button>
+            </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {uploads.map(item => (
+                <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-2xl p-6 relative group hover:border-blue-500/30 transition-all">
+                    {/* Badge الحالة */}
+                    <div className={`absolute left-4 top-4 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${item.status === 'approved' ? 'bg-green-500/10 text-green-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
+                        {item.status === 'approved' ? <><FaCheckCircle /> تم النشر</> : <><FaHourglassHalf /> قيد المراجعة</>}
+                    </div>
+
+                    <div className="flex items-center gap-4 mt-8">
+                        <div className="p-3 bg-gray-800 rounded-xl">
+                            {(item.fileType === 'pdf' || item.fileUrl?.endsWith('.pdf')) ? <FaFilePdf className="text-red-500 w-8 h-8" /> : <FaImage className="text-blue-400 w-8 h-8" />}
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold line-clamp-1">{item.title}</h3>
+                            <p className="text-sm text-gray-500">{item.subject}</p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3 mt-6">
+                         <button onClick={() => setSelectedFile(item)} className="flex-1 bg-gray-800 hover:bg-gray-700 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2">
+                            <FaEye /> معاينة
+                         </button>
+                         <a href={item.fileUrl} target="_blank" download className="bg-gray-800 hover:bg-gray-700 px-4 rounded-xl flex items-center text-gray-400 hover:text-white transition-colors">
+                            <FaDownload />
+                         </a>
+                    </div>
+                </div>
+            ))}
+        </div>
+      )}
+
+      {/* ==================== نفس نافذة المعاينة (MODAL) ==================== */}
+      {selectedFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-gray-900 w-full max-w-5xl h-[85vh] rounded-2xl border border-gray-700 flex flex-col shadow-2xl">
+            <div className="p-4 flex justify-between items-center border-b border-gray-800">
+                <h3 className="font-bold text-lg">{selectedFile.title}</h3>
+                <button onClick={() => setSelectedFile(null)} className="p-2 hover:bg-red-500/20 hover:text-red-500 rounded-full transition-colors"><FaTimes size={20} /></button>
+            </div>
+            <div className="flex-1 bg-gray-800 relative overflow-hidden flex items-center justify-center">
+                 {/* عرض الـ PDF أو الصورة */}
+                 {(selectedFile.fileType === 'pdf' || selectedFile.fileUrl?.endsWith('.pdf')) ? (
+                    <iframe src={selectedFile.fileUrl} className="w-full h-full bg-white" title="Preview" />
+                 ) : (
+                    <img src={selectedFile.fileUrl} alt="preview" className="max-h-full max-w-full object-contain" />
+                 )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
