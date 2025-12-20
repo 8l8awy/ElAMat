@@ -1,169 +1,57 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { db } from "../../../lib/firebase"; 
-import { collection, addDoc, deleteDoc, doc, getDocs, query, where, serverTimestamp, orderBy, onSnapshot, updateDoc } from "firebase/firestore";
-import { FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaLock, FaSignOutAlt, FaExclamationTriangle, FaTimes, FaCheck, FaDownload, FaImage, FaUser, FaThumbtack } from "react-icons/fa";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "firebase/firestore";
+import { FaCheck, FaTrash, FaEye, FaFilePdf, FaImage, FaTimes, FaDownload, FaExclamationTriangle, FaUser, FaThumbtack } from "react-icons/fa";
 import { Loader2 } from "lucide-react";
 import { saveAs } from 'file-saver';
+import JSZip from 'jszip';
 
-export default function AdminPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  // ☁️ بيانات Cloudinary
-  const CLOUD_NAME = "dhj0extnk"; 
-  const UPLOAD_PRESET = "ml_default"; 
-
-  // حالات النظام
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showFake404, setShowFake404] = useState(true); 
-  const [inputCode, setInputCode] = useState("");
-  const [checkingCode, setCheckingCode] = useState(false);
-
-  // متغيرات لوحة التحكم
-  const [title, setTitle] = useState("");
-  const [subject, setSubject] = useState("مبادئ الاقتصاد");
-  const [type, setType] = useState("summary");
-  const [files, setFiles] = useState([]); 
-  const [materialsList, setMaterialsList] = useState([]);
-  const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [selectedFile, setSelectedFile] = useState(null); // للمعاينة
+export default function AdminDashboard() {
+  const [materials, setMaterials] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedFile, setSelectedFile] = useState(null); 
+  const [filter, setFilter] = useState("all"); 
   const [downloading, setDownloading] = useState(false);
 
-  const subjects = ["مبادئ الاقتصاد", "لغة اجنبية (1)", "مبادئ المحاسبة المالية", "مبادئ القانون", "مبادئ ادارة الاعمال"];
+  // جلب البيانات
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const q = query(collection(db, "materials"), orderBy("createdAt", "desc"));
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setMaterials(data);
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // ✅ 1. الفحص الذكي عند فتح الصفحة
   useEffect(() => {
-    const checkAccess = async () => {
-      const savedCode = localStorage.getItem("adminCode");
-      const isSecretMode = searchParams.get("mode") === "login";
-
-      if (savedCode) {
-        await verifyCode(savedCode, true);
-      } else if (isSecretMode) {
-        setIsLoading(false);
-        setShowFake404(false);
-      } else {
-        setIsLoading(false);
-        setShowFake404(true);
-      }
-    };
-
-    checkAccess();
+    fetchData();
   }, []);
 
-  // دالة التحقق من الكود
-  const verifyCode = async (codeToVerify, isAutoCheck = false) => {
-    if (!isAutoCheck) setCheckingCode(true);
-
+  // دوال التحكم
+  const handleApprove = async (id, e) => {
+    if(e) e.stopPropagation(); 
+    if (!confirm("هل أنت متأكد من قبول هذا الملف ونشره؟")) return;
     try {
-      const codesRef = collection(db, "allowedCodes");
-      const q = query(codesRef, where("code", "==", codeToVerify.trim()));
-      const querySnapshot = await getDocs(q);
-
-      if (!querySnapshot.empty) {
-        const userData = querySnapshot.docs[0].data();
-        if (userData.admin === true) {
-          setIsAuthenticated(true);
-          setShowFake404(false);
-          localStorage.setItem("adminCode", codeToVerify); 
-        } else {
-          if (!isAutoCheck) alert("⛔ هذا الكود ليس لمشرف (Admin)");
-          if (isAutoCheck) handleLoginFail(); 
-        }
-      } else {
-        if (!isAutoCheck) alert("⛔ الكود غير صحيح");
-        if (isAutoCheck) handleLoginFail();
-      }
-    } catch (error) {
-      console.error(error);
-      if (!isAutoCheck) alert("خطأ في الاتصال");
-    }
-    
-    setIsLoading(false);
-    if (!isAutoCheck) setCheckingCode(false);
+      await updateDoc(doc(db, "materials", id), { status: "approved" });
+      setMaterials(prev => prev.map(item => item.id === id ? { ...item, status: "approved" } : item));
+      if(selectedFile?.id === id) setSelectedFile(null); // إغلاق النافذة
+    } catch (error) { alert("حدث خطأ"); }
   };
 
-  const handleLoginFail = () => {
-    localStorage.removeItem("adminCode");
-    setIsAuthenticated(false);
-    setShowFake404(true);
-  };
-
-  const handleManualLogin = async (e) => {
-    e.preventDefault();
-    await verifyCode(inputCode);
-  };
-
-  // ... (دوال الرفع والحذف والتحميل) ...
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    const q = query(collection(db, "materials"), orderBy("date", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setMaterialsList(data);
-    });
-    return () => unsubscribe();
-  }, [isAuthenticated]);
-
-  const handleDelete = async (id, title) => { 
-      if (confirm(`حذف "${title}"؟`)) {
-          await deleteDoc(doc(db, "materials", id)); 
-          if(selectedFile?.id === id) setSelectedFile(null);
-      }
-  };
-
-  const handleFileChange = (e) => { if (e.target.files) setFiles(Array.from(e.target.files)); };
-  
-  const uploadToCloudinary = async (file) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", UPLOAD_PRESET);
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, { method: "POST", body: formData });
-    const data = await res.json();
-    return data.secure_url;
-  };
-
-  const handleUpload = async (e) => {
-    e.preventDefault();
-    if (!files.length || !title) return alert("البيانات ناقصة");
-    setUploading(true); setMessage("جاري الرفع...");
-    
+  const handleDelete = async (id, e) => {
+    if(e) e.stopPropagation();
+    if (!confirm("حذف نهائي؟ لا يمكن التراجع.")) return;
     try {
-      // رفع الملفات واحد تلو الآخر (أو الأول فقط إذا كنت تريد ملف واحد)
-      // هنا سنفترض أننا نرفع أول ملف فقط لأن قاعدة البيانات لديك تخزن fileUrl واحد
-      // إذا كنت تريد دعم ملفات متعددة، يجب تغيير هيكلة قاعدة البيانات لتكون files: []
-      
-      const file = files[0];
-      const url = await uploadToCloudinary(file);
-      
-      // تحديد نوع الملف
-      let fileType = 'other';
-      if (file.type.includes('pdf')) fileType = 'pdf';
-      else if (file.type.includes('image')) fileType = 'image';
-
-      await addDoc(collection(db, "materials"), {
-        title, subject, type, 
-        fileUrl: url, 
-        fileType: fileType,
-        uploader: "Admin", // لأن الأدمن هو من يرفع
-        date: new Date().toISOString(), 
-        status: "approved", 
-        viewCount: 0, 
-        downloadCount: 0, 
-        createdAt: serverTimestamp(),
-      });
-      
-      setUploading(false); setTitle(""); setFiles([]); setMessage("تم بنجاح! ");
-      setTimeout(() => setMessage(""), 3000);
-    } catch (error) { 
-        console.error(error);
-        setUploading(false); 
-        alert("خطأ في الرفع"); 
-    }
+      await deleteDoc(doc(db, "materials", id));
+      setMaterials(prev => prev.filter(item => item.id !== id));
+      if(selectedFile?.id === id) setSelectedFile(null);
+    } catch (error) { alert("حدث خطأ"); }
   };
 
   const handleDownload = async (fileUrl, title, fileType) => {
@@ -172,7 +60,7 @@ export default function AdminPage() {
         if (fileType === 'pdf' || fileUrl.endsWith('.pdf')) {
             saveAs(fileUrl, `${title}.pdf`);
         } else {
-            saveAs(fileUrl, `${title}.jpg`);
+            saveAs(fileUrl, `${title}.jpg`); // تحميل الصورة مباشرة
         }
     } catch (error) {
         alert("فشل التحميل.");
@@ -181,35 +69,179 @@ export default function AdminPage() {
     }
   };
 
-  // ⏳ شاشة تحميل
-  if (isLoading) {
-    return (
-      <div style={{height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#fff'}}>
-        <FaSpinner className="fa-spin" size={40} color="#333" />
-      </div>
-    );
-  }
+  // تصفية الطلبات المعلقة
+  const pendingMaterials = materials.filter(item => item.status !== "approved");
+  
+  const filteredMaterials = materials.filter(item => {
+    if (filter === "pending") return item.status !== "approved";
+    if (filter === "approved") return item.status === "approved";
+    return true;
+  });
 
-  // 👻 1. صفحة 404 الوهمية
-  if (showFake404) {
-    return (
-      <div style={{height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#000', background: '#fff', fontFamily: 'sans-serif'}}>
-        <h1 style={{fontSize: '2rem', fontWeight: '600', margin: '0 0 10px 0'}}>404</h1>
-        <h2 style={{fontSize: '14px', fontWeight: 'normal', margin: 0}}>This page could not be found.</h2>
-      </div>
-    );
-  }
+  if (loading) return <div className="h-screen flex flex-col items-center justify-center bg-[#0b0c15] text-blue-500"><Loader2 className="animate-spin w-12 h-12 mb-4" /><p>جاري تحميل لوحة التحكم...</p></div>;
 
-  // 🔒 2. شاشة تسجيل الدخول
-  if (!isAuthenticated) {
-    return (
-      <div style={{height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#000', color: 'white', fontFamily: 'sans-serif'}}>
-        <div style={{background: 'rgba(255, 255, 255, 0.05)', padding: '50px 40px', borderRadius: '20px', textAlign: 'center', border: '1px solid #333', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', width: '100%', maxWidth: '400px'}}>
-          <h1 style={{fontSize: '1.8rem', marginBottom: '10px', fontWeight: 'bold'}}>Admin Access</h1>
-          <form onSubmit={handleManualLogin}>
-            <div style={{marginBottom: '20px', position: 'relative'}}>
-                <FaLock style={{position: 'absolute', left: '15px', top: '15px', color: '#666'}} />
-                <input type="password" placeholder="Security Code" value={inputCode} onChange={(e) => setInputCode(e.target.value)} style={{width: '100%', padding: '15px 15px 15px 45px', borderRadius: '10px', border: '1px solid #444', background: '#111', color: 'white', fontSize: '1rem', outline: 'none'}} />
+  return (
+    <div className="min-h-screen bg-[#0b0c15] text-white p-6 lg:p-10 font-sans" dir="rtl">
+      
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+           <span className="text-blue-500">🛡️</span> لوحة تحكم الأدمن
+        </h1>
+        <div className="bg-gray-900 p-1 rounded-xl border border-gray-800 flex gap-1">
+          {['all', 'pending', 'approved'].map((f) => (
+            <button key={f} onClick={() => setFilter(f)} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filter === f ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+              {f === 'all' ? 'الكل' : f === 'pending' ? 'قيد المراجعة' : 'المنشورة'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ==================== قسم الطلبات قيد الانتظار (التصميم الجديد) ==================== */}
+      {pendingMaterials.length > 0 && (
+        <div className="mb-10 animate-fadeIn">
+            <div className="border border-yellow-600/30 bg-yellow-500/5 rounded-2xl p-6">
+                <h2 className="text-xl font-bold text-yellow-500 mb-4 flex items-center gap-2">
+                    <FaExclamationTriangle /> طلبات قيد الانتظار ({pendingMaterials.length})
+                </h2>
+                
+                <div className="space-y-3">
+                    {pendingMaterials.map(item => (
+                        <div 
+                            key={item.id} 
+                            onClick={() => setSelectedFile(item)} // 👈 هذا يفتح المعاينة عند الضغط
+                            className="bg-[#1a1d2d] hover:bg-[#23263a] border border-gray-700 rounded-xl p-4 flex flex-col md:flex-row justify-between items-center gap-4 cursor-pointer transition-all group"
+                        >
+                            {/* معلومات الملف (يمين) */}
+                            <div className="flex items-center gap-4 w-full md:w-auto">
+                                <div className="p-3 bg-gray-800 rounded-lg">
+                                    {(item.fileType === 'pdf' || item.fileUrl?.endsWith('.pdf')) ? <FaFilePdf className="text-red-500 w-6 h-6"/> : <FaImage className="text-blue-400 w-6 h-6"/>}
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-white text-lg group-hover:text-blue-400 transition-colors">{item.title}</h3>
+                                    <div className="flex flex-wrap gap-3 text-xs text-gray-400 mt-1">
+                                        <span className="flex items-center gap-1 bg-gray-800 px-2 py-0.5 rounded"><FaUser size={10}/> {item.uploader}</span>
+                                        <span className="flex items-center gap-1 bg-gray-800 px-2 py-0.5 rounded text-pink-400"><FaThumbtack size={10}/> {item.subject}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* أزرار الإجراءات (يسار) */}
+                            <div className="flex gap-2 w-full md:w-auto pl-2">
+                                <button 
+                                    onClick={(e) => handleApprove(item.id, e)}
+                                    className="bg-green-600 hover:bg-green-500 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors text-sm shadow-lg shadow-green-900/20"
+                                >
+                                    <FaCheck /> قبول
+                                </button>
+                                <button 
+                                    onClick={(e) => handleDelete(item.id, e)}
+                                    className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors text-sm border border-red-500/20"
+                                >
+                                    <FaTimes /> رفض
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
-            <button type="submit" disabled={checkingCode} style={{background: 'white', color: 'black', border: 'none', padding: '15px', borderRadius: '10px', fontWeight: 'bold', fontSize: '1rem', width: '100%', cursor: 'pointer', opacity: checkingCode ? 0.7 : 1}}>
-              {checkingCode ? "Verifying..." : "Login"}
+        </div>
+      )}
+
+      {/* ==================== شبكة باقي الملفات ==================== */}
+      <h3 className="text-lg font-bold text-gray-400 mb-4 border-b border-gray-800 pb-2">سجل الملفات</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {filteredMaterials.map((item) => (
+          <div key={item.id} className="bg-[#151720] border border-gray-800 rounded-2xl p-5 hover:border-blue-500/30 transition-all relative overflow-hidden">
+            <div className={`absolute top-0 right-0 bottom-0 w-1 ${item.status === 'approved' ? 'bg-green-500' : 'bg-gray-700'}`}></div>
+
+            <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-gray-900 rounded-xl">
+                    {(item.fileType === 'pdf' || item.fileUrl?.endsWith('.pdf')) ? <FaFilePdf className="text-red-500 w-6 h-6"/> : <FaImage className="text-blue-400 w-6 h-6"/>}
+                </div>
+                <div>
+                    <h3 className="font-bold text-white line-clamp-1">{item.title}</h3>
+                    <p className="text-xs text-gray-500">{item.subject}</p>
+                </div>
+            </div>
+
+            <div className="flex gap-2 pt-4 border-t border-gray-800">
+                <button onClick={() => setSelectedFile(item)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2">
+                    <FaEye /> معاينة
+                </button>
+                {item.status !== "approved" && (
+                     <button onClick={(e) => handleApprove(item.id, e)} className="flex-1 bg-green-600/20 text-green-400 hover:bg-green-600 hover:text-white py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2">
+                        <FaCheck /> قبول
+                    </button>
+                )}
+                <button onClick={(e) => handleDelete(item.id, e)} className="w-9 h-9 flex items-center justify-center bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-colors">
+                    <FaTrash size={14} />
+                </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ==================== نافذة المعاينة (MODAL) ==================== */}
+      {selectedFile && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fadeIn">
+          <div className="bg-[#151720] w-full max-w-5xl h-[90vh] rounded-2xl border border-gray-700 flex flex-col shadow-2xl overflow-hidden relative">
+            
+            {/* زر الإغلاق العائم */}
+            <button onClick={() => setSelectedFile(null)} className="absolute top-4 left-4 z-50 bg-black/50 hover:bg-red-600 text-white p-2 rounded-full backdrop-blur-sm transition-colors">
+                <FaTimes size={20} />
+            </button>
+
+            {/* Header */}
+            <div className="p-4 border-b border-gray-800 bg-gray-900 text-center">
+                <h3 className="font-bold text-lg text-white">{selectedFile.title}</h3>
+                <p className="text-sm text-gray-400">{selectedFile.subject} • {selectedFile.uploader}</p>
+            </div>
+
+            {/* Body: المعاينة */}
+            <div className="flex-1 bg-gray-950 flex items-center justify-center p-4 overflow-hidden relative">
+              {(selectedFile.fileType === 'pdf' || selectedFile.fileUrl?.endsWith('.pdf')) ? (
+                <div className="text-center">
+                    <FaFilePdf className="text-gray-700 w-24 h-24 mx-auto mb-4 animate-pulse" />
+                    <button 
+                        onClick={() => window.open(selectedFile.fileUrl, '_blank')}
+                        className="bg-[#00f260] text-black px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:scale-105 transition-transform shadow-[0_0_30px_rgba(0,242,96,0.3)]"
+                    >
+                        📖 فتح PDF في صفحة جديدة
+                    </button>
+                </div>
+              ) : (
+                <img src={selectedFile.fileUrl} alt="Preview" className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />
+              )}
+            </div>
+
+            {/* Footer: الإجراءات */}
+            <div className="p-4 border-t border-gray-800 bg-gray-900 flex justify-between items-center">
+               <div className="flex gap-3">
+                   {selectedFile.status !== "approved" && (
+                       <button 
+                         onClick={() => handleApprove(selectedFile.id)}
+                         className="bg-green-600 hover:bg-green-500 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-green-900/20"
+                       >
+                         <FaCheck /> قبول ونشر
+                       </button>
+                   )}
+                   <button 
+                     onClick={() => handleDownload(selectedFile.fileUrl, selectedFile.title, selectedFile.fileType)}
+                     disabled={downloading}
+                     className="bg-gray-800 hover:bg-gray-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2"
+                   >
+                     {downloading ? <Loader2 className="animate-spin" size={18}/> : <FaDownload size={18}/>} تحميل
+                   </button>
+               </div>
+               
+               <button onClick={() => handleDelete(selectedFile.id)} className="text-red-500 hover:bg-red-500/10 px-5 py-2.5 rounded-xl font-bold transition-colors">
+                   حذف الملف
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
