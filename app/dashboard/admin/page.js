@@ -286,5 +286,88 @@ export default function AdminPage() {
         </div>
       </div>
     </div>
+{/* ==================== نافذة المعاينة والتحميل (Modal) ==================== */}
+{selectedFile && (
+  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fadeIn">
+    <div className="bg-[#151720] w-full max-w-5xl h-[85vh] rounded-2xl border border-gray-700 flex flex-col shadow-2xl overflow-hidden">
+      
+      {/* Header: العنوان وبيانات الطالب */}
+      <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900">
+        <div>
+            <h3 className="font-bold text-lg text-white">{selectedFile.title}</h3>
+            <div className="flex gap-2 text-xs mt-1">
+                <span className="bg-blue-600/20 text-blue-400 px-2 rounded">الطالب: {selectedFile.uploader}</span>
+                <span className="bg-gray-700 text-gray-300 px-2 rounded">{selectedFile.subject}</span>
+            </div>
+        </div>
+        {/* زر الإغلاق (X) */}
+        <button 
+            onClick={() => setSelectedFile(null)} 
+            className="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-red-500 hover:text-white rounded-full transition-colors"
+        >
+            <FaTimes />
+        </button>
+      </div>
+
+      {/* Body: منطقة عرض المحتوى */}
+      <div className="flex-1 bg-gray-950 relative flex items-center justify-center p-4 overflow-hidden">
+        
+        {/* التحقق: هل هو PDF أم صورة؟ */}
+        {(selectedFile.fileType === 'pdf' || selectedFile.fileUrl?.endsWith('.pdf')) ? (
+          // خيار الـ PDF: زر كبير لفتح الملف في نافذة جديدة
+          <div className="flex flex-col items-center justify-center gap-6">
+              <FaFilePdf className="text-gray-700 w-32 h-32 animate-pulse" />
+              <button 
+                  onClick={() => window.open(selectedFile.fileUrl, '_blank')}
+                  className="bg-[#00f260] text-black px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:scale-105 transition-transform shadow-[0_0_20px_rgba(0,242,96,0.3)]"
+              >
+                  📖 فتح PDF في نافذة جديدة
+              </button>
+              <p className="text-gray-500 text-sm">اضغط لفتح المستند في عارض المتصفح الأصلي</p>
+          </div>
+        ) : (
+          // خيار الصورة: عرض الصورة مباشرة
+          <img 
+            src={selectedFile.fileUrl} 
+            alt="Preview" 
+            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" 
+          />
+        )}
+      </div>
+
+      {/* Footer: أزرار التحكم (قبول، تحميل، حذف) */}
+      <div className="p-4 border-t border-gray-800 bg-gray-900 flex justify-between items-center">
+         <div className="flex gap-2">
+             {/* زر القبول (يظهر فقط إذا كان الملف لم ينشر بعد) */}
+             {selectedFile.status !== "approved" && (
+                 <button 
+                   onClick={() => { handleApprove(selectedFile.id); setSelectedFile(null); }}
+                   className="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors"
+                 >
+                   <FaCheck /> قبول ونشر
+                 </button>
+             )}
+             
+             {/* زر التحميل */}
+             <button 
+               onClick={() => handleDownload(selectedFile.fileUrl, selectedFile.title, selectedFile.fileType)}
+               disabled={downloading}
+               className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors"
+             >
+               {downloading ? <Loader2 className="animate-spin" size={16}/> : <FaDownload size={16}/>} تحميل
+             </button>
+         </div>
+         
+         {/* زر الحذف */}
+         <button 
+            onClick={() => handleDelete(selectedFile.id)} 
+            className="text-red-500 hover:bg-red-500/10 px-4 py-2 rounded-lg transition-colors"
+         >
+             حذف
+         </button>
+      </div>
+    </div>
+  </div>
+)}
   );
 }
