@@ -30,7 +30,7 @@ export default function AdminDashboard() {
     fetchData();
   }, []);
 
-  // دوال التحكم
+  // دوال التحكم (قبول / حذف)
   const handleApprove = async (id) => {
     if (!confirm("نشر هذا الملف للطلاب؟")) return;
     try {
@@ -149,7 +149,7 @@ export default function AdminDashboard() {
           </div>
       )}
 
-      {/* ==================== Modal (نافذة المعاينة) ==================== */}
+      {/* ==================== Modal (نافذة المعاينة المحدثة) ==================== */}
       {selectedFile && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fadeIn">
           <div className="bg-[#151720] w-full max-w-5xl h-[85vh] rounded-2xl border border-gray-700 flex flex-col shadow-2xl overflow-hidden">
@@ -168,48 +168,36 @@ export default function AdminDashboard() {
             {/* Body */}
             <div className="flex-1 bg-gray-950 relative flex items-center justify-center p-4 overflow-hidden">
               
-              {/* الكود الجديد لمعاينة PDF */}
+              {/* التغيير هنا: عرض الزر فقط للـ PDF */}
               {(selectedFile.fileType === 'pdf' || selectedFile.fileUrl?.endsWith('.pdf')) ? (
-                <div className="relative w-full h-full">
-                    {/* iframe للمعاينة */}
-                    <iframe 
-                      src={`${selectedFile.fileUrl}#toolbar=0`}
-                      width="100%" 
-                      height="100%" 
-                      style={{border:'none', backgroundColor: 'white', borderRadius: '8px'}}
-                      title="PDF Preview"
-                    ></iframe>
+                <div className="flex flex-col items-center justify-center gap-6">
+                    <FaFilePdf className="text-gray-700 w-32 h-32 animate-pulse" />
                     
-                    {/* زر الفتح في نافذة جديدة */}
-                    <a 
-                      href={selectedFile.fileUrl} 
-                      target="_blank" 
-                      rel="noreferrer" 
-                      style={{
-                        position:'absolute', 
-                        bottom:'20px', 
-                        left:'50%', 
-                        transform:'translateX(-50%)', 
-                        background:'rgba(255, 255, 255, 0.95)', 
-                        padding:'10px 25px', 
-                        borderRadius:'25px', 
-                        textDecoration:'none', 
-                        color:'black', 
-                        fontSize:'0.9em', 
-                        fontWeight:'bold', 
-                        boxShadow:'0 5px 15px rgba(0,0,0,0.5)',
-                        zIndex: 10,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        whiteSpace: 'nowrap'
-                      }}
+                    {/* 👇👇 الزر الخاص بك هنا 👇👇 */}
+                    <button 
+                        onClick={() => window.open(selectedFile.fileUrl, '_blank')}
+                        style={{
+                            background: '#00f260',
+                            color: '#000',
+                            padding: '12px 30px',
+                            borderRadius: '12px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            border: 'none',
+                            fontSize: '1.1rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            boxShadow: '0 0 20px rgba(0, 242, 96, 0.3)'
+                        }}
                     >
-                      <FaFilePdf className="text-red-600" /> فتح في نافذة جديدة
-                    </a>
+                        📖 فتح PDF في نافذة جديدة
+                    </button>
+                    
+                    <p className="text-gray-500 text-sm mt-2">سيتم فتح الملف في تبويب جديد للقراءة</p>
                 </div>
               ) : (
-                /* إذا كان صورة */
+                /* إذا كان صورة تظهر كما هي */
                 <img src={selectedFile.fileUrl} alt="Preview" className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />
               )}
               
@@ -217,15 +205,18 @@ export default function AdminDashboard() {
 
             {/* Footer */}
             <div className="p-4 border-t border-gray-800 bg-gray-900 flex justify-between items-center">
-               <a 
-                 href={selectedFile.fileUrl} 
-                 target="_blank" 
-                 download 
-                 className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors"
-               >
-                 <FaDownload /> تحميل الملف
-               </a>
-               <button onClick={() => setSelectedFile(null)} className="text-gray-400 hover:text-white text-sm">إغلاق النافذة</button>
+               <div className="flex gap-3">
+                   {/* زر تحميل إضافي */}
+                   <a 
+                     href={selectedFile.fileUrl} 
+                     target="_blank" 
+                     download 
+                     className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors"
+                   >
+                     <FaDownload /> تحميل
+                   </a>
+               </div>
+               <button onClick={() => setSelectedFile(null)} className="text-gray-400 hover:text-white text-sm">إغلاق</button>
             </div>
           </div>
         </div>
