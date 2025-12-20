@@ -1,106 +1,92 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { db } from "@/lib/firebase";
+import { useAuth } from "../../../context/AuthContext"; // تأكد من المسار
+import { db } from "../../../lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { FaCloudUploadAlt, FaCheckCircle, FaHourglassHalf, FaEye, FaDownload, FaFilePdf, FaImage, FaTimes } from "react-icons/fa";
-import { Loader2 } from "lucide-react";
-import Link from "next/link";
+import { FaCloudUploadAlt, FaCheckCircle, FaHourglassHalf, FaEye, FaDownload } from "react-icons/fa";
 
 export default function MyUploadsPage() {
   const { user } = useAuth();
   const [uploads, setUploads] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedFile, setSelectedFile] = useState(null); // للمعاينة
 
   useEffect(() => {
     async function fetchMyUploads() {
       if (!user) return;
+
       try {
+        // البحث عن المواد التي يكون فيها "uploader" مطابق لاسم المستخدم الحالي
         const q = query(collection(db, "materials"), where("uploader", "==", user.name));
         const snapshot = await getDocs(q);
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // ترتيب يدوي
-        data.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+        
+        const data = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        // ترتيب الأحدث أولاً (يمكنك عمل هذا في الكويري أيضاً إذا أضفت index)
+        data.sort((a, b) => new Date(b.date) - new Date(a.date));
+
         setUploads(data);
-      } catch (err) { console.error(err); } 
-      finally { setLoading(false); }
+      } catch (err) {
+        console.error("Error fetching uploads:", err);
+      } finally {
+        setLoading(false);
+      }
     }
+
     fetchMyUploads();
   }, [user]);
 
-  if (loading) return <div className="flex justify-center mt-20 text-blue-500"><Loader2 className="animate-spin w-10 h-10" /></div>;
+  if (loading) return <div style={{textAlign:'center', marginTop:'50px', color:'white'}}>جاري تحميل ملفاتك...</div>;
 
   return (
-    <div className="space-y-8 animate-fadeIn text-white">
-      <div className="flex items-center justify-between border-b border-gray-800 pb-6">
-        <div>
-            <h2 className="text-3xl font-bold mb-2">ملفاتي المرفوعة</h2>
-            <p className="text-gray-400">تابع حالة قبول ملخصاتك هنا</p>
-        </div>
-        <Link href="/dashboard/upload">
-            <button className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2">
-                <FaCloudUploadAlt size={20} /> رفع جديد
-            </button>
-        </Link>
-      </div>
+    <div>
+      <h2 className="page-title" style={{color:'white', fontSize:'2em', fontWeight:'900', marginBottom:'30px'}}>ملخصاتي ومشاركاتي</h2>
 
       {uploads.length === 0 ? (
-        <div className="text-center py-20 bg-gray-900/50 rounded-3xl border border-gray-800 border-dashed">
-            <p className="text-gray-400 text-xl mb-6">لم تقم برفع أي ملفات بعد</p>
-            <Link href="/dashboard/upload">
-                <button className="px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold rounded-xl">ارفع أول ملخص</button>
-            </Link>
+        <div className="empty-state">
+            <span className="empty-state-icon">📂</span>
+            <p>لم تقم برفع أي ملفات بعد.</p>
+            {/* سنقوم لاحقاً بتفعيل زر الرفع للطلاب */}
+            <button className="btn" style={{width:'auto', marginTop:'15px', background: 'var(--gradient-1)'}}>
+                ارفع أول ملخص ليك
+            </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div style={{display:'grid', gap:'20px'}}>
             {uploads.map(item => (
-                <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-2xl p-6 relative group hover:border-blue-500/30 transition-all">
-                    {/* Badge الحالة */}
-                    <div className={`absolute left-4 top-4 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${item.status === 'approved' ? 'bg-green-500/10 text-green-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
-                        {item.status === 'approved' ? <><FaCheckCircle /> تم النشر</> : <><FaHourglassHalf /> قيد المراجعة</>}
+                <div key={item.id} className="material-card" style={{
+                    borderLeft: `5px solid ${item.status === 'approved' ? '#00f260' : '#ffc107'}`,
+                    cursor: 'default'
+                }}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'10px'}}>
+                        <span className="material-type-badge" style={{position:'static', background:'#333'}}>
+                            {item.type === 'summary' ? 'ملخص' : 'تكليف'}
+                        </span>
+                        
+                        {/* حالة الملف */}
+                        {item.status === 'approved' ? (
+                            <span style={{color:'#00f260', display:'flex', alignItems:'center', gap:'5px', fontSize:'0.9em', background:'rgba(0,242,96,0.1)', padding:'5px 10px', borderRadius:'15px'}}>
+                                <FaCheckCircle /> تم النشر
+                            </span>
+                        ) : (
+                            <span style={{color:'#ffc107', display:'flex', alignItems:'center', gap:'5px', fontSize:'0.9em', background:'rgba(255,193,7,0.1)', padding:'5px 10px', borderRadius:'15px'}}>
+                                <FaHourglassHalf /> قيد المراجعة
+                            </span>
+                        )}
                     </div>
 
-                    <div className="flex items-center gap-4 mt-8">
-                        <div className="p-3 bg-gray-800 rounded-xl">
-                            {(item.fileType === 'pdf' || item.fileUrl?.endsWith('.pdf')) ? <FaFilePdf className="text-red-500 w-8 h-8" /> : <FaImage className="text-blue-400 w-8 h-8" />}
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-bold line-clamp-1">{item.title}</h3>
-                            <p className="text-sm text-gray-500">{item.subject}</p>
-                        </div>
-                    </div>
+                    <h3 style={{color:'white', fontSize:'1.3em', marginBottom:'5px'}}>{item.title}</h3>
+                    <p style={{color:'#888', fontSize:'0.9em'}}>{item.subject}</p>
 
-                    <div className="flex gap-3 mt-6">
-                         <button onClick={() => setSelectedFile(item)} className="flex-1 bg-gray-800 hover:bg-gray-700 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2">
-                            <FaEye /> معاينة
-                         </button>
-                         <a href={item.fileUrl} target="_blank" download className="bg-gray-800 hover:bg-gray-700 px-4 rounded-xl flex items-center text-gray-400 hover:text-white transition-colors">
-                            <FaDownload />
-                         </a>
+                    <div style={{marginTop:'15px', paddingTop:'15px', borderTop:'1px solid #333', display:'flex', gap:'20px', color:'#aaa', fontSize:'0.9em'}}>
+                        <span style={{display:'flex', alignItems:'center', gap:'5px'}}><FaEye /> {item.viewCount || 0} مشاهدة</span>
+                        <span style={{display:'flex', alignItems:'center', gap:'5px'}}><FaDownload /> {item.downloadCount || 0} تحميل</span>
+                        <span style={{marginLeft:'auto'}}>{new Date(item.date).toLocaleDateString("ar-EG")}</span>
                     </div>
                 </div>
             ))}
-        </div>
-      )}
-
-      {/* ==================== نفس نافذة المعاينة (MODAL) ==================== */}
-      {selectedFile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-gray-900 w-full max-w-5xl h-[85vh] rounded-2xl border border-gray-700 flex flex-col shadow-2xl">
-            <div className="p-4 flex justify-between items-center border-b border-gray-800">
-                <h3 className="font-bold text-lg">{selectedFile.title}</h3>
-                <button onClick={() => setSelectedFile(null)} className="p-2 hover:bg-red-500/20 hover:text-red-500 rounded-full transition-colors"><FaTimes size={20} /></button>
-            </div>
-            <div className="flex-1 bg-gray-800 relative overflow-hidden flex items-center justify-center">
-                 {/* عرض الـ PDF أو الصورة */}
-                 {(selectedFile.fileType === 'pdf' || selectedFile.fileUrl?.endsWith('.pdf')) ? (
-                    <iframe src={selectedFile.fileUrl} className="w-full h-full bg-white" title="Preview" />
-                 ) : (
-                    <img src={selectedFile.fileUrl} alt="preview" className="max-h-full max-w-full object-contain" />
-                 )}
-            </div>
-          </div>
         </div>
       )}
     </div>
