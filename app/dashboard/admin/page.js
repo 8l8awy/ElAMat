@@ -1,4 +1,5 @@
 "use client";
+// Build version: 2.0 - Clean rebuild
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase"; 
