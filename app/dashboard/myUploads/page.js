@@ -1,10 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useAuth } from "../../../context/AuthContext"; 
+import { useAuth } from "../../../context/AuthContext"; // تأكد من المسار
 import { db } from "../../../lib/firebase";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
-import { FaCheckCircle, FaHourglassHalf, FaEye, FaDownload, FaFileUpload } from "react-icons/fa";
-import Link from "next/link"; // ✅ استيراد Link للتنقل
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { FaCloudUploadAlt, FaCheckCircle, FaHourglassHalf, FaEye, FaDownload } from "react-icons/fa";
 
 export default function MyUploadsPage() {
   const { user } = useAuth();
@@ -16,13 +15,8 @@ export default function MyUploadsPage() {
       if (!user) return;
 
       try {
-        // ✅ استخدام orderBy في الكويري مباشرة لترتيب أسرع (تتطلب Index في الفايربيس أحياناً)
-        // إذا واجهت مشكلة في الـ Index، ابق على كود الترتيب اليدوي الذي كتبته أنت
-        const q = query(
-            collection(db, "materials"), 
-            where("uploader", "==", user.name)
-        );
-        
+        // البحث عن المواد التي يكون فيها "uploader" مطابق لاسم المستخدم الحالي
+        const q = query(collection(db, "materials"), where("uploader", "==", user.name));
         const snapshot = await getDocs(q);
         
         const data = snapshot.docs.map(doc => ({
@@ -30,7 +24,7 @@ export default function MyUploadsPage() {
             ...doc.data()
         }));
 
-        // ترتيب يدوي (الأحدث أولاً) - هذا ممتاز ولا يسبب مشاكل
+        // ترتيب الأحدث أولاً (يمكنك عمل هذا في الكويري أيضاً إذا أضفت index)
         data.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         setUploads(data);
@@ -44,64 +38,52 @@ export default function MyUploadsPage() {
     fetchMyUploads();
   }, [user]);
 
-  if (loading) return (
-    <div className="flex h-[50vh] items-center justify-center text-white">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-    </div>
-  );
+  if (loading) return <div style={{textAlign:'center', marginTop:'50px', color:'white'}}>جاري تحميل ملفاتك...</div>;
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-bold text-white">ملفاتي ومشاركاتي</h2>
-          {/* زر رفع جديد يظهر دائماً في الأعلى */}
-          <Link href="/dashboard/upload" className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all">
-             <FaFileUpload /> رفع ملف جديد
-          </Link>
-      </div>
+    <div>
+      <h2 className="page-title" style={{color:'white', fontSize:'2em', fontWeight:'900', marginBottom:'30px'}}>ملخصاتي ومشاركاتي</h2>
 
       {uploads.length === 0 ? (
-        <div className="text-center py-20 bg-[#151720] rounded-2xl border border-gray-800">
-            <span className="text-6xl mb-4 block">📂</span>
-            <p className="text-gray-400 text-lg mb-6">لم تقم برفع أي ملفات بعد.</p>
-            
-            {/* ✅ تفعيل الزر ليوجه لصفحة الرفع */}
-            <Link href="/dashboard/upload" className="inline-block bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-8 py-3 rounded-xl font-bold hover:scale-105 transition-transform">
-                ارفع أول ملخص ليك 🚀
-            </Link>
+        <div className="empty-state">
+            <span className="empty-state-icon">📂</span>
+            <p>لم تقم برفع أي ملفات بعد.</p>
+            {/* سنقوم لاحقاً بتفعيل زر الرفع للطلاب */}
+            <button className="btn" style={{width:'auto', marginTop:'15px', background: 'var(--gradient-1)'}}>
+                ارفع أول ملخص ليك
+            </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div style={{display:'grid', gap:'20px'}}>
             {uploads.map(item => (
-                <div key={item.id} className="bg-[#151720] border border-gray-800 rounded-2xl p-5 hover:border-blue-500/30 transition-all relative overflow-hidden group">
-                    
-                    {/* شريط الحالة الملون على اليمين */}
-                    <div className={`absolute top-0 right-0 bottom-0 w-1 ${item.status === 'approved' ? 'bg-[#00f260]' : 'bg-[#ffc107'}`}></div>
-
-                    <div className="flex justify-between items-start mb-4 pr-3">
-                        <span className="bg-gray-800 text-gray-300 px-3 py-1 rounded-lg text-sm border border-gray-700">
+                <div key={item.id} className="material-card" style={{
+                    borderLeft: `5px solid ${item.status === 'approved' ? '#00f260' : '#ffc107'}`,
+                    cursor: 'default'
+                }}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'10px'}}>
+                        <span className="material-type-badge" style={{position:'static', background:'#333'}}>
                             {item.type === 'summary' ? 'ملخص' : 'تكليف'}
                         </span>
                         
                         {/* حالة الملف */}
                         {item.status === 'approved' ? (
-                            <span className="text-[#00f260] bg-[#00f260]/10 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 border border-[#00f260]/20">
+                            <span style={{color:'#00f260', display:'flex', alignItems:'center', gap:'5px', fontSize:'0.9em', background:'rgba(0,242,96,0.1)', padding:'5px 10px', borderRadius:'15px'}}>
                                 <FaCheckCircle /> تم النشر
                             </span>
                         ) : (
-                            <span className="text-[#ffc107] bg-[#ffc107]/10 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 border border-[#ffc107]/20">
+                            <span style={{color:'#ffc107', display:'flex', alignItems:'center', gap:'5px', fontSize:'0.9em', background:'rgba(255,193,7,0.1)', padding:'5px 10px', borderRadius:'15px'}}>
                                 <FaHourglassHalf /> قيد المراجعة
                             </span>
                         )}
                     </div>
 
-                    <h3 className="text-white text-xl font-bold mb-2 pr-3 line-clamp-1">{item.title}</h3>
-                    <p className="text-gray-400 text-sm pr-3 mb-4">{item.subject}</p>
+                    <h3 style={{color:'white', fontSize:'1.3em', marginBottom:'5px'}}>{item.title}</h3>
+                    <p style={{color:'#888', fontSize:'0.9em'}}>{item.subject}</p>
 
-                    <div className="flex items-center gap-4 text-gray-500 text-xs border-t border-gray-800 pt-4 pr-3">
-                        <span className="flex items-center gap-1"><FaEye /> {item.viewCount || 0}</span>
-                        <span className="flex items-center gap-1"><FaDownload /> {item.downloadCount || 0}</span>
-                        <span className="mr-auto">{new Date(item.date).toLocaleDateString("ar-EG")}</span>
+                    <div style={{marginTop:'15px', paddingTop:'15px', borderTop:'1px solid #333', display:'flex', gap:'20px', color:'#aaa', fontSize:'0.9em'}}>
+                        <span style={{display:'flex', alignItems:'center', gap:'5px'}}><FaEye /> {item.viewCount || 0} مشاهدة</span>
+                        <span style={{display:'flex', alignItems:'center', gap:'5px'}}><FaDownload /> {item.downloadCount || 0} تحميل</span>
+                        <span style={{marginLeft:'auto'}}>{new Date(item.date).toLocaleDateString("ar-EG")}</span>
                     </div>
                 </div>
             ))}
