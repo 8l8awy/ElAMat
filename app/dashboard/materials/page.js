@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase"; 
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
-// ✅ استيراد الأيقونات الكلاسيكية المتوافقة مع جميع الإصدارات
+// ✅ تم استبدال الأيقونات بأسماء متوافقة مع الإصدار القديم والجديد
 import { 
   FaCloudDownloadAlt, // بديلة لـ FaCloudArrowDown
   FaEye, 
@@ -24,7 +24,7 @@ function MaterialsContent() {
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
 
-  // دالة فحص الملفات
+  // دالة فحص الملفات (صور أم PDF)
   const isPdfFile = (file) => {
     const name = file.name?.toLowerCase() || "";
     const url = file.url?.toLowerCase() || "";
@@ -249,7 +249,7 @@ function MaterialsContent() {
                     </div>
                 </div>
 
-                {/* Body */}
+                {/* Body - استخدام عارض المتصفح بدلاً من Google Viewer */}
                 <div style={{flex:1, position:'relative', background:'#000', overflow: 'hidden', display:'flex', justifyContent:'center', alignItems:'center'}}>
                     {previewFile.type === 'pdf' ? (
                         <iframe 
