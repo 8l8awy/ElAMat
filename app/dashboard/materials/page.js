@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase"; 
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
-// ✅ تم تصحيح الاستيراد ليتوافق مع مكتبتك الحالية
+// ✅ استيراد الأيقونات الكلاسيكية المتوافقة مع جميع الإصدارات
 import { 
   FaCloudDownloadAlt, // بديلة لـ FaCloudArrowDown
   FaEye, 
