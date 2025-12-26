@@ -1,29 +1,10 @@
 "use client";
-
 import { useState, useEffect, Suspense } from "react";
-
 import { useSearchParams } from "next/navigation";
-
-import { db } from "../../../lib/firebase";
-
-import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
-
-import { 
-
-  FaCloudArrowDown, 
-
-  FaEye, 
-
-  FaFolderOpen, 
-
-  FaFilePdf, 
-
-  FaFileImage,
-
-  FaShareNodes,      
-
-} from "react-icons/fa6";
-
+import { db } from "@/lib/firebase"; // تأكد أن هذا المسار صحيح، أو استخدم ../../../lib/firebase
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { FaFilePdf, FaImage, FaExternalLinkAlt, FaSearch } from "react-icons/fa";
+import { Loader2 } from "lucide-react";
 
 // 1. مكون المحتوى الداخلي
 function MaterialsContent() {
