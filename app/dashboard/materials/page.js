@@ -235,31 +235,31 @@ function MaterialsContent() {
                 <div style={{flex:1, position:'relative', background:'#000', overflow: 'hidden', display:'flex', justifyContent:'center', alignItems:'center'}}>
                     {previewFile.type === 'pdf' ? (
                         /* الحل الجذري لعرض الـ PDF */
-                        <object
-                            data={previewFile.url}
-                            type="application/pdf"
-                            width="100%"
-                            height="100%"
-                            style={{border:'none'}}
-                        >
-                            {/* خطة بديلة 1: Google Viewer إذا فشل المتصفح */}
-                            <iframe 
-                                src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile.url)}&embedded=true`}
-                                width="100%" 
-                                height="100%" 
-                                style={{border:'none', background:'white'}}
-                                title="PDF Preview Fallback"
-                            >
-                                {/* خطة بديلة 2: رابط تحميل مباشر */}
-                                <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100%', flexDirection:'column', color:'white'}}>
-                                    <p>لا يمكن عرض الملف مباشرة داخل التطبيق.</p>
-                                    <a href={previewFile.url} target="_blank" rel="noreferrer" className="view-file-btn" style={{marginTop:'10px', background:'#00f260', color:'black', padding:'10px 20px', borderRadius:'5px', textDecoration:'none'}}>
-                                        اضغط هنا لفتح الملف
-                                    </a>
-                                </div>
-                            </iframe>
-                        </object>
-                    ) : (
+                       {/* محاولة عرض الـ PDF باستخدام عارض المتصفح الأصلي */}
+<object 
+    data={previewFile.url} 
+    type="application/pdf" 
+    width="100%" 
+    height="100%"
+    style={{border: 'none', background: '#333'}}
+>
+    {/* إذا فشل العرض الأصلي، نستخدم جوجل كخطة بديلة */}
+    <iframe 
+        src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile.url)}&embedded=true`}
+        width="100%" 
+        height="100%" 
+        style={{border:'none'}}
+        title="PDF Preview Fallback"
+    >
+        {/* إذا فشل الاثنان، يظهر رابط التحميل */}
+        <div style={{color:'white', textAlign:'center', marginTop:'20%'}}>
+            <p>عذراً، لا يدعم متصفحك عرض ملفات PDF مباشرة.</p>
+            <a href={previewFile.url} target="_blank" rel="noreferrer" style={{color:'#00f260'}}>
+                اضغط هنا لتحميل الملف
+            </a>
+        </div>
+    </iframe>
+</object> (
                         <div className="modal-image-scroll" style={{width:'100%', height:'100%', overflow:'auto', display:'flex', justifyContent:'center'}}>
                            <img src={previewFile.url} alt="Preview" style={{maxWidth:'100%', objectFit:'contain'}} />
                         </div>
