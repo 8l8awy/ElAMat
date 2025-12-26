@@ -3,16 +3,17 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase"; 
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
+// ✅ تم تصحيح الاستيراد ليتوافق مع مكتبتك الحالية
 import { 
-  FaCloudDownloadAlt, // ✅ تم التعديل (بدلاً من FaCloudArrowDown)
+  FaCloudDownloadAlt, // بديلة لـ FaCloudArrowDown
   FaEye, 
   FaFolderOpen, 
   FaFilePdf, 
   FaFileImage,
-  FaShareAlt,         // ✅ تم التعديل (بدلاً من FaShareNodes)
+  FaShareAlt,         // بديلة لـ FaShareNodes
   FaTimes,
   FaExternalLinkAlt     
-} from "react-icons/fa"; // ✅ الاستيراد الآن صحيح ومتوافق
+} from "react-icons/fa"; 
 
 function MaterialsContent() {
   const searchParams = useSearchParams();
