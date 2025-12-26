@@ -2,10 +2,9 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase"; 
-// ✅ أضفنا updateDoc لتحديث الحالة
 import { useAuth } from "@/context/AuthContext";
 import { collection, addDoc, deleteDoc, updateDoc, doc, getDocs, query, where, serverTimestamp, orderBy, onSnapshot } from "firebase/firestore";
-import { FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaLock, FaSignOutAlt, FaCheck, FaTimes } from "react-icons/fa";
+import { FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaLock, FaCheck, FaTimes, FaExternalLinkAlt } from "react-icons/fa";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -102,27 +101,17 @@ export default function AdminPage() {
     await verifyCode(inputCode);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminCode");
-    setIsAuthenticated(false);
-    setShowFake404(true);
-    setInputCode("");
-    router.push("/");
-  };
-
   // ✅ جلب البيانات وفصلها (مقبولة vs معلقة)
   useEffect(() => {
     if (!isAuthenticated) return;
     
-    // نجلب كل المواد ونرتبها حسب التاريخ
     const q = query(collection(db, "materials"), orderBy("date", "desc"));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const allData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
-      // نفصل البيانات هنا
       const approved = allData.filter(item => item.status === "approved");
-      const pending = allData.filter(item => item.status === "pending"); // تأكد أن الطلاب يرفعون بحالة pending
+      const pending = allData.filter(item => item.status === "pending");
       
       setMaterialsList(approved);
       setPendingList(pending);
@@ -131,6 +120,21 @@ export default function AdminPage() {
     
     return () => unsubscribe();
   }, [isAuthenticated]);
+
+  // ✅ دالة جديدة لفتح الملف في صفحة جديدة
+  const openFile = (item) => {
+    // نحاول الحصول على الرابط سواء كان في مصفوفة files أو كـ fileUrl مباشر
+    let url = item.fileUrl; // الصيغة القديمة أو المباشرة
+    if (!url && item.files && item.files.length > 0) {
+        url = item.files[0].url; // الصيغة الجديدة (مصفوفة)
+    }
+
+    if (url) {
+        window.open(url, '_blank');
+    } else {
+        alert("لا يوجد ملف للعرض");
+    }
+  };
 
   // ✅ دوال التعامل مع الطلبات (حذف / قبول)
   const handleDelete = async (id, title) => { if (confirm(`حذف "${title}" نهائياً؟`)) await deleteDoc(doc(db, "materials", id)); };
@@ -169,7 +173,7 @@ export default function AdminPage() {
       await addDoc(collection(db, "materials"), {
         title, desc, subject, type, files: uploadedFilesData,
         date: new Date().toISOString(), 
-        status: "approved", // الأدمن يرفع مباشرة بحالة approved
+        status: "approved", 
         viewCount: 0, downloadCount: 0, createdAt: serverTimestamp(),
       });
       setUploading(false); setTitle(""); setDesc(""); setFiles([]); setMessage("تم الرفع بنجاح! ");
@@ -224,7 +228,6 @@ export default function AdminPage() {
     <div className="admin-container">
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px'}}>
         <h1 style={{color: 'white', fontSize: '2rem'}}>لوحة التحكم 🚀</h1>
-        {/* زر الخروج محذوف حسب طلبك */}
       </div>
 
       {message && <div style={{background: 'rgba(0, 242, 96, 0.2)', color: '#00f260', padding: '15px', borderRadius: '10px', textAlign: 'center', marginBottom: '20px', border: '1px solid #00f260'}}><FaCheckCircle /> {message}</div>}
@@ -243,15 +246,19 @@ export default function AdminPage() {
       {pendingList.length > 0 && (
         <div style={{marginBottom: '40px', border: '1px solid #eab308', borderRadius: '15px', padding: '20px', background: 'rgba(234, 179, 8, 0.05)'}}>
           <h2 style={{color: '#eab308', marginTop: 0, display: 'flex', alignItems: 'center', gap: '10px'}}>
-             ⚠️ طلبات قيد الانتظار ({pendingList.length})
+              ⚠️ طلبات قيد الانتظار ({pendingList.length})
           </h2>
           <div style={{display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px'}}>
             {pendingList.map((item) => (
                 <div key={item.id} style={{background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
-                        <h4 style={{color: 'white', margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                    <div 
+                        onClick={() => openFile(item)} 
+                        style={{display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer'}}
+                        title="اضغط لفتح الملف"
+                    >
+                        <h4 style={{color: 'white', margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'underline', textDecorationColor: '#666'}}>
                             <FaFilePdf style={{color: '#ccc'}} /> {item.title} 
-                            <span style={{fontSize: '0.8rem', background: '#333', padding: '2px 6px', borderRadius: '4px'}}>طالب</span>
+                            <span style={{fontSize: '0.8rem', background: '#333', padding: '2px 6px', borderRadius: '4px', textDecoration: 'none'}}>طالب</span>
                         </h4>
                         <div style={{display: 'flex', gap: '10px', fontSize: '0.85rem'}}>
                             <span style={{color: '#ccc'}}>📌 {item.subject}</span>
@@ -277,8 +284,14 @@ export default function AdminPage() {
         <div style={{display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px'}}>
             {materialsList.map((item) => (
                 <div key={item.id} style={{background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
-                        <h4 style={{color: 'white', margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px'}}><FaFilePdf style={{color: item.type === 'summary' ? '#00f260' : '#ff9f43'}} /> {item.title}</h4>
+                    <div 
+                        onClick={() => openFile(item)}
+                        style={{display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer'}}
+                        title="اضغط لفتح الملف"
+                    >
+                        <h4 style={{color: 'white', margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'underline', textDecorationColor: '#666'}}>
+                            <FaFilePdf style={{color: item.type === 'summary' ? '#00f260' : '#ff9f43'}} /> {item.title} <FaExternalLinkAlt size={12} color="#888"/>
+                        </h4>
                         <div style={{display: 'flex', gap: '10px', fontSize: '0.85rem'}}>
                             <span style={{color: '#ccc', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '6px'}}>📌 {item.subject}</span>
                             <span style={{color: item.type === 'summary' ? '#00f260' : '#ff9f43', background: item.type === 'summary' ? 'rgba(0, 242, 96, 0.1)' : 'rgba(255, 159, 67, 0.1)', padding: '2px 8px', borderRadius: '6px'}}>{item.type === 'assignment' ? 'تكليف' : 'ملخص'}</span>
