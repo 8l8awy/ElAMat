@@ -4,14 +4,14 @@ import { useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase"; 
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
 
-// ✅ تم استخدام أيقونات مضمونة (FaCloudDownloadAlt و FaShareAlt) لحل مشكلة الـ Build
+// ✅ تغيير جذري: استخدام أيقونات أساسية موجودة في كل الإصدارات
 import { 
-  FaCloudDownloadAlt, 
+  FaDownload, // أيقونة تحميل أساسية (بدلاً من FaCloudDownloadAlt)
   FaEye, 
   FaFolderOpen, 
   FaFilePdf, 
   FaFileImage,
-  FaShareAlt,         
+  FaShare,    // أيقونة مشاركة أساسية (بدلاً من FaShareAlt)
   FaTimes,
   FaExternalLinkAlt     
 } from "react-icons/fa"; 
@@ -25,13 +25,11 @@ function MaterialsContent() {
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
 
-  // فحص دقيق لنوع الملف
   const isPdfFile = (file) => {
     const name = file.name?.toLowerCase() || "";
     const url = file.url?.toLowerCase() || "";
     const type = file.type?.toLowerCase() || "";
 
-    // إذا كان الامتداد صورة، فهو ليس PDF
     if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".webp") ||
         url.includes(".png") || url.includes(".jpg") || url.includes(".jpeg")) {
         return false;
@@ -149,7 +147,7 @@ function MaterialsContent() {
                         
                         <div style={{display:'flex', gap:'8px', fontSize:'0.8em', color:'#aaa', alignItems:'center'}}>
                             <span><FaEye /> {m.viewCount || 0}</span>
-                            <span><FaCloudDownloadAlt /> {m.downloadCount || 0}</span>
+                            <span><FaDownload /> {m.downloadCount || 0}</span>
                         </div>
                     </div>
 
@@ -179,14 +177,14 @@ function MaterialsContent() {
                 </div>
                 <div style={{width:'1px', background:'#333'}}></div>
                 <div style={{textAlign:'center', color:'#3b82f6'}}>
-                    <FaCloudDownloadAlt size={20} /> <span style={{fontSize:'0.8em', color:'#ccc'}}> {selectedMaterial.downloadCount || 0}</span>
+                    <FaDownload size={20} /> <span style={{fontSize:'0.8em', color:'#ccc'}}> {selectedMaterial.downloadCount || 0}</span>
                 </div>
             </div>
 
             <p style={{textAlign:'center', color:'#888', marginBottom:'20px'}}>{selectedMaterial.desc}</p>
             
             <button onClick={() => handleShare(selectedMaterial)} style={{width: '100%', background: 'var(--gradient-3)', color: 'white', padding: '12px', borderRadius: '8px', marginBottom: '20px', border: 'none', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
-                <FaShareAlt /> مشاركة
+                <FaShare /> مشاركة
             </button>
 
             <div className="modal-files-scroll">
@@ -214,7 +212,7 @@ function MaterialsContent() {
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                           <FaCloudDownloadAlt /> تحميل
+                           <FaDownload /> تحميل
                         </a>
                     </div>
                   </div>
@@ -227,7 +225,6 @@ function MaterialsContent() {
         </div>
       )}
 
-      {/* ✅ نافذة المعاينة: تم استخدام object لضمان العرض المباشر للـ PDF */}
       {previewFile && (
         <div className="modal active" onClick={() => setPreviewFile(null)} style={{display:'flex', zIndex: 3000}}>
            
@@ -250,12 +247,12 @@ function MaterialsContent() {
 
                 <div style={{flex:1, position:'relative', background:'#000', overflow: 'hidden', display:'flex', justifyContent:'center', alignItems:'center'}}>
                     {previewFile.type === 'pdf' ? (
-                        <object
-                            data={previewFile.url}
-                            type="application/pdf"
-                            width="100%"
+                        <object 
+                            data={previewFile.url} 
+                            type="application/pdf" 
+                            width="100%" 
                             height="100%"
-                            style={{border:'none'}}
+                            style={{border:'none', background:'white'}}
                         >
                             <iframe 
                                 src={previewFile.url}
