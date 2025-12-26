@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { db } from "../../../lib/firebase"; // تأكد من المسار
+import { db } from "../../../lib/firebase"; // تأكد من صحة مسار ملف firebase لديك
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
 import { 
   FaCloudArrowDown, 
@@ -21,9 +21,8 @@ function MaterialsContent() {
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
 
-  // دالة مساعدة لمعرفة هل الملف PDF أم لا
+  // دالة ذكية لمعرفة هل الملف PDF أم لا (من الاسم أو النوع)
   const isPdfFile = (file) => {
-    // نتحقق من النوع المسجل أو من امتداد الرابط
     const typeCheck = file.type?.toLowerCase().includes('pdf');
     const urlCheck = file.url?.toLowerCase().includes('.pdf') || file.name?.toLowerCase().includes('.pdf');
     return typeCheck || urlCheck;
@@ -39,6 +38,7 @@ function MaterialsContent() {
 
   const getDownloadUrl = (url) => {
     if (!url) return "#";
+    // تحسين رابط Cloudinary للتحميل المباشر إذا لزم الأمر
     if (url.includes("cloudinary.com") && url.includes("/upload/")) {
       return url.replace("/upload/", "/upload/fl_attachment/");
     }
@@ -107,11 +107,11 @@ function MaterialsContent() {
   };
 
   const handlePreviewFile = (file) => {
-    // تم التعديل لتمرير كائن الملف بالكامل بدلاً من الرابط فقط لضمان دقة الفحص
     const isPdf = isPdfFile(file);
     setPreviewFile({
         url: file.url,
-        type: isPdf ? 'pdf' : 'image'
+        type: isPdf ? 'pdf' : 'image',
+        name: file.name
     });
   };
 
@@ -186,7 +186,6 @@ function MaterialsContent() {
                 selectedMaterial.files.map((file, index) => (
                   <div key={index} className="modal-file-item" style={{background:'#222', padding:'15px', borderRadius:'10px', marginBottom:'10px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                     <span style={{color:'white', display:'flex', alignItems:'center', gap:'10px'}}>
-                        {/* استخدام الدالة الجديدة لفحص نوع الملف بدقة */}
                         {isPdfFile(file) ? <FaFilePdf color="#ef4444"/> : <FaFileImage color="#3b82f6"/>} 
                         {file.name}
                     </span>
@@ -220,34 +219,46 @@ function MaterialsContent() {
         </div>
       )}
 
-      {/* نافذة معاينة الملف الكبيرة */}
+      {/* ✅ نافذة معاينة الملف الكبيرة (تم تحديثها لإصلاح مشكلة الـ PDF)
+        نستخدم <object> بدلاً من الاعتماد الكلي على Google Viewer
+      */}
       {previewFile && (
         <div className="modal active" onClick={() => setPreviewFile(null)} style={{display:'flex', zIndex: 3000}}>
            
            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{maxWidth: '900px', width: '95%', height: '90vh', display:'flex', flexDirection:'column', padding: '0', overflow: 'hidden'}}>
                
                 <div style={{padding:'15px', background:'#1a1a1a', display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid #333'}}>
-                    <h3 style={{color:'white', margin:0, fontSize:'1em'}}>معاينة الملف</h3>
+                    <h3 style={{color:'white', margin:0, fontSize:'1em'}}>{previewFile.name || "معاينة الملف"}</h3>
                     <button className="close-btn" onClick={() => setPreviewFile(null)} style={{background:'transparent', border:'none', color:'white', fontSize:'1.5em', cursor:'pointer'}}>×</button>
                 </div>
 
                 <div style={{flex:1, position:'relative', background:'#000', overflow: 'hidden', display:'flex', justifyContent:'center', alignItems:'center'}}>
                     {previewFile.type === 'pdf' ? (
-                        <>
-                           {/* Google Viewer is good, ensure URL is encoded properly */}
-                           <iframe 
+                        /* الحل الجذري لعرض الـ PDF */
+                        <object
+                            data={previewFile.url}
+                            type="application/pdf"
+                            width="100%"
+                            height="100%"
+                            style={{border:'none'}}
+                        >
+                            {/* خطة بديلة 1: Google Viewer إذا فشل المتصفح */}
+                            <iframe 
                                 src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile.url)}&embedded=true`}
                                 width="100%" 
                                 height="100%" 
-                                style={{border:'none', background: 'white'}}
-                                title="PDF Preview"
-                            ></iframe>
-                            
-                            {/* زر احتياطي مهم جداً في حال فشل جوجل في العرض */}
-                            <a href={previewFile.url} target="_blank" rel="noreferrer" style={{position:'absolute', bottom:'20px', left:'50%', transform:'translateX(-50%)', background:'white', padding:'8px 20px', borderRadius:'20px', textDecoration:'none', color:'black', fontSize:'0.9em', fontWeight:'bold', boxShadow:'0 5px 15px rgba(0,0,0,0.5)', zIndex: 10}}>
-                                🔗 فتح الملف الأصلي
-                            </a>
-                        </>
+                                style={{border:'none', background:'white'}}
+                                title="PDF Preview Fallback"
+                            >
+                                {/* خطة بديلة 2: رابط تحميل مباشر */}
+                                <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100%', flexDirection:'column', color:'white'}}>
+                                    <p>لا يمكن عرض الملف مباشرة داخل التطبيق.</p>
+                                    <a href={previewFile.url} target="_blank" rel="noreferrer" className="view-file-btn" style={{marginTop:'10px', background:'#00f260', color:'black', padding:'10px 20px', borderRadius:'5px', textDecoration:'none'}}>
+                                        اضغط هنا لفتح الملف
+                                    </a>
+                                </div>
+                            </iframe>
+                        </object>
                     ) : (
                         <div className="modal-image-scroll" style={{width:'100%', height:'100%', overflow:'auto', display:'flex', justifyContent:'center'}}>
                            <img src={previewFile.url} alt="Preview" style={{maxWidth:'100%', objectFit:'contain'}} />
