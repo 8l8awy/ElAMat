@@ -4,14 +4,14 @@ import { useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase"; 
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
 
-// ✅ تغيير جذري: استخدام أيقونات أساسية موجودة في كل الإصدارات
+// ✅ استخدام أيقونات أساسية (FaDownload, FaShare) لضمان نجاح الـ Build
 import { 
-  FaDownload, // أيقونة تحميل أساسية (بدلاً من FaCloudDownloadAlt)
+  FaDownload, 
   FaEye, 
   FaFolderOpen, 
   FaFilePdf, 
   FaFileImage,
-  FaShare,    // أيقونة مشاركة أساسية (بدلاً من FaShareAlt)
+  FaShare,    
   FaTimes,
   FaExternalLinkAlt     
 } from "react-icons/fa"; 
@@ -25,15 +25,18 @@ function MaterialsContent() {
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
 
+  // دالة ذكية لمعرفة هل الملف PDF أم صورة
   const isPdfFile = (file) => {
     const name = file.name?.toLowerCase() || "";
     const url = file.url?.toLowerCase() || "";
     const type = file.type?.toLowerCase() || "";
 
+    // استبعاد الصور الصريحة
     if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".webp") ||
         url.includes(".png") || url.includes(".jpg") || url.includes(".jpeg")) {
         return false;
     }
+    // التأكد من أنه PDF
     return type.includes("pdf") || url.includes(".pdf") || name.includes(".pdf");
   };
 
@@ -225,6 +228,7 @@ function MaterialsContent() {
         </div>
       )}
 
+      {/* ✅ هذا هو الجزء المسؤول عن عرض الـ PDF بشكل صحيح (Object Tag) */}
       {previewFile && (
         <div className="modal active" onClick={() => setPreviewFile(null)} style={{display:'flex', zIndex: 3000}}>
            
