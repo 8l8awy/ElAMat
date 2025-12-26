@@ -705,96 +705,64 @@ export default function AdminPageImproved() {
         )}
 
         {/* Published Materials */}
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: '20px',
-          padding: '30px',
-          border: '1px solid rgba(255, 255, 255, 0.2)'
-        }}>
-          <h2 style={{
-            color: 'white',
-            marginTop: 0,
-            marginBottom: '25px',
-            fontSize: '1.5rem',
-            fontWeight: '600',
-            borderRight: '4px solid #48bb78',
-            paddingRight: '15px'
-          }}>
-            الملفات المنشورة ({materialsList.length})
-          </h2>
-          
-          <div style={{display: 'flex', flexDirection: 'column', gap: '15px'}}>
-            {materialsList.map((item) => (
-              <div key={item.id} style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '15px',
-                padding: '20px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '15px'
-              }}>
-                <div style={{flex: 1, minWidth: '200px'}}>
-                  <h4 style={{
-                    color: 'white',
-                    margin: '0 0 10px 0',
-                    fontSize: '1.1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px'
+      {/* Published Materials */}
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.05)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        borderRadius: '15px',
+        padding: '30px'
+      }}>
+        <h2 style={{color: 'white', borderRight: '4px solid #00f260', paddingRight: '10px'}}>
+          الملفات المنشورة ({materialsList.length})
+        </h2>
+        <div style={{display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px'}}>
+          {materialsList.map((item) => (
+            <div key={item.id} style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              padding: '15px 20px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                <h4 style={{color: 'white', margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                  <FaFilePdf style={{color: item.type === 'summary' ? '#00f260' : '#ff9f43'}} /> {item.title}
+                </h4>
+                <div style={{display: 'flex', gap: '10px', fontSize: '0.85rem'}}>
+                  <span style={{color: '#ccc', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '6px'}}>
+                    📌 {item.subject}
+                  </span>
+                  <span style={{
+                    color: item.type === 'summary' ? '#00f260' : '#ff9f43',
+                    background: item.type === 'summary' ? 'rgba(0, 242, 96, 0.1)' : 'rgba(255, 159, 67, 0.1)',
+                    padding: '2px 8px',
+                    borderRadius: '6px'
                   }}>
-                    {getFileIcon(item.files[0].type)} {item.title}
-                  </h4>
-                  <div style={{display: 'flex', gap: '12px', fontSize: '0.9rem', flexWrap: 'wrap'}}>
-                    <span style={{
-                      color: '#ccc',
-                      background: 'rgba(255,255,255,0.1)',
-                      padding: '4px 10px',
-                      borderRadius: '6px'
-                    }}>
-                      📌 {item.subject}
-                    </span>
-                    <span style={{
-                      color: item.type === 'summary' ? '#48bb78' : '#f59e0b',
-                      background: item.type === 'summary' ? 'rgba(72, 187, 120, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-                      padding: '4px 10px',
-                      borderRadius: '6px'
-                    }}>
-                      {item.type === 'assignment' ? '📋 تكليف' : '📝 ملخص'}
-                    </span>
-                  </div>
+                    {item.type === 'assignment' ? 'تكليف' : 'ملخص'}
+                  </span>
                 </div>
-                
-                <button
-                  onClick={() => handleDelete(item.id, item.title)}
-                  style={{
-                    background: 'transparent',
-                    color: '#ef4444',
-                    border: '1px solid rgba(239, 68, 68, 0.4)',
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '10px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    transition: 'all 0.3s'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                  }}
-                >
-                  <FaTrash size={16} />
-                </button>
               </div>
-            ))}
-          </div>
+              <button 
+                onClick={() => handleDelete(item.id, item.title)} 
+                style={{
+                  background: 'transparent',
+                  color: '#ff4d4d',
+                  border: '1px solid rgba(255, 77, 77, 0.3)',
+                  width: '35px',
+                  height: '35px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}
+              >
+                <FaTrash size={14} />
+              </button>
+            </div>
+          ))}
         </div>
       </div>
     </div>
