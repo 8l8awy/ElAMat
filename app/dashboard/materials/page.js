@@ -3,15 +3,14 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase"; 
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
-
-// ✅ التغيير الجذري هنا: استخدام أيقونات متوافقة مع جميع الإصدارات
+// ✅ استخدام أيقونات آمنة تعمل على كل الإصدارات
 import { 
-  FaCloudDownloadAlt, // بديل مضمون لـ FaCloudArrowDown
+  FaCloudDownloadAlt, 
   FaEye, 
   FaFolderOpen, 
   FaFilePdf, 
   FaFileImage,
-  FaShareAlt,         // بديل مضمون لـ FaShareNodes
+  FaShareAlt,         
   FaTimes,
   FaExternalLinkAlt     
 } from "react-icons/fa"; 
@@ -25,7 +24,6 @@ function MaterialsContent() {
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
 
-  // دالة فحص الملفات (صور أم PDF)
   const isPdfFile = (file) => {
     const name = file.name?.toLowerCase() || "";
     const url = file.url?.toLowerCase() || "";
@@ -35,7 +33,6 @@ function MaterialsContent() {
         url.includes(".png") || url.includes(".jpg") || url.includes(".jpeg")) {
         return false;
     }
-    
     return type.includes("pdf") || url.includes(".pdf") || name.includes(".pdf");
   };
 
@@ -149,7 +146,6 @@ function MaterialsContent() {
                         
                         <div style={{display:'flex', gap:'8px', fontSize:'0.8em', color:'#aaa', alignItems:'center'}}>
                             <span><FaEye /> {m.viewCount || 0}</span>
-                            {/* استخدام الأيقونة الآمنة */}
                             <span><FaCloudDownloadAlt /> {m.downloadCount || 0}</span>
                         </div>
                     </div>
@@ -167,32 +163,24 @@ function MaterialsContent() {
         )}
       </div>
 
-      {/* نافذة تفاصيل المادة */}
       {selectedMaterial && !previewFile && (
         <div className="modal active" onClick={() => setSelectedMaterial(null)} style={{display:'flex'}}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <span className="close" onClick={() => setSelectedMaterial(null)}>&times;</span>
-            
             <h2 style={{textAlign:'center', marginBottom:'10px'}}>{selectedMaterial.title}</h2>
-            
             <div style={{display:'flex', justifyContent:'center', gap:'20px', marginBottom:'20px', background:'#1a1a1a', padding:'10px', borderRadius:'10px', border: '1px solid #333'}}>
                 <div style={{textAlign:'center', color:'#00f260'}}>
                     <FaEye size={20} /> <span style={{fontSize:'0.8em', color:'#ccc'}}> {selectedMaterial.viewCount || 0}</span>
                 </div>
                 <div style={{width:'1px', background:'#333'}}></div>
                 <div style={{textAlign:'center', color:'#3b82f6'}}>
-                    {/* استخدام الأيقونة الآمنة */}
                     <FaCloudDownloadAlt size={20} /> <span style={{fontSize:'0.8em', color:'#ccc'}}> {selectedMaterial.downloadCount || 0}</span>
                 </div>
             </div>
-
             <p style={{textAlign:'center', color:'#888', marginBottom:'20px'}}>{selectedMaterial.desc}</p>
-            
             <button onClick={() => handleShare(selectedMaterial)} style={{width: '100%', background: 'var(--gradient-3)', color: 'white', padding: '12px', borderRadius: '8px', marginBottom: '20px', border: 'none', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
-                {/* استخدام الأيقونة الآمنة */}
                 <FaShareAlt /> مشاركة
             </button>
-
             <div className="modal-files-scroll">
               <h4 style={{color:'white', marginBottom:'10px', borderBottom:'1px solid #333', paddingBottom:'5px'}}>الملفات:</h4>
               {selectedMaterial.files && selectedMaterial.files.length > 0 ? (
@@ -203,71 +191,39 @@ function MaterialsContent() {
                         {file.name}
                     </span>
                     <div style={{display:'flex', gap:'10px'}}>
-                        <button 
-                            onClick={() => handlePreviewFile(file)}
-                            className="btn-preview"
-                        >
-                           <FaEye /> معاينة
-                        </button>
-                        
-                        <a 
-                            href={getDownloadUrl(file.url)} 
-                            onClick={() => handleDownloadStats(selectedMaterial.id)}
-                            className="view-file-btn" 
-                            style={{background:'#00f260', color:'#000', padding:'8px 15px', borderRadius:'8px', textDecoration:'none', fontSize:'0.9em', display:'flex', alignItems:'center', gap:'5px', fontWeight:'600'}}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
+                        <button onClick={() => handlePreviewFile(file)} className="btn-preview"><FaEye /> معاينة</button>
+                        <a href={getDownloadUrl(file.url)} onClick={() => handleDownloadStats(selectedMaterial.id)} className="view-file-btn" style={{background:'#00f260', color:'#000', padding:'8px 15px', borderRadius:'8px', textDecoration:'none', fontSize:'0.9em', display:'flex', alignItems:'center', gap:'5px', fontWeight:'600'}} target="_blank" rel="noopener noreferrer">
                            <FaCloudDownloadAlt /> تحميل
                         </a>
                     </div>
                   </div>
                 ))
-              ) : (
-                <p style={{textAlign:'center', color:'#888'}}>لا توجد ملفات مرفقة.</p>
-              )}
+              ) : (<p style={{textAlign:'center', color:'#888'}}>لا توجد ملفات مرفقة.</p>)}
             </div>
           </div>
         </div>
       )}
 
-      {/* نافذة المعاينة الكبيرة */}
+      {/* ✅ الجزء المصحح لعرض الـ PDF */}
       {previewFile && (
         <div className="modal active" onClick={() => setPreviewFile(null)} style={{display:'flex', zIndex: 3000}}>
-           
            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{maxWidth: '900px', width: '95%', height: '90vh', display:'flex', flexDirection:'column', padding: '0', overflow: 'hidden', background: '#000'}}>
-               
-                {/* Header */}
                 <div style={{padding:'15px', background:'#1a1a1a', display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid #333'}}>
                     <h3 style={{color:'white', margin:0, fontSize:'1em', display:'flex', alignItems:'center', gap:'10px'}}>
                         {previewFile.type === 'pdf' ? <FaFilePdf color="#ef4444"/> : <FaFileImage color="#3b82f6"/>}
                         {previewFile.name || "معاينة الملف"}
                     </h3>
                     <div style={{display:'flex', gap:'15px', alignItems:'center'}}>
-                        <a href={previewFile.url} target="_blank" rel="noreferrer" title="فتح في نافذة جديدة" style={{color:'white', fontSize:'1.2em'}}>
-                            <FaExternalLinkAlt />
-                        </a>
-                        <button className="close-btn" onClick={() => setPreviewFile(null)} style={{background:'transparent', border:'none', color:'white', fontSize:'1.5em', cursor:'pointer'}}>
-                            <FaTimes />
-                        </button>
+                        <a href={previewFile.url} target="_blank" rel="noreferrer" title="فتح في نافذة جديدة" style={{color:'white', fontSize:'1.2em'}}><FaExternalLinkAlt /></a>
+                        <button className="close-btn" onClick={() => setPreviewFile(null)} style={{background:'transparent', border:'none', color:'white', fontSize:'1.5em', cursor:'pointer'}}><FaTimes /></button>
                     </div>
                 </div>
-
-                {/* Body - استخدام عارض المتصفح بدلاً من Google Viewer */}
                 <div style={{flex:1, position:'relative', background:'#000', overflow: 'hidden', display:'flex', justifyContent:'center', alignItems:'center'}}>
                     {previewFile.type === 'pdf' ? (
-                        <iframe 
-                            src={previewFile.url}
-                            width="100%" 
-                            height="100%" 
-                            style={{border:'none', background:'white'}}
-                            title="PDF Preview"
-                        >
+                        <iframe src={previewFile.url} width="100%" height="100%" style={{border:'none', background:'white'}} title="PDF Preview">
                             <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100%', flexDirection:'column', color:'white'}}>
                                 <p>متصفحك لا يدعم عرض PDF مباشرة.</p>
-                                <a href={previewFile.url} target="_blank" rel="noreferrer" className="view-file-btn" style={{marginTop:'10px', background:'#00f260', color:'black', padding:'10px 20px', borderRadius:'5px', textDecoration:'none'}}>
-                                    اضغط هنا لتحميل الملف
-                                </a>
+                                <a href={previewFile.url} target="_blank" rel="noreferrer" className="view-file-btn" style={{marginTop:'10px', background:'#00f260', color:'black', padding:'10px 20px', borderRadius:'5px', textDecoration:'none'}}>اضغط هنا لتحميل الملف</a>
                             </div>
                         </iframe>
                     ) : (
@@ -279,7 +235,6 @@ function MaterialsContent() {
            </div>
         </div>
       )}
-
     </div>
   );
 }
