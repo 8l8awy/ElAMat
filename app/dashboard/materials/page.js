@@ -4,15 +4,15 @@ import { useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase"; 
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
 import { 
-  FaCloudArrowDown, 
+  FaCloudDownloadAlt, // ✅ تم التعديل (بدلاً من FaCloudArrowDown)
   FaEye, 
   FaFolderOpen, 
   FaFilePdf, 
   FaFileImage,
-  FaShareNodes, 
+  FaShareAlt,         // ✅ تم التعديل (بدلاً من FaShareNodes)
   FaTimes,
   FaExternalLinkAlt     
-} from "react-icons/fa"; // تأكد من استيراد الأيقونات من مكتبة react-icons/fa أو fa6
+} from "react-icons/fa"; // ✅ الاستيراد الآن صحيح ومتوافق
 
 function MaterialsContent() {
   const searchParams = useSearchParams();
@@ -23,19 +23,17 @@ function MaterialsContent() {
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
 
-  // ✅ دالة محسنة جداً للفصل بين الصور والـ PDF
+  // دالة فحص الملفات
   const isPdfFile = (file) => {
     const name = file.name?.toLowerCase() || "";
     const url = file.url?.toLowerCase() || "";
     const type = file.type?.toLowerCase() || "";
 
-    // 1. إذا كان الامتداد صورة صريحة، فهو ليس PDF
     if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".webp") ||
         url.includes(".png") || url.includes(".jpg") || url.includes(".jpeg")) {
         return false;
     }
     
-    // 2. فحص هل هو PDF
     return type.includes("pdf") || url.includes(".pdf") || name.includes(".pdf");
   };
 
@@ -45,6 +43,14 @@ function MaterialsContent() {
       return url.replace("/upload/", "/upload/fl_attachment/");
     }
     return url;
+  };
+
+  const normalizeType = (type) => {
+    if (!type) return "";
+    type = type.toString().trim();
+    if (["summary", "ملخص", "ملخصات", "تلخيص"].includes(type)) return "summary";
+    if (["assignment", "تكليف", "تكاليف", "واجب"].includes(type)) return "assignment";
+    return type;
   };
 
   useEffect(() => {
@@ -62,7 +68,6 @@ function MaterialsContent() {
         const data = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
-            // إصلاح النوع إذا كان مخزناً بشكل خاطئ
             type: normalizeType(doc.data().type)
         }));
         
@@ -76,14 +81,6 @@ function MaterialsContent() {
     }
     fetchData();
   }, [subject]);
-
-  const normalizeType = (type) => {
-    if (!type) return "";
-    type = type.toString().trim();
-    if (["summary", "ملخص", "ملخصات", "تلخيص"].includes(type)) return "summary";
-    if (["assignment", "تكليف", "تكاليف", "واجب"].includes(type)) return "assignment";
-    return type;
-  };
 
   const handleOpenMaterial = async (material) => {
     setSelectedMaterial(material);
@@ -119,7 +116,6 @@ function MaterialsContent() {
 
   const handlePreviewFile = (file) => {
     const isPdf = isPdfFile(file);
-    console.log("File Type Check:", isPdf ? "PDF" : "IMAGE", file.name); // Debugging
     setPreviewFile({
         url: file.url,
         type: isPdf ? 'pdf' : 'image',
@@ -151,7 +147,7 @@ function MaterialsContent() {
                         
                         <div style={{display:'flex', gap:'8px', fontSize:'0.8em', color:'#aaa', alignItems:'center'}}>
                             <span><FaEye /> {m.viewCount || 0}</span>
-                            <span><FaCloudArrowDown /> {m.downloadCount || 0}</span>
+                            <span><FaCloudDownloadAlt /> {m.downloadCount || 0}</span>
                         </div>
                     </div>
 
@@ -182,14 +178,14 @@ function MaterialsContent() {
                 </div>
                 <div style={{width:'1px', background:'#333'}}></div>
                 <div style={{textAlign:'center', color:'#3b82f6'}}>
-                    <FaCloudArrowDown size={20} /> <span style={{fontSize:'0.8em', color:'#ccc'}}> {selectedMaterial.downloadCount || 0}</span>
+                    <FaCloudDownloadAlt size={20} /> <span style={{fontSize:'0.8em', color:'#ccc'}}> {selectedMaterial.downloadCount || 0}</span>
                 </div>
             </div>
 
             <p style={{textAlign:'center', color:'#888', marginBottom:'20px'}}>{selectedMaterial.desc}</p>
             
             <button onClick={() => handleShare(selectedMaterial)} style={{width: '100%', background: 'var(--gradient-3)', color: 'white', padding: '12px', borderRadius: '8px', marginBottom: '20px', border: 'none', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
-                <FaShareNodes /> مشاركة
+                <FaShareAlt /> مشاركة
             </button>
 
             <div className="modal-files-scroll">
@@ -217,7 +213,7 @@ function MaterialsContent() {
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                           <FaCloudArrowDown /> تحميل
+                           <FaCloudDownloadAlt /> تحميل
                         </a>
                     </div>
                   </div>
@@ -230,7 +226,7 @@ function MaterialsContent() {
         </div>
       )}
 
-      {/* ✅ نافذة المعاينة الكبيرة - الإصلاح النهائي */}
+      {/* نافذة المعاينة الكبيرة */}
       {previewFile && (
         <div className="modal active" onClick={() => setPreviewFile(null)} style={{display:'flex', zIndex: 3000}}>
            
@@ -243,7 +239,6 @@ function MaterialsContent() {
                         {previewFile.name || "معاينة الملف"}
                     </h3>
                     <div style={{display:'flex', gap:'15px', alignItems:'center'}}>
-                        {/* زر فتح خارجي للطوارئ */}
                         <a href={previewFile.url} target="_blank" rel="noreferrer" title="فتح في نافذة جديدة" style={{color:'white', fontSize:'1.2em'}}>
                             <FaExternalLinkAlt />
                         </a>
@@ -256,7 +251,6 @@ function MaterialsContent() {
                 {/* Body */}
                 <div style={{flex:1, position:'relative', background:'#000', overflow: 'hidden', display:'flex', justifyContent:'center', alignItems:'center'}}>
                     {previewFile.type === 'pdf' ? (
-                        // ✅ عرض PDF باستخدام iframe المتصفح الأصلي بدلاً من Google Viewer
                         <iframe 
                             src={previewFile.url}
                             width="100%" 
@@ -264,7 +258,6 @@ function MaterialsContent() {
                             style={{border:'none', background:'white'}}
                             title="PDF Preview"
                         >
-                             {/* رسالة تظهر فقط إذا كان المتصفح قديماً جداً ولا يدعم iframe */}
                             <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100%', flexDirection:'column', color:'white'}}>
                                 <p>متصفحك لا يدعم عرض PDF مباشرة.</p>
                                 <a href={previewFile.url} target="_blank" rel="noreferrer" className="view-file-btn" style={{marginTop:'10px', background:'#00f260', color:'black', padding:'10px 20px', borderRadius:'5px', textDecoration:'none'}}>
@@ -273,7 +266,6 @@ function MaterialsContent() {
                             </div>
                         </iframe>
                     ) : (
-                        // ✅ عرض الصور
                         <div className="modal-image-scroll" style={{width:'100%', height:'100%', overflow:'auto', display:'flex', justifyContent:'center', alignItems:'center'}}>
                            <img src={previewFile.url} alt="Preview" style={{maxWidth:'100%', maxHeight:'100%', objectFit:'contain'}} />
                         </div>
