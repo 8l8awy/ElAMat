@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { db } from "../../../lib/firebase";
+import { db } from "../../../lib/firebase"; // تأكد من المسار
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
 import { 
   FaCloudArrowDown, 
@@ -19,7 +19,15 @@ function MaterialsContent() {
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
-  const [previewFile, setPreviewFile] = useState(null); // للمعاينة الكبيرة
+  const [previewFile, setPreviewFile] = useState(null);
+
+  // دالة مساعدة لمعرفة هل الملف PDF أم لا
+  const isPdfFile = (file) => {
+    // نتحقق من النوع المسجل أو من امتداد الرابط
+    const typeCheck = file.type?.toLowerCase().includes('pdf');
+    const urlCheck = file.url?.toLowerCase().includes('.pdf') || file.name?.toLowerCase().includes('.pdf');
+    return typeCheck || urlCheck;
+  };
 
   const normalizeType = (type) => {
     if (!type) return "";
@@ -98,10 +106,11 @@ function MaterialsContent() {
     } catch (err) { console.log("Share skipped"); }
   };
 
-  const handlePreviewFile = (fileUrl) => {
-    const isPdf = fileUrl.toLowerCase().includes(".pdf");
+  const handlePreviewFile = (file) => {
+    // تم التعديل لتمرير كائن الملف بالكامل بدلاً من الرابط فقط لضمان دقة الفحص
+    const isPdf = isPdfFile(file);
     setPreviewFile({
-        url: fileUrl,
+        url: file.url,
         type: isPdf ? 'pdf' : 'image'
     });
   };
@@ -177,14 +186,14 @@ function MaterialsContent() {
                 selectedMaterial.files.map((file, index) => (
                   <div key={index} className="modal-file-item" style={{background:'#222', padding:'15px', borderRadius:'10px', marginBottom:'10px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                     <span style={{color:'white', display:'flex', alignItems:'center', gap:'10px'}}>
-                        {file.type?.includes('pdf') ? <FaFilePdf color="#ef4444"/> : <FaFileImage color="#3b82f6"/>} 
+                        {/* استخدام الدالة الجديدة لفحص نوع الملف بدقة */}
+                        {isPdfFile(file) ? <FaFilePdf color="#ef4444"/> : <FaFileImage color="#3b82f6"/>} 
                         {file.name}
                     </span>
                     <div style={{display:'flex', gap:'10px'}}>
                         
-                        {/* زر المعاينة */}
                         <button 
-                            onClick={() => handlePreviewFile(file.url)}
+                            onClick={() => handlePreviewFile(file)}
                             className="btn-preview"
                         >
                            <FaEye /> معاينة
@@ -195,6 +204,8 @@ function MaterialsContent() {
                             onClick={() => handleDownloadStats(selectedMaterial.id)}
                             className="view-file-btn" 
                             style={{background:'#00f260', color:'#000', padding:'8px 15px', borderRadius:'8px', textDecoration:'none', fontSize:'0.9em', display:'flex', alignItems:'center', gap:'5px', fontWeight:'600'}}
+                            target="_blank"
+                            rel="noopener noreferrer"
                         >
                            <FaCloudArrowDown /> تحميل
                         </a>
@@ -209,41 +220,41 @@ function MaterialsContent() {
         </div>
       )}
 
-      {/* نافذة معاينة الملف الكبيرة (تم التصحيح هنا) */}
+      {/* نافذة معاينة الملف الكبيرة */}
       {previewFile && (
         <div className="modal active" onClick={() => setPreviewFile(null)} style={{display:'flex', zIndex: 3000}}>
            
            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{maxWidth: '900px', width: '95%', height: '90vh', display:'flex', flexDirection:'column', padding: '0', overflow: 'hidden'}}>
                
-               {/* شريط العنوان وزر الإغلاق */}
                 <div style={{padding:'15px', background:'#1a1a1a', display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid #333'}}>
                     <h3 style={{color:'white', margin:0, fontSize:'1em'}}>معاينة الملف</h3>
                     <button className="close-btn" onClick={() => setPreviewFile(null)} style={{background:'transparent', border:'none', color:'white', fontSize:'1.5em', cursor:'pointer'}}>×</button>
                 </div>
 
-                {/* جسم النافذة (الصورة أو الـ PDF) */}
-                <div style={{flex:1, position:'relative', background:'#000', overflow: 'hidden', display:'flex', justifyContent:'center'}}>
+                <div style={{flex:1, position:'relative', background:'#000', overflow: 'hidden', display:'flex', justifyContent:'center', alignItems:'center'}}>
                     {previewFile.type === 'pdf' ? (
                         <>
+                           {/* Google Viewer is good, ensure URL is encoded properly */}
                            <iframe 
                                 src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile.url)}&embedded=true`}
                                 width="100%" 
                                 height="100%" 
-                                style={{border:'none'}}
+                                style={{border:'none', background: 'white'}}
                                 title="PDF Preview"
                             ></iframe>
-                            <a href={previewFile.url} target="_blank" rel="noreferrer" style={{position:'absolute', bottom:'20px', left:'50%', transform:'translateX(-50%)', background:'white', padding:'8px 20px', borderRadius:'20px', textDecoration:'none', color:'black', fontSize:'0.9em', fontWeight:'bold', boxShadow:'0 5px 15px rgba(0,0,0,0.5)'}}>
-                                🔗 فتح في نافذة خارجية
+                            
+                            {/* زر احتياطي مهم جداً في حال فشل جوجل في العرض */}
+                            <a href={previewFile.url} target="_blank" rel="noreferrer" style={{position:'absolute', bottom:'20px', left:'50%', transform:'translateX(-50%)', background:'white', padding:'8px 20px', borderRadius:'20px', textDecoration:'none', color:'black', fontSize:'0.9em', fontWeight:'bold', boxShadow:'0 5px 15px rgba(0,0,0,0.5)', zIndex: 10}}>
+                                🔗 فتح الملف الأصلي
                             </a>
                         </>
                     ) : (
-                        // ✅ هنا وضعنا ديف السكرول للصورة
-                        <div className="modal-image-scroll">
-                           <img src={previewFile.url} alt="Preview" />
+                        <div className="modal-image-scroll" style={{width:'100%', height:'100%', overflow:'auto', display:'flex', justifyContent:'center'}}>
+                           <img src={previewFile.url} alt="Preview" style={{maxWidth:'100%', objectFit:'contain'}} />
                         </div>
                     )}
                 </div>
-            </div>
+           </div>
         </div>
       )}
 
