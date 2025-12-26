@@ -3,14 +3,15 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase"; 
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
-// ✅ تم استبدال الأيقونات بأسماء متوافقة مع الإصدار القديم والجديد
+
+// ✅ التغيير الجذري هنا: استخدام أيقونات متوافقة مع جميع الإصدارات
 import { 
-  FaCloudDownloadAlt, // بديلة لـ FaCloudArrowDown
+  FaCloudDownloadAlt, // بديل مضمون لـ FaCloudArrowDown
   FaEye, 
   FaFolderOpen, 
   FaFilePdf, 
   FaFileImage,
-  FaShareAlt,         // بديلة لـ FaShareNodes
+  FaShareAlt,         // بديل مضمون لـ FaShareNodes
   FaTimes,
   FaExternalLinkAlt     
 } from "react-icons/fa"; 
@@ -148,6 +149,7 @@ function MaterialsContent() {
                         
                         <div style={{display:'flex', gap:'8px', fontSize:'0.8em', color:'#aaa', alignItems:'center'}}>
                             <span><FaEye /> {m.viewCount || 0}</span>
+                            {/* استخدام الأيقونة الآمنة */}
                             <span><FaCloudDownloadAlt /> {m.downloadCount || 0}</span>
                         </div>
                     </div>
@@ -179,6 +181,7 @@ function MaterialsContent() {
                 </div>
                 <div style={{width:'1px', background:'#333'}}></div>
                 <div style={{textAlign:'center', color:'#3b82f6'}}>
+                    {/* استخدام الأيقونة الآمنة */}
                     <FaCloudDownloadAlt size={20} /> <span style={{fontSize:'0.8em', color:'#ccc'}}> {selectedMaterial.downloadCount || 0}</span>
                 </div>
             </div>
@@ -186,6 +189,7 @@ function MaterialsContent() {
             <p style={{textAlign:'center', color:'#888', marginBottom:'20px'}}>{selectedMaterial.desc}</p>
             
             <button onClick={() => handleShare(selectedMaterial)} style={{width: '100%', background: 'var(--gradient-3)', color: 'white', padding: '12px', borderRadius: '8px', marginBottom: '20px', border: 'none', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'}}>
+                {/* استخدام الأيقونة الآمنة */}
                 <FaShareAlt /> مشاركة
             </button>
 
