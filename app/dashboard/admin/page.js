@@ -2,9 +2,8 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase"; 
-import { useAuth } from "@/context/AuthContext";
 import { collection, addDoc, deleteDoc, updateDoc, doc, getDocs, query, where, serverTimestamp, orderBy, onSnapshot } from "firebase/firestore";
-import { FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaLock, FaCheck, FaTimes, FaExternalLinkAlt } from "react-icons/fa";
+import { FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaFileImage, FaLock, FaCheck, FaTimes, FaExternalLinkAlt } from "react-icons/fa";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -27,11 +26,11 @@ export default function AdminPage() {
   const [subject, setSubject] = useState("مبادئ الاقتصاد");
   const [type, setType] = useState("summary");
   const [files, setFiles] = useState([]); 
-  
+   
   // ✅ قوائم منفصلة للمنشورات والطلبات المعلقة
   const [materialsList, setMaterialsList] = useState([]); // الملفات المقبولة
   const [pendingList, setPendingList] = useState([]);     // طلبات الطلاب المعلقة
-  
+   
   const [loadingList, setLoadingList] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
@@ -123,10 +122,9 @@ export default function AdminPage() {
 
   // ✅ دالة جديدة لفتح الملف في صفحة جديدة
   const openFile = (item) => {
-    // نحاول الحصول على الرابط سواء كان في مصفوفة files أو كـ fileUrl مباشر
-    let url = item.fileUrl; // الصيغة القديمة أو المباشرة
+    let url = item.fileUrl; 
     if (!url && item.files && item.files.length > 0) {
-        url = item.files[0].url; // الصيغة الجديدة (مصفوفة)
+        url = item.files[0].url; 
     }
 
     if (url) {
@@ -138,7 +136,7 @@ export default function AdminPage() {
 
   // ✅ دوال التعامل مع الطلبات (حذف / قبول)
   const handleDelete = async (id, title) => { if (confirm(`حذف "${title}" نهائياً؟`)) await deleteDoc(doc(db, "materials", id)); };
-  
+   
   const handleApprove = async (id, title) => {
     if (confirm(`هل تريد قبول ونشر "${title}"؟`)) {
       await updateDoc(doc(db, "materials", id), {
@@ -150,11 +148,12 @@ export default function AdminPage() {
   };
 
   const handleFileChange = (e) => { if (e.target.files) setFiles(Array.from(e.target.files)); };
-  
+   
   const uploadToCloudinary = async (file) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", UPLOAD_PRESET);
+    // ⚠️ هام: استخدام auto بدلاً من image للسماح بالـ PDF
     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, { method: "POST", body: formData });
     const data = await res.json();
     return data.secure_url;
@@ -168,7 +167,12 @@ export default function AdminPage() {
     try {
       for (let file of files) {
         const url = await uploadToCloudinary(file);
-        uploadedFilesData.push({ name: file.name, url: url, type: file.type });
+        // ✅ نحفظ نوع الملف بدقة لكي يعمل كود العرض
+        uploadedFilesData.push({ 
+            name: file.name, 
+            url: url, 
+            type: file.type // مهم: هذا يخزن 'application/pdf' للملفات
+        });
       }
       await addDoc(collection(db, "materials"), {
         title, desc, subject, type, files: uploadedFilesData,
@@ -178,7 +182,11 @@ export default function AdminPage() {
       });
       setUploading(false); setTitle(""); setDesc(""); setFiles([]); setMessage("تم الرفع بنجاح! ");
       setTimeout(() => setMessage(""), 3000);
-    } catch (error) { setUploading(false); alert("خطأ في الرفع"); }
+    } catch (error) { 
+        console.error(error);
+        setUploading(false); 
+        alert("خطأ في الرفع: " + error.message); 
+    }
   };
 
   if (isLoading) {
@@ -238,8 +246,42 @@ export default function AdminPage() {
             <div className="form-group"><label>المادة</label><select className="form-select" value={subject} onChange={(e)=>setSubject(e.target.value)}>{subjects.map((s,i)=><option key={i} value={s}>{s}</option>)}</select></div>
             <div className="form-group"><label>النوع</label><select className="form-select" value={type} onChange={(e)=>setType(e.target.value)}><option value="summary">ملخص</option><option value="assignment">تكليف</option></select></div>
         </div>
-        <div className="form-group"><label>الملفات</label><div className="upload-area" style={{padding: '20px'}}><input type="file" onChange={handleFileChange} accept=".pdf,image/*" multiple />{files.length > 0 ? <p style={{color: '#00f260'}}>{files.length} ملفات</p> : <p style={{color: '#888'}}>اختر ملفات</p>}</div></div>
-        <button type="submit" className="submit-btn" disabled={uploading}>{uploading ? "جاري الرفع..." : "رفع "}</button>
+        
+        {/* منطقة رفع الملفات المحسنة */}
+        <div className="form-group">
+            <label>الملفات (صور أو PDF)</label>
+            <div className="upload-area" style={{padding: '20px', border: '2px dashed #444', textAlign:'center'}}>
+                <input 
+                    type="file" 
+                    onChange={handleFileChange} 
+                    // ✅ التعديل هنا لضمان قبول الـ PDF بشكل صحيح في جميع الأجهزة
+                    accept="image/*, application/pdf" 
+                    multiple 
+                    style={{display:'none'}}
+                    id="file-upload"
+                />
+                <label htmlFor="file-upload" style={{cursor:'pointer', display:'block'}}>
+                    {files.length > 0 ? (
+                        <div style={{textAlign:'right'}}>
+                            <p style={{color: '#00f260', marginBottom:'10px'}}>تم اختيار {files.length} ملفات:</p>
+                            {files.map((f, i) => (
+                                <div key={i} style={{fontSize:'0.9rem', color:'#ccc', display:'flex', alignItems:'center', gap:'5px', marginBottom:'5px'}}>
+                                    {f.type.includes('pdf') ? <FaFilePdf color="#ef4444"/> : <FaFileImage color="#3b82f6"/>} 
+                                    {f.name}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div>
+                            <p style={{color: '#888', fontSize:'2em', margin:0}}>📂</p>
+                            <p style={{color: '#888'}}>اضغط لاختيار صور أو ملفات PDF</p>
+                        </div>
+                    )}
+                </label>
+            </div>
+        </div>
+
+        <button type="submit" className="submit-btn" disabled={uploading}>{uploading ? "جاري الرفع..." : "رفع ونشر"}</button>
       </form>
 
       {/* ✅ قسم طلبات الطلاب الجديدة */}
@@ -290,7 +332,12 @@ export default function AdminPage() {
                         title="اضغط لفتح الملف"
                     >
                         <h4 style={{color: 'white', margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'underline', textDecorationColor: '#666'}}>
-                            <FaFilePdf style={{color: item.type === 'summary' ? '#00f260' : '#ff9f43'}} /> {item.title} <FaExternalLinkAlt size={12} color="#888"/>
+                            {/* فحص نوع الملف لعرض الأيقونة المناسبة */}
+                            {item.files && item.files[0] && item.files[0].type && item.files[0].type.includes('pdf') 
+                                ? <FaFilePdf style={{color: '#ef4444'}} /> 
+                                : <FaFileImage style={{color: '#3b82f6'}} />
+                            }
+                            {item.title} <FaExternalLinkAlt size={12} color="#888"/>
                         </h4>
                         <div style={{display: 'flex', gap: '10px', fontSize: '0.85rem'}}>
                             <span style={{color: '#ccc', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '6px'}}>📌 {item.subject}</span>
