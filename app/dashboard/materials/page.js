@@ -1,12 +1,14 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { db } from "@/lib/firebase"; // تأكد أن هذا المسار صحيح، أو استخدم ../../../lib/firebase
+import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { FaFilePdf, FaImage, FaExternalLinkAlt, FaSearch } from "react-icons/fa";
 import { Loader2 } from "lucide-react";
 
-// 1. مكون المحتوى الداخلي
+// --------------------------------------------------------
+// 1. المكون الفرعي: يحتوي على منطق عرض المواد
+// --------------------------------------------------------
 function MaterialsContent() {
   const searchParams = useSearchParams();
   const subject = searchParams.get("subject");
@@ -171,11 +173,15 @@ function MaterialsContent() {
   );
 }
 
-// 2. الدالة الرئيسية (هذا هو الجزء الذي كان ناقصاً ويسبب الخطأ)
-export default function MaterialsPage() {
+// --------------------------------------------------------
+// 2. المكون الرئيسي: (ضروري جداً لكي يعمل الملف)
+// --------------------------------------------------------
+const MaterialsPage = () => {
   return (
-    <Suspense fallback={<div className="h-screen w-full flex items-center justify-center bg-[#0b0c15] text-white">جاري التحميل...</div>}>
+    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center bg-[#0b0c15] text-white">جاري التحميل...</div>}>
       <MaterialsContent />
     </Suspense>
   );
-}
+};
+
+export default MaterialsPage;
