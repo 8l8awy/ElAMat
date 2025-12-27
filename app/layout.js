@@ -1,7 +1,6 @@
 import "./globals.css";
 import Script from "next/script";
 import { AuthProvider } from "@/context/AuthContext"; 
-import SupportBtn from "@/components/SupportBtn"; // ✅ 1. تم استيراد زر الدعم
 
 // 1. إعدادات الـ SEO (Metadata)
 export const metadata = {
@@ -18,6 +17,7 @@ export const metadata = {
     locale: 'ar_EG',
     type: 'website',
   },
+  // ملاحظة: Next.js سيكتشف ملف icon.png تلقائياً من مجلد app
 };
 
 export default function RootLayout({ children }) {
@@ -30,8 +30,8 @@ export default function RootLayout({ children }) {
     '@type': 'Organization',
     name: 'El Agamy Materials',
     url: 'https://eamat.vercel.app',
-    logo: 'https://eamat.vercel.app/icon.png', 
-    sameAs: [] 
+    logo: 'https://eamat.vercel.app/icon.png', // ✅ الرابط صحيح
+    sameAs: [] // يمكنك إضافة روابط فيسبوك أو تويتر هنا مستقبلاً
   }
 
   return (
@@ -99,10 +99,7 @@ export default function RootLayout({ children }) {
               </div>
             ) : (
               // الموقع يعمل
-              <>
-                <SupportBtn /> {/* ✅ 2. تم وضع الزر هنا ليظهر فوق كل الصفحات */}
-                {children}
-              </>
+              children
             )}
           </AuthProvider>
         </div>
