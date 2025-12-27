@@ -13,8 +13,7 @@ import {
   FaUserClock, 
   FaBars, 
   FaTimes,
-  FaClipboardList, // أيقونة الامتحانات
-  FaPenFancy       // أيقونة إضافية إذا احتجناها
+  FaClipboardList
 } from 'react-icons/fa';
 
 export default function Navbar() {
@@ -32,7 +31,7 @@ export default function Navbar() {
     router.push('/');
   };
 
-  // تنسيق الأزرار (في المنتصف + شكل أنيق)
+  // ستايل موحد للأزرار (في المنتصف + شكل أنيق)
   const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5";
 
   return (
@@ -62,8 +61,8 @@ export default function Navbar() {
             <FaBook size={20} />
         </Link>
         
-        {/* ⭐ 3. زر الامتحانات (للطلاب) */}
-        <Link href="/dashboard/exams" className={`${btnClass} hover:bg-purple-600`} title="الامتحانات (للطلاب)" onClick={closeMenu}>
+        {/* 3. الامتحانات (للطلاب) */}
+        <Link href="/dashboard/exams" className={`${btnClass} hover:bg-purple-600`} title="الامتحانات" onClick={closeMenu}>
             <FaClipboardList size={20} />
         </Link>
 
@@ -77,8 +76,8 @@ export default function Navbar() {
              <FaCloudUploadAlt size={20} />
         </Link>
 
-        {/* ⭐ 6. زر صنع الامتحان (للأدمن فقط) */}
-        {/* يظهر باللون الأحمر ومحمي بالكود السري */}
+        {/* 6. زر صنع الامتحان (الأحمر السري) */}
+        {/* يظهر فقط للأدمن الذي معه الكود، ويوجه لصفحة الامتحانات مباشرة */}
         <div className="w-fit mx-auto"> 
             <AdminLink onClick={closeMenu} />
         </div>
