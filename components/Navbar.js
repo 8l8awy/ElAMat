@@ -1,35 +1,39 @@
 "use client";
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // 1. استيراد الراوتر
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
+import AdminLink from './AdminLink'; 
 import { 
   FaHome, 
   FaBook, 
   FaBell, 
   FaSignOutAlt, 
-  FaPlus, 
   FaCloudUploadAlt, 
   FaUserClock, 
   FaBars, 
-  FaTimes 
+  FaTimes,
+  FaClipboardList, // أيقونة الامتحانات
+  FaPenFancy       // أيقونة إضافية إذا احتجناها
 } from 'react-icons/fa';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
-  const router = useRouter(); // 2. تفعيل الراوتر
+  const router = useRouter();
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
 
-  // 3. دالة خروج مخصصة
   const handleLogout = () => {
-    logout();          // مسح بيانات المستخدم
-    closeMenu();       // إغلاق القائمة (في الموبايل)
-    router.push('/');  // التوجيه فوراً لصفحة الدخول
+    logout();
+    closeMenu();
+    router.push('/');
   };
+
+  // تنسيق الأزرار (في المنتصف + شكل أنيق)
+  const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5";
 
   return (
     <nav className="navbar">
@@ -43,26 +47,51 @@ export default function Navbar() {
       </button>
 
       <div className={`nav-buttons ${isMenuOpen ? 'active' : ''}`}>
-        <span id="userName" style={{color:'white', marginLeft:'10px', fontWeight:'bold'}}>{user?.name}</span>
         
-        <Link href="/dashboard" className="nav-btn" title="الرئيسية" onClick={closeMenu}><FaHome /></Link>
-        <Link href="/dashboard/subjects" className="nav-btn" title="المواد" onClick={closeMenu}><FaBook /></Link>
-        <Link href="/dashboard/announcements" className="nav-btn" title="الإعلانات" onClick={closeMenu}><FaBell /></Link>
+        <span id="userName" style={{color:'white', fontWeight:'bold', display:'block', textAlign:'center', marginBottom:'15px'}}>
+            {user?.name}
+        </span>
         
-        <Link href="/dashboard/share" className="nav-btn" title="مشاركة ملخص" onClick={closeMenu}>
-             <FaCloudUploadAlt />
+        {/* 1. الرئيسية */}
+        <Link href="/dashboard" className={`${btnClass} hover:bg-blue-600`} title="الرئيسية" onClick={closeMenu}>
+            <FaHome size={20} />
         </Link>
 
-        {user?.isAdmin && (
-            <Link href="/dashboard/admin" className="nav-btn" title="لوحة التحكم" style={{background:'#eab308', color:'black'}} onClick={closeMenu}>
-                <FaPlus />
-            </Link>
-        )}
-
-        <Link href="/dashboard/myUploads" className="nav-btn" title="ملخصاتي" onClick={closeMenu}><FaUserClock /></Link>
+        {/* 2. المواد */}
+        <Link href="/dashboard/subjects" className={`${btnClass} hover:bg-gray-600`} title="المواد" onClick={closeMenu}>
+            <FaBook size={20} />
+        </Link>
         
-        {/* 4. استخدام الدالة الجديدة هنا */}
-        <button onClick={handleLogout} className="nav-btn logout" title="تسجيل خروج"><FaSignOutAlt /></button>
+        {/* ⭐ 3. زر الامتحانات (للطلاب) */}
+        <Link href="/dashboard/exams" className={`${btnClass} hover:bg-purple-600`} title="الامتحانات (للطلاب)" onClick={closeMenu}>
+            <FaClipboardList size={20} />
+        </Link>
+
+        {/* 4. الإعلانات */}
+        <Link href="/dashboard/announcements" className={`${btnClass} hover:bg-yellow-600`} title="الإعلانات" onClick={closeMenu}>
+            <FaBell size={20} />
+        </Link>
+        
+        {/* 5. رفع الملفات */}
+        <Link href="/dashboard/share" className={`${btnClass} hover:bg-green-600`} title="رفع ملخص / تكليف" onClick={closeMenu}>
+             <FaCloudUploadAlt size={20} />
+        </Link>
+
+        {/* ⭐ 6. زر صنع الامتحان (للأدمن فقط) */}
+        {/* يظهر باللون الأحمر ومحمي بالكود السري */}
+        <div className="w-fit mx-auto"> 
+            <AdminLink onClick={closeMenu} />
+        </div>
+
+        {/* 7. ملخصاتي */}
+        <Link href="/dashboard/myUploads" className={`${btnClass} hover:bg-cyan-600`} title="ملخصاتي" onClick={closeMenu}>
+             <FaUserClock size={20} />
+        </Link>
+        
+        {/* 8. خروج */}
+        <button onClick={handleLogout} className={`${btnClass} logout bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white`} title="تسجيل خروج" style={{marginTop:'10px'}}>
+            <FaSignOutAlt size={20} />
+        </button>
       </div>
     </nav>
   );
