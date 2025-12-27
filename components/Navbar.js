@@ -81,7 +81,11 @@ export default function Navbar() {
         <div className="w-fit mx-auto"> 
             <AdminLink onClick={closeMenu} />
         </div>
-
+{user?.isAdmin && (
+            <Link href="/dashboard/admin" className="nav-btn" title="لوحة التحكم" style={{background:'#eab308', color:'black'}} onClick={closeMenu}>
+                <FaPlus />
+            </Link>
+        )}
         {/* 7. ملخصاتي */}
         <Link href="/dashboard/myUploads" className={`${btnClass} hover:bg-cyan-600`} title="ملخصاتي" onClick={closeMenu}>
              <FaUserClock size={20} />
