@@ -3,17 +3,19 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
-import AdminLink from './AdminLink'; 
+// 👇 1. استيراد المكون السري للأدمن
+import AdminLink from '../components/AdminLink'; 
 import { 
   FaHome, 
   FaBook, 
   FaBell, 
   FaSignOutAlt, 
+  FaPlus, 
   FaCloudUploadAlt, 
   FaUserClock, 
   FaBars, 
   FaTimes,
-  FaClipboardList
+  FaClipboardList // 👈 2. استيراد أيقونة الامتحانات
 } from 'react-icons/fa';
 
 export default function Navbar() {
@@ -31,12 +33,6 @@ export default function Navbar() {
     router.push('/');
   };
 
-  // ✅ التعديل السحري:
-  // 1. w-fit: يجعل عرض الزر على قد المحتوى فقط (fit-content)
-  // 2. mx-auto: يضع الزر في منتصف الشاشة (Margin Auto)
-  // 3. p-3: حواف داخلية ليكون الزر مريحاً
-  const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl";
-
   return (
     <nav className="navbar">
       <h1>
@@ -49,51 +45,37 @@ export default function Navbar() {
       </button>
 
       <div className={`nav-buttons ${isMenuOpen ? 'active' : ''}`}>
+        <span id="userName" style={{color:'white', marginLeft:'10px', fontWeight:'bold'}}>{user?.name}</span>
         
-        {/* اسم المستخدم */}
-        <span id="userName" style={{color:'white', fontWeight:'bold', display:'block', textAlign:'center', marginBottom:'15px'}}>
-            {user?.name}
-        </span>
+        <Link href="/dashboard" className="nav-btn" title="الرئيسية" onClick={closeMenu}><FaHome /></Link>
+        <Link href="/dashboard/subjects" className="nav-btn" title="المواد" onClick={closeMenu}><FaBook /></Link>
         
-        {/* 1. الرئيسية */}
-        <Link href="/dashboard" className={btnClass} title="الرئيسية" onClick={closeMenu}>
-            <FaHome size={20} />
+        {/* 👇 3. زر الامتحانات (يظهر للجميع) */}
+        <Link href="/dashboard/exams" className="nav-btn" title="الامتحانات" onClick={closeMenu}>
+            <FaClipboardList />
         </Link>
 
-        {/* 2. المواد */}
-        <Link href="/dashboard/subjects" className={btnClass} title="المواد" onClick={closeMenu}>
-            <FaBook size={20} />
-        </Link>
+        <Link href="/dashboard/announcements" className="nav-btn" title="الإعلانات" onClick={closeMenu}><FaBell /></Link>
         
-        {/* 3. الامتحانات */}
-        <Link href="/dashboard/exams" className={btnClass} title="الامتحانات" onClick={closeMenu}>
-            <FaClipboardList size={20} />
+        <Link href="/dashboard/share" className="nav-btn" title="مشاركة ملخص" onClick={closeMenu}>
+             <FaCloudUploadAlt />
         </Link>
 
-        {/* 4. الإعلانات */}
-        <Link href="/dashboard/announcements" className={btnClass} title="الإعلانات" onClick={closeMenu}>
-            <FaBell size={20} />
-        </Link>
-        
-        {/* 5. مشاركة */}
-        <Link href="/dashboard/share" className={btnClass} title="مشاركة ملخص" onClick={closeMenu}>
-             <FaCloudUploadAlt size={20} />
-        </Link>
-
-        {/* 6. زر الأدمن (هو أصلاً fit-content) */}
-        <div className="w-fit mx-auto"> 
-            <AdminLink onClick={closeMenu} />
+        {/* 👇 4. الزر السري (يظهر لك أنت فقط كأدمن) */}
+        <div onClick={closeMenu}>
+            <AdminLink />
         </div>
 
-        {/* 7. ملخصاتي */}
-        <Link href="/dashboard/myUploads" className={btnClass} title="ملخصاتي" onClick={closeMenu}>
-             <FaUserClock size={20} />
-        </Link>
+        {/* زر الأدمن القديم (إذا كنت تريد الإبقاء عليه أو حذفه) */}
+        {user?.isAdmin && (
+            <Link href="/dashboard/admin" className="nav-btn" title="لوحة التحكم" style={{background:'#eab308', color:'black'}} onClick={closeMenu}>
+                <FaPlus />
+            </Link>
+        )}
+
+        <Link href="/dashboard/myUploads" className="nav-btn" title="ملخصاتي" onClick={closeMenu}><FaUserClock /></Link>
         
-        {/* 8. خروج */}
-        <button onClick={handleLogout} className={`${btnClass} logout`} title="تسجيل خروج" style={{marginTop:'10px'}}>
-            <FaSignOutAlt size={20} />
-        </button>
+        <button onClick={handleLogout} className="nav-btn logout" title="تسجيل خروج"><FaSignOutAlt /></button>
       </div>
     </nav>
   );
