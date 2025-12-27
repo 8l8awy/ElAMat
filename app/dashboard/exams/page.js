@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { 
   FaCheckCircle, FaTimesCircle, FaClipboardList, FaArrowLeft, FaRedo, 
   FaClock, FaTrophy, FaChartLine, FaStar, FaGraduationCap, 
-  FaMedal, FaVolumeUp, FaVolumeMute 
+  FaMedal // تم إزالة أيقونات الصوت
 } from "react-icons/fa";
 
 export default function ExamsPage() {
@@ -21,20 +21,8 @@ export default function ExamsPage() {
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [isExamStarted, setIsExamStarted] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // 🎵 تشغيل الأصوات
-  const playSound = (type) => {
-    if (!soundEnabled) return;
-    const sounds = {
-      success: "https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3",
-      clap: "https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3",
-      click: "https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3",
-    };
-    const audio = new Audio(sounds[type]);
-    audio.volume = 0.5;
-    audio.play().catch(e => console.log("Audio error:", e));
-  };
+  // تم إزالة دالة playSound وحالة الصوت
 
   useEffect(() => {
     async function fetchExams() {
@@ -69,7 +57,7 @@ export default function ExamsPage() {
   };
 
   const startExam = (exam) => {
-    playSound("click");
+    // تم إزالة playSound
     setSelectedExam(exam);
     setUserAnswers({});
     setShowResult(false);
@@ -83,7 +71,7 @@ export default function ExamsPage() {
   const handleSelect = (qIndex, optionIndex) => {
     if (showResult) return;
     setUserAnswers(prev => ({ ...prev, [qIndex]: optionIndex }));
-    playSound("click");
+    // تم إزالة playSound
   };
 
   const saveResultToDb = async (finalScore, percentage) => {
@@ -124,8 +112,7 @@ export default function ExamsPage() {
     await saveResultToDb(calculatedScore, percentage);
 
     if (percentage >= 75) {
-      playSound("success");
-      setTimeout(() => playSound("clap"), 500);
+      // تم إزالة أصوات النجاح والتصفيق
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 8000);
     }
@@ -134,7 +121,7 @@ export default function ExamsPage() {
   };
 
   const resetAll = () => {
-    playSound("click");
+    // تم إزالة playSound
     setSelectedExam(null);
     setUserAnswers({});
     setShowResult(false);
@@ -157,7 +144,6 @@ export default function ExamsPage() {
   }
 
   return (
-    // 1. حاوية رئيسية نظيفة وتملأ الشاشة
     <div className="min-h-screen w-full text-white p-4 font-sans relative overflow-hidden" dir="rtl">
       
       {/* خلفية تفاعلية خفيفة جداً */}
@@ -174,13 +160,7 @@ export default function ExamsPage() {
         </div>
       )}
 
-      {/* زر الصوت */}
-      <button 
-        onClick={() => setSoundEnabled(!soundEnabled)}
-        className="fixed top-4 left-4 z-50 bg-white/10 hover:bg-white/20 backdrop-blur-md p-3 rounded-full text-white transition-all border border-white/10"
-      >
-        {soundEnabled ? <FaVolumeUp /> : <FaVolumeMute />}
-      </button>
+      {/* تم إزالة زر التحكم بالصوت من هنا */}
 
       <div className="relative z-10">
         {!selectedExam ? (
@@ -196,7 +176,7 @@ export default function ExamsPage() {
               </p>
             </div>
 
-            {/* شبكة الامتحانات (Full Width) */}
+            {/* شبكة الامتحانات */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
               {exams.map((exam, idx) => (
                 <div 
@@ -233,7 +213,7 @@ export default function ExamsPage() {
           </div>
         ) : (
           <div className="max-w-5xl mx-auto w-full animate-fadeIn">
-            {/* شريط الامتحان (Sticky & Glass) */}
+            {/* شريط الامتحان */}
             <div className="sticky top-2 z-40 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 mb-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xl">
                <div className="flex items-center gap-4 w-full md:w-auto">
                  <button onClick={resetAll} className="bg-white/10 hover:bg-white/20 p-3 rounded-xl transition-all border border-white/10">
