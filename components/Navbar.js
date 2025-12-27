@@ -31,10 +31,11 @@ export default function Navbar() {
     router.push('/');
   };
 
-  // ✅ كلاس موحد لتوسيط جميع الأزرار
-  // nav-btn: الكلاس القديم (للشكل)
-  // flex justify-center items-center: لتوسيط الأيقونة في النصف تماماً
-  const btnClass = "nav-btn flex justify-center items-center gap-2";
+  // ✅ التعديل السحري:
+  // 1. w-fit: يجعل عرض الزر على قد المحتوى فقط (fit-content)
+  // 2. mx-auto: يضع الزر في منتصف الشاشة (Margin Auto)
+  // 3. p-3: حواف داخلية ليكون الزر مريحاً
+  const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl";
 
   return (
     <nav className="navbar">
@@ -48,46 +49,50 @@ export default function Navbar() {
       </button>
 
       <div className={`nav-buttons ${isMenuOpen ? 'active' : ''}`}>
-        <span id="userName" style={{color:'white', marginLeft:'10px', fontWeight:'bold', display:'block', textAlign:'center', marginBottom:'10px'}}>{user?.name}</span>
+        
+        {/* اسم المستخدم */}
+        <span id="userName" style={{color:'white', fontWeight:'bold', display:'block', textAlign:'center', marginBottom:'15px'}}>
+            {user?.name}
+        </span>
         
         {/* 1. الرئيسية */}
         <Link href="/dashboard" className={btnClass} title="الرئيسية" onClick={closeMenu}>
-            <FaHome />
+            <FaHome size={20} />
         </Link>
 
         {/* 2. المواد */}
         <Link href="/dashboard/subjects" className={btnClass} title="المواد" onClick={closeMenu}>
-            <FaBook />
+            <FaBook size={20} />
         </Link>
         
         {/* 3. الامتحانات */}
         <Link href="/dashboard/exams" className={btnClass} title="الامتحانات" onClick={closeMenu}>
-            <FaClipboardList />
+            <FaClipboardList size={20} />
         </Link>
 
         {/* 4. الإعلانات */}
         <Link href="/dashboard/announcements" className={btnClass} title="الإعلانات" onClick={closeMenu}>
-            <FaBell />
+            <FaBell size={20} />
         </Link>
         
         {/* 5. مشاركة */}
         <Link href="/dashboard/share" className={btnClass} title="مشاركة ملخص" onClick={closeMenu}>
-             <FaCloudUploadAlt />
+             <FaCloudUploadAlt size={20} />
         </Link>
 
-        {/* 6. زر الأدمن (تأكدنا من توسيطه أيضاً) */}
-        <div className="flex justify-center w-full"> 
+        {/* 6. زر الأدمن (هو أصلاً fit-content) */}
+        <div className="w-fit mx-auto"> 
             <AdminLink onClick={closeMenu} />
         </div>
 
         {/* 7. ملخصاتي */}
         <Link href="/dashboard/myUploads" className={btnClass} title="ملخصاتي" onClick={closeMenu}>
-             <FaUserClock />
+             <FaUserClock size={20} />
         </Link>
         
         {/* 8. خروج */}
-        <button onClick={handleLogout} className={`${btnClass} logout`} title="تسجيل خروج">
-            <FaSignOutAlt />
+        <button onClick={handleLogout} className={`${btnClass} logout`} title="تسجيل خروج" style={{marginTop:'10px'}}>
+            <FaSignOutAlt size={20} />
         </button>
       </div>
     </nav>
