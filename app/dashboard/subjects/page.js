@@ -1,107 +1,98 @@
 "use client";
-import { useState, useEffect } from "react";
-import { db } from "../../../lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
 import Link from "next/link";
-import { FaChartLine, FaLanguage, FaCalculator, FaScaleBalanced, FaBriefcase, FaBookOpen } from "react-icons/fa6";
+import { FaCalculator, FaLanguage, FaChartLine, FaBriefcase, FaBalanceScale, FaBook, FaArrowLeft } from "react-icons/fa";
 
 export default function SubjectsPage() {
-  const [stats, setStats] = useState({});
-  const [loading, setLoading] = useState(true);
-
-  // قائمة المواد الثابتة (نفس الموجودة في مشروعك القديم)
+  
+  // قائمة المواد (مطابقة للصورة التي أرسلتها)
   const subjects = [
-    "مبادئ الاقتصاد",
-    "لغة اجنبية (1)",
-    "مبادئ المحاسبة المالية",
-    "مبادئ القانون",
-    "مبادئ ادارة الاعمال"
+    {
+      id: "economics",
+      name: "مبادئ الاقتصاد",
+      icon: <FaChartLine className="text-4xl text-blue-400" />, // أيقونة الاقتصاد
+      summaries: 9,
+      assignments: 2,
+      color: "border-blue-500"
+    },
+    {
+      id: "english",
+      name: "لغة اجنبية (1)",
+      icon: <FaLanguage className="text-4xl text-purple-400" />, // أيقونة اللغة
+      summaries: 0,
+      assignments: 6,
+      color: "border-purple-500"
+    },
+    {
+      id: "accounting",
+      name: "مبادئ المحاسبة المالية",
+      icon: <FaCalculator className="text-4xl text-green-400" />, // أيقونة المحاسبة
+      summaries: 2,
+      assignments: 0,
+      color: "border-green-500"
+    },
+    {
+      id: "management",
+      name: "مبادئ ادارة الاعمال",
+      icon: <FaBriefcase className="text-4xl text-orange-400" />, // أيقونة الإدارة
+      summaries: 1,
+      assignments: 0,
+      color: "border-orange-500"
+    },
+    {
+      id: "law",
+      name: "مبادئ القانون",
+      icon: <FaBalanceScale className="text-4xl text-red-400" />, // أيقونة القانون
+      summaries: 4,
+      assignments: 0,
+      color: "border-red-500"
+    }
   ];
 
-  // دالة لتحديد الأيقونة المناسبة لكل مادة
-  const getSubjectIcon = (subject) => {
-    const icons = {
-        "مبادئ الاقتصاد": <FaChartLine />,         
-        "لغة اجنبية (1)": <FaLanguage />,           
-        "مبادئ المحاسبة المالية": <FaCalculator />,   
-        "مبادئ القانون": <FaScaleBalanced />,      
-        "مبادئ ادارة الاعمال": <FaBriefcase />    
-    };
-    return icons[subject] || <FaBookOpen />;
-  };
-
-  const normalizeType = (type) => {
-    if (!type) return "";
-    type = type.toString().trim();
-    if (["summary", "ملخص", "ملخصات", "تلخيص"].includes(type)) return "summary";
-    if (["assignment", "تكليف", "تكاليف", "واجب"].includes(type)) return "assignment";
-    return type;
-  };
-
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        // جلب كل المواد المعتمدة لحساب الإحصائيات
-        const q = query(collection(db, "materials"), where("status", "==", "approved"));
-        const snapshot = await getDocs(q);
-        
-        const newStats = {};
-        
-        // تهيئة العدادات
-        subjects.forEach(sub => newStats[sub] = { summary: 0, assignment: 0 });
-
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          const sub = data.subject;
-          const type = normalizeType(data.type);
-          
-          if (newStats[sub]) {
-            if (type === "summary") newStats[sub].summary++;
-            if (type === "assignment") newStats[sub].assignment++;
-          }
-        });
-
-        setStats(newStats);
-      } catch (err) {
-        console.error("Error fetching stats:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchStats();
-  }, []);
-
-  if (loading) return <div style={{textAlign: 'center', padding: '50px', color: '#fff'}}>جاري تحميل المواد...</div>;
-
   return (
-    <div>
-      <h2 className="page-title" style={{ color: 'white', fontSize: '2.5em', margin: '30px 0', fontWeight: '900' }}>المواد الدراسية</h2>
+    <div className="min-h-screen bg-[#0b0c15] text-white p-6 md:p-10 font-sans" dir="rtl">
       
-      <div className="subjects-grid">
-        {subjects.map((subject) => (
-          /* عند الضغط على المادة، سننتقل لصفحة تعرض محتواها.
-             سنستخدم query params لتمرير اسم المادة.
-          */
-          <Link 
-            href={`/dashboard/materials?subject=${encodeURIComponent(subject)}`} 
-            key={subject} 
-            className="subject-card"
-            style={{textDecoration: 'none', display: 'block'}} // إصلاحات للرابط
-          >
-            <div className="subject-icon" style={{fontSize: '3.5em', marginBottom: '20px', color: '#fff'}}>
-                {getSubjectIcon(subject)}
-            </div>
-            
-            <h3>{subject}</h3>
-            
-            <div className="subject-stats">
-              <span className="stat-badge summary">
-                {stats[subject]?.summary || 0} ملخص
-              </span>
-              <span className="stat-badge assignment">
-                {stats[subject]?.assignment || 0} تكليف
-              </span>
+      {/* العنوان */}
+      <div className="flex justify-between items-center mb-12">
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-l from-white to-gray-400 bg-clip-text text-transparent">
+           المواد الدراسية
+        </h1>
+      </div>
+
+      {/* شبكة البطاقات */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {subjects.map((sub, index) => (
+          <Link href={`/dashboard/subjects/${sub.id}`} key={index}>
+            <div className={`group relative bg-[#151720] border border-gray-800 hover:border-gray-600 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl overflow-hidden cursor-pointer`}>
+              
+              {/* الشريط الملون العلوي (تأثير متوهج) */}
+              <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-${sub.color.split('-')[1]}-500 to-transparent opacity-50 group-hover:opacity-100 transition-opacity`}></div>
+              
+              {/* ✨ التعديل هنا: flex-col + items-center لتوسيط كل شيء */}
+              <div className="flex flex-col items-center justify-center text-center space-y-4">
+                
+                {/* الأيقونة في دائرة خلفية خفيفة */}
+                <div className="w-20 h-20 rounded-full bg-gray-800/50 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300 border border-gray-700/50 group-hover:border-gray-600">
+                   {sub.icon}
+                </div>
+
+                {/* اسم المادة */}
+                <h2 className="text-xl font-bold text-gray-100 group-hover:text-white transition-colors">
+                  {sub.name}
+                </h2>
+
+                {/* الإحصائيات (ملخصات وتكاليف) */}
+                <div className="flex items-center gap-3 mt-2 w-full justify-center">
+                   <div className="bg-gray-900/80 px-4 py-2 rounded-lg border border-gray-800 text-xs text-gray-400 flex items-center gap-2">
+                      <FaBook /> 
+                      <span>{sub.summaries} ملخص</span>
+                   </div>
+                   <div className="bg-gray-900/80 px-4 py-2 rounded-lg border border-gray-800 text-xs text-gray-400 flex items-center gap-2">
+                      <span>📝</span>
+                      <span>{sub.assignments} تكليف</span>
+                   </div>
+                </div>
+              </div>
+
             </div>
           </Link>
         ))}
