@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // 👈 إضافة useEffect
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
@@ -14,7 +14,7 @@ import {
   FaBars, 
   FaTimes,
   FaClipboardList,
-  FaCogs // 👈 استيراد أيقونة الإعدادات
+  FaCogs 
 } from 'react-icons/fa';
 
 export default function Navbar() {
@@ -22,6 +22,7 @@ export default function Navbar() {
   const router = useRouter();
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false); // 👈 1. حالة لمعرفة هل هو أدمن أم لا
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
@@ -31,6 +32,17 @@ export default function Navbar() {
     closeMenu();
     router.push('/');
   };
+
+  // 👇 2. التأكد من وجود الكود السري عند تحميل الصفحة
+  useEffect(() => {
+    const checkAdmin = () => {
+      // إذا وجدنا الكود في المتصفح، نظهر زر الأدمن
+      if (typeof window !== 'undefined' && localStorage.getItem("adminCode")) {
+        setIsAdmin(true);
+      }
+    };
+    checkAdmin();
+  }, []);
 
   const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5";
 
@@ -76,12 +88,14 @@ export default function Navbar() {
              <FaCloudUploadAlt size={20} />
         </Link>
 
-        {/* 6. لوحة التحكم الرئيسية (زر جديد) 🆕 */}
-        <Link href="/dashboard/admin" className={`${btnClass} hover:bg-orange-600`} title="لوحة التحكم الرئيسية" onClick={closeMenu}>
-             <FaCogs size={20} />
-        </Link>
+        {/* 👇 6. زر لوحة التحكم (يظهر فقط إذا كان isAdmin = true) */}
+        {isAdmin && (
+          <Link href="/dashboard/admin" className={`${btnClass} hover:bg-orange-600`} title="لوحة التحكم الرئيسية" onClick={closeMenu}>
+               <FaCogs size={20} />
+          </Link>
+        )}
 
-        {/* 7. زر صنع الامتحان (الأحمر السري - يظهر للأدمن فقط) */}
+        {/* 7. زر صنع الامتحان (الأحمر) - هو يخفي نفسه تلقائياً */}
         <div className="w-fit mx-auto"> 
             <AdminLink onClick={closeMenu} />
         </div>
