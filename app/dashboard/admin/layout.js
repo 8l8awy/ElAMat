@@ -1,77 +1,71 @@
 "use client";
 import { useState, useEffect } from "react";
-import { db } from "@/lib/firebase"; // استيراد قاعدة البيانات
+import { useSearchParams, useRouter } from "next/navigation";
+import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { FaLock, FaUserShield, FaSpinner } from "react-icons/fa";
+import { FaSpinner } from "react-icons/fa";
 
 export default function AdminLayout({ children }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [passInput, setPassInput] = useState("");
-  const [checking, setChecking] = useState(true); // حالة التحميل
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // 🔍 دالة مساعدة للتحقق من الكود في الفايربيس
-  const verifyCodeWithFirebase = async (codeToCheck) => {
+  // 🔍 دالة التحقق من الكود في الفايربيس
+  const verifyCode = async (codeToCheck) => {
     try {
-      const q = query(
-        collection(db, "allowedCodes"),
-        where("code", "==", codeToCheck) // البحث عن مستند يحتوي على هذا الكود
-      );
+      // البحث في كوليكشن allowedCodes كما في صورتك
+      const q = query(collection(db, "allowedCodes"), where("code", "==", codeToCheck));
       const snapshot = await getDocs(q);
-      return !snapshot.empty; // إذا وجدنا نتيجة، فالكود صحيح
+      return !snapshot.empty;
     } catch (error) {
-      console.error("Error verifying code:", error);
+      console.error("Verification Error:", error);
       return false;
     }
   };
 
   useEffect(() => {
-    const checkAuth = async () => {
-      // 1. جلب الكود المخزن في Local Storage
-      const storedCode = localStorage.getItem("adminCode");
+    const checkAccess = async () => {
+      // 1. هل يوجد كود في الرابط؟ (لأول مرة للدخول)
+      // مثال: ?auth=123456
+      const urlCode = searchParams.get("auth");
       
-      if (storedCode) {
-        // 2. التحقق: هل الكود المخزن موجود فعلاً في قاعدة بيانات فايربيس؟
-        const isValid = await verifyCodeWithFirebase(storedCode);
-        
+      // 2. هل يوجد كود محفوظ سابقاً في المتصفح؟
+      const storedCode = localStorage.getItem("adminCode");
+
+      let codeToVerify = urlCode || storedCode;
+
+      if (codeToVerify) {
+        const isValid = await verifyCode(codeToVerify);
+
         if (isValid) {
-          setIsAuthenticated(true);
+          // ✅ الكود صحيح
+          setIsAuthorized(true);
+          
+          if (urlCode) {
+            // إذا كان الكود قادماً من الرابط، نحفظه للمستقبل
+            localStorage.setItem("adminCode", urlCode);
+            // ونقوم بتنظيف الرابط (إزالة الكود منه لعدم مشاركته بالخطأ)
+            router.replace("/dashboard/admin/exams");
+          }
         } else {
-          // إذا كان الكود قديماً أو تم حذفه من القاعدة، نخرجه
-          localStorage.removeItem("adminCode");
-          setIsAuthenticated(false);
+          // ❌ الكود خاطئ
+          localStorage.removeItem("adminCode"); // تنظيف أي كود قديم فاسد
+          setIsAuthorized(false);
         }
+      } else {
+        // لا يوجد كود في الرابط ولا في الذاكرة
+        setIsAuthorized(false);
       }
-      setChecking(false);
+      
+      setLoading(false);
     };
 
-    checkAuth();
-  }, []);
+    checkAccess();
+  }, [searchParams, router]);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setChecking(true); // إظهار التحميل أثناء الفحص
-    const code = passInput.trim();
-
-    // التحقق المباشر من الفايربيس عند الضغط على زر الدخول
-    const isValid = await verifyCodeWithFirebase(code);
-
-    if (isValid) {
-      setIsAuthenticated(true);
-      localStorage.setItem("adminCode", code); // ✅ حفظ الكود الصحيح
-    } else {
-      alert("⛔ كود غير صحيح أو غير مصرح به!");
-      setPassInput("");
-    }
-    setChecking(false);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("adminCode");
-    setIsAuthenticated(false);
-  };
-
-  // شاشة التحميل (تظهر للحظات أثناء التأكد من الفايربيس)
-  if (checking) {
+  // 1. حالة التحميل (شاشة سوداء لحظية)
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#0b0c15] flex items-center justify-center">
         <FaSpinner className="animate-spin text-4xl text-blue-500" />
@@ -79,47 +73,33 @@ export default function AdminLayout({ children }) {
     );
   }
 
-  // 🔒 شاشة القفل
-  if (!isAuthenticated) {
+  // 2. حالة الرفض: عرض صفحة 404 مزيفة (Fake 404)
+  if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-[#0b0c15] flex flex-col items-center justify-center p-4 text-white font-sans" dir="rtl">
-        <div className="bg-[#151720] p-8 rounded-2xl border border-red-500/30 text-center w-full max-w-md shadow-2xl">
-          <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-             <FaUserShield className="text-5xl text-red-500" />
-          </div>
-          
-          <h2 className="text-3xl font-bold mb-2">منطقة محظورة</h2>
-          <p className="text-gray-400 mb-8 text-sm">أدخل كود الأدمن للمتابعة (سيتم التحقق من السيرفر).</p>
-          
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="relative">
-                <FaLock className="absolute right-4 top-4 text-gray-500"/>
-                <input 
-                  type="password" 
-                  placeholder="أدخل الكود..." 
-                  value={passInput}
-                  onChange={(e) => setPassInput(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-xl py-3 pr-12 pl-4 text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all"
-                />
-            </div>
-            <button type="submit" disabled={checking} className="w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white py-3.5 rounded-xl font-bold transition-all transform hover:scale-[1.02] shadow-lg disabled:opacity-50">
-              {checking ? "جاري التحقق..." : "تحقق ودخول"}
-            </button>
-          </form>
+      <div className="min-h-screen bg-white text-black flex flex-col items-center justify-center font-sans">
+        {/* تصميم يطابق صفحة الخطأ الافتراضية في Next.js لإقناع المتطفل */}
+        <div className="flex items-center">
+            <h1 className="text-5xl font-medium border-r border-gray-300 pr-6 mr-6 py-2">404</h1>
+            <div className="text-sm">This page could not be found.</div>
         </div>
       </div>
     );
   }
 
-  // ✅ عرض الصفحة
+  // 3. حالة القبول: عرض لوحة التحكم
   return (
-    <div className="relative">
+    <div className="animate-fadeIn">
+      {/* زر خروج سري صغير جداً في الأسفل */}
       <button 
-        onClick={handleLogout}
-        className="fixed top-4 left-4 z-50 bg-red-600/80 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded-lg backdrop-blur-sm transition-all"
+        onClick={() => {
+            localStorage.removeItem("adminCode");
+            window.location.reload();
+        }}
+        className="fixed bottom-2 left-2 z-50 opacity-20 hover:opacity-100 text-[10px] text-red-500 hover:text-red-600 transition-all"
       >
-        خروج
+        [Admin Logout]
       </button>
+      
       {children}
     </div>
   );
