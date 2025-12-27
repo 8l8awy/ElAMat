@@ -172,7 +172,7 @@ export default function ExamsPage() {
                    الامتحانات
               </h1>
               <p className="text-gray-400">
-                  أهلاً بك يا <span className="text-blue-400 font-bold">{user?.name}</span>، اختر امتحانك وابدأ ! 
+                  أهلاً يا <span className="text-blue-400 font-bold">{user?.name}</span>، اختر امتحانك وابدأ ! 
               </p>
             </div>
 
