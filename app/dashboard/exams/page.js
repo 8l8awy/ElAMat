@@ -184,10 +184,10 @@ export default function ExamsPage() {
               </div>
               
               <h1 className="text-6xl md:text-8xl font-black mb-6 bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-400 bg-clip-text text-transparent animate-gradient leading-tight">
-                منصة الامتحانات الذكية
+                 El Agamy Materials 
               </h1>
               <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed mb-8">
-                🚀 اختبر نفسك، تحدّى قدراتك، وحقق النجاح مع أفضل تجربة تعليمية تفاعلية
+                 اختبر نفسك، تحدّى قدراتك، وحقق النجاح مع أفضل تجربة تعليمية تفاعلية
               </p>
               
               {/* Enhanced stats bar */}
@@ -242,7 +242,7 @@ export default function ExamsPage() {
                       <FaClipboardList className="text-7xl text-slate-600"/>
                     </div>
                     <h3 className="text-4xl font-black text-gray-200 mb-5">لا توجد امتحانات متاحة</h3>
-                    <p className="text-gray-400 text-xl">سيتم إضافة امتحانات جديدة ومثيرة قريباً! 🎯</p>
+                    <p className="text-gray-400 text-xl">سيتم إضافة امتحانات جديدة قريباً! 🎯</p>
                   </div>
                 </div>
               </div>
@@ -253,7 +253,7 @@ export default function ExamsPage() {
                     <FaClipboardList className="text-blue-400"/>
                     اختر امتحانك
                   </h2>
-                  <p className="text-gray-300 text-lg">انقر على أي امتحان للبدء فوراً 🚀</p>
+                  <p className="text-gray-300 text-lg">اضغط على أي امتحان للبدء فوراً </p>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -441,10 +441,10 @@ export default function ExamsPage() {
 
                   {/* Result text with animation */}
                   <h3 className="text-5xl md:text-6xl font-black mb-8 text-white drop-shadow-lg animate-bounce">
-                    {percentage >= 90 ? "🏆 أداء أسطوري!" : 
-                     percentage >= 75 ? "⭐ ممتاز جداً!" : 
-                     percentage >= 50 ? "👍 جيد جداً!" : 
-                     "💪 واصل التدريب!"}
+                    {percentage >= 90 ? " جامد!" : 
+                     percentage >= 75 ? " عاش!" : 
+                     percentage >= 50 ? "  رايق!" : 
+                     " راجع تاني"}
                   </h3>
                   
                   {/* Score display */}
