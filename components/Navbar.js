@@ -13,7 +13,8 @@ import {
   FaUserClock, 
   FaBars, 
   FaTimes,
-  FaClipboardList
+  FaClipboardList,
+  FaCogs // 👈 استيراد أيقونة الإعدادات
 } from 'react-icons/fa';
 
 export default function Navbar() {
@@ -31,7 +32,6 @@ export default function Navbar() {
     router.push('/');
   };
 
-  // ستايل موحد للأزرار (في المنتصف + شكل أنيق)
   const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5";
 
   return (
@@ -61,7 +61,7 @@ export default function Navbar() {
             <FaBook size={20} />
         </Link>
         
-        {/* 3. الامتحانات (للطلاب) */}
+        {/* 3. الامتحانات */}
         <Link href="/dashboard/exams" className={`${btnClass} hover:bg-purple-600`} title="الامتحانات" onClick={closeMenu}>
             <FaClipboardList size={20} />
         </Link>
@@ -76,18 +76,22 @@ export default function Navbar() {
              <FaCloudUploadAlt size={20} />
         </Link>
 
-        {/* 6. زر صنع الامتحان (الأحمر السري) */}
-        {/* يظهر فقط للأدمن الذي معه الكود، ويوجه لصفحة الامتحانات مباشرة */}
+        {/* 6. لوحة التحكم الرئيسية (زر جديد) 🆕 */}
+        <Link href="/dashboard/admin" className={`${btnClass} hover:bg-orange-600`} title="لوحة التحكم الرئيسية" onClick={closeMenu}>
+             <FaCogs size={20} />
+        </Link>
+
+        {/* 7. زر صنع الامتحان (الأحمر السري - يظهر للأدمن فقط) */}
         <div className="w-fit mx-auto"> 
             <AdminLink onClick={closeMenu} />
         </div>
 
-        {/* 7. ملخصاتي */}
+        {/* 8. ملخصاتي */}
         <Link href="/dashboard/myUploads" className={`${btnClass} hover:bg-cyan-600`} title="ملخصاتي" onClick={closeMenu}>
              <FaUserClock size={20} />
         </Link>
         
-        {/* 8. خروج */}
+        {/* 9. خروج */}
         <button onClick={handleLogout} className={`${btnClass} logout bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white`} title="تسجيل خروج" style={{marginTop:'10px'}}>
             <FaSignOutAlt size={20} />
         </button>
