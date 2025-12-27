@@ -169,10 +169,10 @@ export default function ExamsPage() {
             {/* الهيدر */}
             <div className="text-center mb-8 pt-4">
               <h1 className="text-3xl md:text-5xl font-black bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
-                  منصة الامتحانات
+                   الامتحانات
               </h1>
               <p className="text-gray-400">
-                  أهلاً بك يا <span className="text-blue-400 font-bold">{user?.name}</span>، اختر امتحانك وابدأ التحدي! 🚀
+                  أهلاً بك يا <span className="text-blue-400 font-bold">{user?.name}</span>، اختر امتحانك وابدأ ! 
               </p>
             </div>
 
@@ -255,7 +255,7 @@ export default function ExamsPage() {
                     </div>
 
                     <h2 className="text-4xl font-black text-white mb-2">
-                        {percentage >= 90 ? "أسطوري! 🏆" : percentage >= 75 ? "ممتاز! 🔥" : "نتيجة جيدة 👍"}
+                        {percentage >= 90 ? "جامد! " : percentage >= 75 ? "عاش! " : "كويس "}
                     </h2>
                     
                     <div className="flex justify-center gap-4 mt-6">
