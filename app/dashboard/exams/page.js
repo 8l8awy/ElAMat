@@ -23,38 +23,6 @@ export default function ExamsPage() {
   const [isExamStarted, setIsExamStarted] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   
-  // حالة الصوت
-  const [soundEnabled, setSoundEnabled] = useState(true);
-
-  // 🎵 تشغيل الأصوات
-  const playSound = (type) => {
-    if (!soundEnabled) return;
-    const sounds = {
-      success: "https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3", // صوت نجاح
-      clap: "https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3",    // تصفيق
-      click: "https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3",   // نقرة
-    };
-    const audio = new Audio(sounds[type]);
-    audio.volume = 0.5;
-    audio.play().catch(e => console.log("Audio error:", e));
-  };
-
-  useEffect(() => {
-    async function fetchExams() {
-      try {
-        const q = query(collection(db, "exams"), orderBy("createdAt", "desc"));
-        const snapshot = await getDocs(q);
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setExams(data);
-      } catch (error) {
-        console.error("Error fetching exams:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchExams();
-  }, []);
-
   // المؤقت
   useEffect(() => {
     let timer;
