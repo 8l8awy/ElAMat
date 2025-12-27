@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { FaPlus, FaSave, FaTrash, FaCheckCircle } from "react-icons/fa";
+import { FaPlus, FaSave, FaTrash, FaCheckCircle, FaMagic } from "react-icons/fa";
 
 export default function CreateExamPage() {
   const [loading, setLoading] = useState(false);
@@ -17,18 +17,45 @@ export default function CreateExamPage() {
   // السؤال الحالي (قيد الكتابة)
   const [currentQ, setCurrentQ] = useState({
     question: "",
-    options: ["", "", "", ""],
+    options: ["", "", "", ""], // الافتراضي 4 خيارات
     correct: 0 
   });
 
-  // إضافة سؤال للقائمة المؤقتة
+  // دالة لتغيير عدد الخيارات
+  const changeOptionCount = (count) => {
+    let newOptions = [...currentQ.options];
+    if (count > newOptions.length) {
+      // زيادة عدد الخيارات (نضيف خانات فارغة)
+      while (newOptions.length < count) newOptions.push("");
+    } else {
+      // تقليل عدد الخيارات (نحذف الزيادة)
+      newOptions = newOptions.slice(0, count);
+    }
+    
+    // التأكد أن الإجابة الصحيحة ما زالت داخل النطاق
+    let newCorrect = currentQ.correct;
+    if (newCorrect >= count) newCorrect = 0;
+
+    setCurrentQ({ ...currentQ, options: newOptions, correct: newCorrect });
+  };
+
+  // زر سحري لأسئلة الصح والخطأ
+  const setTrueFalse = () => {
+    setCurrentQ({
+      ...currentQ,
+      options: ["صح", "خطأ"],
+      correct: 0
+    });
+  };
+
+  // إضافة سؤال للقائمة
   const addQuestion = () => {
     if (!currentQ.question || currentQ.options.some(opt => opt === "")) {
-      alert("الرجاء تعبئة نص السؤال وجميع الاختيارات الأربعة.");
+      alert("الرجاء تعبئة نص السؤال وجميع الاختيارات.");
       return;
     }
     setQuestions([...questions, { ...currentQ, id: Date.now() }]);
-    // تصفير الخانات
+    // تصفير الخانات (إرجاعها للافتراضي 4 خيارات)
     setCurrentQ({ question: "", options: ["", "", "", ""], correct: 0 });
   };
 
@@ -37,7 +64,7 @@ export default function CreateExamPage() {
     setQuestions(questions.filter(q => q.id !== id));
   };
 
-  // حفظ الامتحان في الفايربيس
+  // حفظ الامتحان
   const saveExam = async () => {
     if (!title || questions.length === 0) {
       alert("الرجاء كتابة عنوان للامتحان وإضافة سؤال واحد على الأقل.");
@@ -108,10 +135,34 @@ export default function CreateExamPage() {
                     className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 outline-none focus:border-blue-500 min-h-[80px]"
                 />
 
+                {/* 🌟 شريط التحكم في عدد الإجابات */}
+                <div className="flex flex-wrap items-center gap-3 bg-gray-900/50 p-2 rounded-lg border border-gray-700">
+                    <span className="text-xs text-gray-400 ml-2">عدد الخيارات:</span>
+                    {[2, 3, 4, 5].map(num => (
+                        <button 
+                            key={num}
+                            onClick={() => changeOptionCount(num)}
+                            className={`w-8 h-8 rounded text-sm font-bold transition-all ${currentQ.options.length === num ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+                        >
+                            {num}
+                        </button>
+                    ))}
+                    
+                    <div className="w-px h-6 bg-gray-700 mx-1"></div>
+                    
+                    <button 
+                        onClick={setTrueFalse}
+                        className="flex items-center gap-1 text-xs bg-purple-600/20 hover:bg-purple-600 text-purple-400 hover:text-white px-3 py-1.5 rounded-lg border border-purple-500/30 transition-all"
+                    >
+                        <FaMagic /> صح/خطأ
+                    </button>
+                </div>
+
+                {/* حقول الإجابات الديناميكية */}
                 <div className="space-y-3">
                     <p className="text-xs text-gray-400">الاختيارات (اضغط الدائرة لتحديد الإجابة الصحيحة):</p>
                     {currentQ.options.map((opt, idx) => (
-                        <div key={idx} className="flex items-center gap-3">
+                        <div key={idx} className="flex items-center gap-3 animate-fadeIn">
                             <input 
                                 type="radio" 
                                 name="correctOption" 
