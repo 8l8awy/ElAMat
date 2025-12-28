@@ -1,44 +1,33 @@
 /* =========================================
-   تصميم صفحة المواد - Modern Premium Style
+   تصميم صفحة المواد - Full Width & Transparent
    ========================================= */
 
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap');
 
 :root {
-    /* لوحة ألوان احترافية (Slate & Emerald) */
-    --bg-page: #020617;       /* خلفية الصفحة: أسود مائل للأزرق العميق */
-    --bg-card: #0f172a;       /* خلفية البطاقة: أفتح قليلاً */
-    --bg-card-hover: #1e293b; /* خلفية البطاقة عند التحويم */
-    
-    --primary-accent: #10b981; /* أخضر زمردي (أشيك من النيون) */
-    --primary-glow: rgba(16, 185, 129, 0.4);
-    
-    --text-main: #f8fafc;     /* أبيض ساطع */
-    --text-muted: #94a3b8;    /* رمادي هادئ */
-    
-    --border-color: #1e293b;  /* لون الحدود */
-    --border-hover: #334155;
+    --primary-accent: #10b981; /* أخضر زمردي هادئ للعناصر النشطة */
+    --text-main: #f8fafc;     /* أبيض للنصوص */
+    --text-muted: #94a3b8;    /* رمادي للنصوص الفرعية */
+    --danger-color: #ef4444;  /* أحمر للتكليفات */
 }
 
-/* تنسيق عام للصفحة */
+/* تنسيق الحاوية الرئيسية */
 .materials-page-container {
-    background-color: var(--bg-page);
+    /* لا نضع لون خلفية هنا ليعتمد على خلفية موقعك الأصلية */
     min-height: 100vh;
-    padding: 40px 20px;
+    padding: 20px; /* تقليل الهوامش لزيادة المساحة */
     color: var(--text-main);
     font-family: 'Cairo', sans-serif;
     direction: rtl;
+    width: 100%; /* ضمان العرض الكامل */
 }
 
 /* --- الهيدر (العنوان) --- */
 .materials-header-redesigned {
-    text-align: center;
-    margin-bottom: 60px;
+    text-align: center; /* إبقاء العنوان في المنتصف */
+    margin-bottom: 40px;
     padding-bottom: 20px;
-    border-bottom: 1px solid var(--border-color);
-    max-width: 1000px;
-    margin-left: auto;
-    margin-right: auto;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .header-content {
@@ -46,7 +35,7 @@
     align-items: center;
     justify-content: center;
     gap: 15px;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 .header-icon {
@@ -58,46 +47,43 @@
     font-size: 2.5rem;
     font-weight: 800;
     margin: 0;
-    background: linear-gradient(to right, #fff, #cbd5e1);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: white;
 }
 
 .header-subtitle {
     color: var(--text-muted);
     font-size: 1.1rem;
-    margin-top: 5px;
 }
 
-/* --- الشبكة (Grid) --- */
+/* --- الشبكة (Grid) - تأخذ الشاشة كاملة --- */
 .materials-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 25px;
-    max-width: 1200px;
-    margin: 0 auto;
+    /* جعل البطاقات مرنة وتملأ المساحة المتاحة */
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+    gap: 20px;
+    width: 100%; /* عرض كامل */
+    max-width: 100%; /* إلغاء أي حد أقصى للعرض */
+    padding: 0 10px;
 }
 
-/* --- البطاقة (Card) - تصميم جديد كلياً --- */
+/* --- البطاقة (Card) - شفافة وبسيطة --- */
 .material-card-redesigned {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 25px;
+    background-color: transparent; /* ⚠️ شفاف: لإلغاء اللون الأزرق */
+    border: none; /* إلغاء الحدود */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* خط فاصل خفيف فقط */
+    padding: 20px;
     position: relative;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
     display: flex;
     flex-direction: column;
     cursor: pointer;
-    overflow: hidden;
 }
 
-/* تأثير الإضاءة عند التحويم */
+/* تأثير بسيط جداً عند التحويم */
 .material-card-redesigned:hover {
-    background-color: var(--bg-card-hover);
-    border-color: var(--primary-accent);
-    transform: translateY(-4px);
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    background-color: rgba(255, 255, 255, 0.03); /* لون خفيف جداً عند الماوس */
+    transform: translateY(-2px);
+    border-radius: 12px; /* إضافة انحناء خفيف عند التحويم */
 }
 
 .material-card-redesigned:hover .card-title {
@@ -108,28 +94,25 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
-/* الشارات (Badges) بتصميم أنيق */
+/* الشارات (Badges) */
 .type-badge {
-    padding: 6px 14px;
-    border-radius: 8px;
-    font-size: 0.75rem;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
     font-weight: 700;
-    letter-spacing: 0.5px;
 }
 
 .badge-summary {
-    background-color: rgba(59, 130, 246, 0.1);
+    background-color: rgba(59, 130, 246, 0.15); /* أزرق فاتح جداً */
     color: #60a5fa;
-    border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 .badge-assignment {
-    background-color: rgba(239, 68, 68, 0.1);
+    background-color: rgba(239, 68, 68, 0.15); /* أحمر فاتح جداً */
     color: #f87171;
-    border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .card-stats {
@@ -139,35 +122,25 @@
     font-size: 0.85rem;
 }
 
-.stat-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.card-content {
-    flex-grow: 1;
-}
-
 .card-title {
     color: var(--text-main);
     font-size: 1.4rem;
     font-weight: 700;
     margin: 0 0 10px 0;
-    transition: color 0.3s ease;
+    transition: color 0.2s;
 }
 
-/* تحسين شكل "بواسطة" */
+/* قسم الناشر */
 .publisher-info {
     display: flex;
     align-items: center;
     gap: 6px;
     font-size: 0.9rem;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     color: var(--text-muted);
 }
 .publisher-name {
-    color: var(--text-main);
+    color: var(--primary-accent);
     font-weight: 600;
 }
 
@@ -179,48 +152,46 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
+    opacity: 0.8;
 }
 
 /* الأزرار داخل البطاقة */
 .card-actions-redesigned {
     margin-top: auto;
-    border-top: 1px solid var(--border-color);
-    padding-top: 15px;
 }
 
 .btn-details-redesigned {
-    width: 100%;
     background: transparent;
-    color: var(--text-main);
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    padding: 8px 0;
+    border: none;
     font-weight: 600;
     cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
     transition: all 0.2s;
+    font-size: 0.95rem;
 }
 
 .btn-details-redesigned:hover {
-    background: var(--primary-accent);
-    border-color: var(--primary-accent);
-    color: #000; /* نص أسود على خلفية خضراء للتباين */
+    color: var(--primary-accent);
+    padding-right: 5px; /* حركة بسيطة لليمين */
 }
 
+/* =========================================
+   تصميم المودال (النافذة المنبثقة)
+   يجب أن يبقى مميزاً قليلاً عن الخلفية
+   ========================================= */
 
-/* --- المودال (النافذة المنبثقة) --- */
 .modal-backdrop {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(8px);
+    background-color: rgba(0, 0, 0, 0.9); /* خلفية سوداء شبه كاملة للتركيز */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -229,56 +200,45 @@
 }
 
 .modal-content-redesigned {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
-    padding: 40px;
-    border-radius: 20px;
+    /* هنا نضع لوناً داكناً لتمييز النافذة عن الخلفية */
+    background-color: #0f0f0f; 
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 30px;
+    border-radius: 16px;
     width: 100%;
     max-width: 600px;
     position: relative;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
     max-height: 90vh;
     display: flex;
     flex-direction: column;
 }
 
 .animate-pop-in {
-    animation: slideUp 0.3s ease-out;
+    animation: fadeInScale 0.2s ease-out;
 }
 
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+@keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
 }
 
 .close-btn-redesigned {
     position: absolute;
     top: 20px;
     left: 20px;
-    background: rgba(255, 255, 255, 0.05);
+    background: transparent;
     border: none;
     color: var(--text-muted);
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    font-size: 1.2rem;
+    font-size: 1.5rem;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
 }
-
-.close-btn-redesigned:hover {
-    background: #ef4444;
-    color: white;
-}
+.close-btn-redesigned:hover { color: var(--danger-color); }
 
 .modal-title {
     text-align: center;
     color: var(--text-main);
     margin-bottom: 5px;
-    font-size: 2rem;
+    font-size: 1.8rem;
     font-weight: 800;
 }
 
@@ -286,21 +246,17 @@
     display: flex;
     justify-content: center;
     gap: 40px;
-    background: rgba(255, 255, 255, 0.03);
     padding: 15px;
-    border-radius: 12px;
-    margin: 25px 0;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 20px;
 }
 
-.modal-stat {
-    text-align: center;
-}
 .modal-stat .count {
     display: block;
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     font-weight: 700;
     color: var(--text-main);
+    text-align: center;
 }
 .modal-stat .label {
     font-size: 0.8rem;
@@ -310,29 +266,28 @@
 .btn-share-redesigned {
     width: 100%;
     background: var(--primary-accent);
-    color: #020617;
-    padding: 16px;
-    border-radius: 12px;
-    margin-bottom: 30px;
+    color: #000;
+    padding: 14px;
+    border-radius: 8px;
+    margin-bottom: 25px;
     border: none;
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1rem;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    transition: filter 0.2s;
+    gap: 8px;
 }
-.btn-share-redesigned:hover {
-    filter: brightness(1.1);
-}
+.btn-share-redesigned:hover { filter: brightness(1.1); }
 
 /* قائمة الملفات */
 .files-title {
     color: var(--text-main);
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     font-size: 1.1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 5px;
 }
 
 .files-list-scroll {
@@ -342,34 +297,26 @@
 }
 
 .file-item-redesigned {
-    background: rgba(255, 255, 255, 0.03);
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 10px;
+    background: transparent;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border: 1px solid transparent;
-    transition: all 0.2s;
 }
 
-.file-item-redesigned:hover {
-    border-color: rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.05);
-}
+.file-item-redesigned:last-child { border-bottom: none; }
 
-.file-name {
-    color: var(--text-main);
-    font-weight: 500;
-}
+.file-name { color: var(--text-main); }
 
 .btn-download-new {
-    background: rgba(16, 185, 129, 0.1);
+    background: transparent;
+    border: 1px solid var(--primary-accent);
     color: var(--primary-accent);
-    padding: 8px 16px;
-    border-radius: 8px;
+    padding: 6px 12px;
+    border-radius: 6px;
     text-decoration: none;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -382,26 +329,15 @@
     color: #000;
 }
 
-/* شاشة الانتظار */
-.loading-spinner {
-    color: var(--primary-accent);
-    text-align: center;
-    font-size: 1.2rem;
-    margin-top: 20%;
-}
-
 /* حالة عدم وجود مواد */
 .empty-state-redesigned {
     text-align: center;
     padding: 80px 20px;
-    background: transparent;
-    border: 2px dashed var(--border-color);
-    border-radius: 20px;
+    opacity: 0.6;
     grid-column: 1 / -1;
 }
 .empty-icon {
     font-size: 3rem;
     margin-bottom: 20px;
     display: block;
-    opacity: 0.5;
 }
