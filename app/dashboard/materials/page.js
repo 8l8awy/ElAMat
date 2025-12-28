@@ -9,6 +9,7 @@ import {
   FaEye,
   FaFilePdf,
   FaFileImage,
+  FaShare,
   FaTimes,
   FaBookOpen,
   FaClipboardList,
@@ -65,6 +66,23 @@ function MaterialsContent() {
     } catch (err) { console.error(err); }
   };
 
+  const handleShare = async (material) => {
+    const shareData = {
+        title: material.title,
+        text: `شاهد "${material.title}" لمادة ${material.subject}`,
+        url: window.location.href
+    };
+    try {
+        if (navigator.share) await navigator.share(shareData);
+        else {
+            await navigator.clipboard.writeText(window.location.href);
+            alert("تم نسخ رابط الصفحة!");
+        }
+    } catch (err) { console.log("Share skipped"); }
+  };
+
+  if (loading) return <div className="loading-spinner">جاري التحميل...</div>;
+
   return (
     <div className="materials-page-container">
       <div className="materials-header-redesigned">
@@ -74,50 +92,58 @@ function MaterialsContent() {
       </div>
 
       <div className="materials-grid">
-        {materials.length === 0 ? (
-            <div className="empty-state-redesigned">
-                <span className="empty-icon">📂</span>
-                <h3>لا توجد مواد مضافة بعد</h3>
-            </div>
-        ) : (
-            materials.map(m => (
-                <div key={m.id} className="material-card-redesigned" onClick={() => handleOpenMaterial(m)}>
-                    {/* استعادة الأيقونة الكبيرة الملونة */}
-                    <div className={`card-big-icon ${m.type === 'assignment' ? 'icon-assignment' : 'icon-summary'}`}>
-                        {m.type === 'assignment' ? <FaClipboardList /> : <FaFileAlt />}
-                    </div>
-                    <h3 className="card-title">{m.title}</h3>
-                    <div className="card-uploader">بواسطة: <span>{m.uploader || "مجهول"}</span></div>
-                    
-                    {/* استعادة الأرقام والإحصائيات أسفل الكارت */}
-                    <div className="card-bottom-pills">
-                        <div className="pill-stat"><FaEye /> {m.viewCount || 0}</div>
-                        <div className="pill-stat"><FaDownload /> {m.downloadCount || 0}</div>
-                    </div>
-                </div>
-            ))
-        )}
+        {materials.map(m => (
+          <div key={m.id} className="material-card-redesigned" onClick={() => handleOpenMaterial(m)}>
+              <div className={`card-big-icon ${m.type === 'assignment' ? 'icon-assignment' : 'icon-summary'}`}>
+                  {m.type === 'assignment' ? <FaClipboardList /> : <FaFileAlt />}
+              </div>
+              <h3 className="card-title">{m.title}</h3>
+              <div className="card-uploader">بواسطة: <span>{m.uploader || "مجهول"}</span></div>
+              <div className="card-bottom-pills">
+                  <div className="pill-stat"><FaEye /> {m.viewCount || 0}</div>
+                  <div className="pill-stat"><FaDownload /> {m.downloadCount || 0}</div>
+              </div>
+          </div>
+        ))}
       </div>
 
       {selectedMaterial && (
         <div className="modal-backdrop active" onClick={() => setSelectedMaterial(null)}>
           <div className="modal-content-redesigned animate-pop-in" onClick={(e) => e.stopPropagation()}>
             <button className="close-btn-redesigned" onClick={() => setSelectedMaterial(null)}><FaTimes /></button>
-            <h2 className="modal-title">{selectedMaterial.title}</h2>
-            <p className="modal-description">{selectedMaterial.desc || "لا يوجد وصف إضافي."}</p>
             
+            <h2 className="modal-title">{selectedMaterial.title}</h2>
+
+            {/* إحصائيات المودال (المشاهدة والتحميل) */}
+            <div className="modal-stats-container">
+                <div className="modal-stat-item">
+                    <FaEye color="#00ff88" />
+                    <span>{selectedMaterial.viewCount || 0}</span>
+                </div>
+                <div className="modal-divider"></div>
+                <div className="modal-stat-item">
+                    <FaDownload color="#3b82f6" />
+                    <span>{selectedMaterial.downloadCount || 0}</span>
+                </div>
+            </div>
+
+            {/* زر المشاركة الملون */}
+            <button className="btn-share-redesigned gradient-btn" onClick={() => handleShare(selectedMaterial)}>
+                <FaShare /> مشاركة
+            </button>
+
             <div className="modal-files-section">
               <h4 className="files-title">الملفات:</h4>
               <div className="files-list-scroll">
                 {selectedMaterial.files?.map((file, index) => (
                     <div key={index} className="file-item-redesigned">
                         <div className="file-info">
-                            {isPdfFile(file) ? <FaFilePdf className="file-icon pdf"/> : <FaFileImage className="file-icon image"/>}
                             <span className="file-name">{file.name}</span>
+                            {isPdfFile(file) ? <FaFilePdf className="file-icon pdf"/> : <FaFileImage className="file-icon image"/>}
                         </div>
                         <div className="file-actions">
                             <a href={file.url} target="_blank" rel="noreferrer" className="btn-action btn-preview-new">
-                                <FaEye /> عرض
+                                <FaEye /> معاينة
                             </a>
                             <a href={file.url} className="btn-action btn-download-new" target="_blank" rel="noopener noreferrer">
                                 <FaDownload /> تحميل
