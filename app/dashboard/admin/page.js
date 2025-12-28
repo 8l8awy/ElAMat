@@ -3,24 +3,20 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { db } from "@/lib/firebase"; 
 import { collection, addDoc, deleteDoc, updateDoc, doc, getDocs, query, where, serverTimestamp, orderBy, onSnapshot } from "firebase/firestore";
-import { FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaFileImage, FaLock, FaCheck, FaTimes, FaExternalLinkAlt, FaUser, FaCloudUploadAlt, FaLayerGroup } from "react-icons/fa";
+import { FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaFileImage, FaLock, FaCheck, FaTimes, FaUser, FaCloudUploadAlt, FaLayerGroup } from "react-icons/fa";
 
 export default function AdminPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  // ☁️ إعدادات Cloudinary
   const CLOUD_NAME = "dhj0extnk"; 
   const UPLOAD_PRESET = "ml_default"; 
 
-  // حالات النظام
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showFake404, setShowFake404] = useState(true);
   const [inputCode, setInputCode] = useState("");
   const [checkingCode, setCheckingCode] = useState(false);
 
-  // متغيرات لوحة التحكم
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [subject, setSubject] = useState("مبادئ الاقتصاد");
@@ -30,13 +26,11 @@ export default function AdminPage() {
   const [materialsList, setMaterialsList] = useState([]); 
   const [pendingList, setPendingList] = useState([]);     
    
-  const [loadingList, setLoadingList] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
 
   const subjects = ["مبادئ الاقتصاد", "لغة اجنبية (1)", "مبادئ المحاسبة المالية", "مبادئ القانون", "مبادئ ادارة الاعمال"];
 
-  // 1. الفحص الأمني
   useEffect(() => {
     const checkAccess = async () => {
       const savedCode = localStorage.getItem("adminCode");
@@ -52,13 +46,11 @@ export default function AdminPage() {
         setShowFake404(true);
       }
     };
-
     checkAccess();
   }, []);
 
   const verifyCode = async (codeToVerify, isAutoCheck = false) => {
     if (!isAutoCheck) setCheckingCode(true);
-
     try {
       const codesRef = collection(db, "allowedCodes");
       const q = query(codesRef, where("code", "==", codeToVerify.trim()));
@@ -82,7 +74,6 @@ export default function AdminPage() {
       console.error(error);
       if (!isAutoCheck) alert("خطأ في الاتصال");
     }
-    
     setIsLoading(false);
     if (!isAutoCheck) setCheckingCode(false);
   };
@@ -98,23 +89,14 @@ export default function AdminPage() {
     await verifyCode(inputCode);
   };
 
-  // جلب البيانات
   useEffect(() => {
     if (!isAuthenticated) return;
-    
     const q = query(collection(db, "materials"), orderBy("createdAt", "desc"));
-    
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const allData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
-      const approved = allData.filter(item => item.status === "approved");
-      const pending = allData.filter(item => item.status === "pending");
-      
-      setMaterialsList(approved);
-      setPendingList(pending);
-      setLoadingList(false);
+      setMaterialsList(allData.filter(item => item.status === "approved"));
+      setPendingList(allData.filter(item => item.status === "pending"));
     });
-    
     return () => unsubscribe();
   }, [isAuthenticated]);
 
@@ -123,21 +105,15 @@ export default function AdminPage() {
     if (!url && item.files && item.files.length > 0) {
         url = item.files[0].url; 
     }
-
-    if (url) {
-        window.open(url, '_blank');
-    } else {
-        alert("لا يوجد ملف للعرض");
-    }
+    if (url) window.open(url, '_blank');
+    else alert("لا يوجد ملف للعرض");
   };
 
   const handleDelete = async (id, title) => { if (confirm(`حذف "${title}" نهائياً؟`)) await deleteDoc(doc(db, "materials", id)); };
    
   const handleApprove = async (id, title) => {
     if (confirm(`هل تريد قبول ونشر "${title}"؟`)) {
-      await updateDoc(doc(db, "materials", id), {
-        status: "approved"
-      });
+      await updateDoc(doc(db, "materials", id), { status: "approved" });
       setMessage(`تم نشر "${title}" بنجاح`);
       setTimeout(() => setMessage(""), 3000);
     }
@@ -162,11 +138,7 @@ export default function AdminPage() {
     try {
       for (let file of files) {
         const url = await uploadToCloudinary(file);
-        uploadedFilesData.push({ 
-            name: file.name, 
-            url: url, 
-            type: file.type 
-        });
+        uploadedFilesData.push({ name: file.name, url: url, type: file.type });
       }
       await addDoc(collection(db, "materials"), {
         title, desc, subject, type, files: uploadedFilesData,
@@ -184,40 +156,34 @@ export default function AdminPage() {
     }
   };
 
-  // --- واجهات التحميل والخطأ ---
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-black"><FaSpinner className="animate-spin text-4xl text-blue-500" /></div>;
 
-  if (showFake404) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white text-black font-sans">
-        <h1 className="text-4xl font-bold border-r border-gray-300 pr-4 mr-4">404</h1>
-        <div className="text-sm">This page could not be found.</div>
-      </div>
-    );
-  }
+  if (showFake404) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white text-black font-sans">
+      <h1 className="text-4xl font-bold border-r border-gray-300 pr-4 mr-4">404</h1>
+      <div className="text-sm">This page could not be found.</div>
+    </div>
+  );
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white font-sans p-4">
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-10 rounded-3xl w-full max-w-md shadow-2xl">
-          <h1 className="text-3xl font-bold mb-2 text-center">Admin Access</h1>
-          <p className="text-gray-400 mb-8 text-center text-sm">Please enter your security code</p>
-          <form onSubmit={handleManualLogin} className="space-y-4">
-            <div className="relative">
-                <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-                <input type="password" placeholder="Security Code" value={inputCode} onChange={(e) => setInputCode(e.target.value)}
-                    className="w-full bg-black/20 border border-white/10 rounded-xl p-4 pl-12 text-white outline-none focus:border-blue-500 transition-all" />
-            </div>
-            <button type="submit" disabled={checkingCode} className="w-full bg-white text-black p-4 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-70">
-              {checkingCode ? "Verifying..." : "Login"}
-            </button>
-          </form>
-        </div>
+  if (!isAuthenticated) return (
+    <div className="min-h-screen flex items-center justify-center bg-black text-white font-sans p-4">
+      <div className="bg-white/5 backdrop-blur-xl p-10 rounded-3xl w-full max-w-md shadow-2xl">
+        <h1 className="text-3xl font-bold mb-2 text-center">Admin Access</h1>
+        <p className="text-gray-400 mb-8 text-center text-sm">Please enter your security code</p>
+        <form onSubmit={handleManualLogin} className="space-y-4">
+          <div className="relative">
+              <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+              <input type="password" placeholder="Security Code" value={inputCode} onChange={(e) => setInputCode(e.target.value)}
+                  className="w-full bg-black/20 rounded-xl p-4 pl-12 text-white outline-none focus:bg-black/40 transition-all" />
+          </div>
+          <button type="submit" disabled={checkingCode} className="w-full bg-white text-black p-4 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-70">
+            {checkingCode ? "Verifying..." : "Login"}
+          </button>
+        </form>
       </div>
-    );
-  }
+    </div>
+  );
 
-  // --- واجهة الأدمن الرئيسية ---
   return (
     <div className="min-h-screen w-full text-white p-4 font-sans relative overflow-hidden" dir="rtl">
       
@@ -230,34 +196,34 @@ export default function AdminPage() {
       <div className="relative z-10 w-full max-w-6xl mx-auto pt-6">
         <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-black bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">لوحة التحكم 🚀</h1>
-            <span className="bg-blue-500/10 text-blue-400 px-4 py-2 rounded-xl text-sm border border-blue-500/20 font-bold">Admin Mode</span>
+            <span className="bg-blue-500/10 text-blue-400 px-4 py-2 rounded-xl text-sm font-bold">Admin Mode</span>
         </div>
 
-        {message && <div className="bg-green-500/10 text-green-400 p-4 rounded-xl text-center mb-6 border border-green-500/20 flex items-center justify-center gap-2 font-bold animate-fadeIn"><FaCheckCircle /> {message}</div>}
+        {message && <div className="bg-green-500/10 text-green-400 p-4 rounded-xl text-center mb-6 flex items-center justify-center gap-2 font-bold animate-fadeIn"><FaCheckCircle /> {message}</div>}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            {/* 1. قسم الرفع */}
+            {/* 1. قسم الرفع - بدون حواف */}
             <div className="lg:col-span-1">
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-xl sticky top-4">
-                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><FaCloudUploadAlt className="text-blue-400"/> رفع ملف جديد</h2>
+                <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 shadow-xl sticky top-4">
+                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-gray-200"><FaCloudUploadAlt className="text-blue-400"/> رفع ملف جديد</h2>
                     <form onSubmit={handleUpload} className="space-y-4">
                         <div>
                             <label className="text-xs text-gray-400 block mb-1">العنوان</label>
-                            <input type="text" className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none" value={title} onChange={(e)=>setTitle(e.target.value)} required />
+                            <input type="text" className="w-full bg-black/20 rounded-xl p-3 text-white focus:bg-black/40 outline-none transition-colors" value={title} onChange={(e)=>setTitle(e.target.value)} required />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
                                 <label className="text-xs text-gray-400 block mb-1">المادة</label>
-                                <select className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none appearance-none cursor-pointer" value={subject} onChange={(e)=>setSubject(e.target.value)}>{subjects.map((s,i)=><option key={i} className="bg-gray-900" value={s}>{s}</option>)}</select>
+                                <select className="w-full bg-black/20 rounded-xl p-3 text-white focus:bg-black/40 outline-none appearance-none cursor-pointer" value={subject} onChange={(e)=>setSubject(e.target.value)}>{subjects.map((s,i)=><option key={i} className="bg-gray-900" value={s}>{s}</option>)}</select>
                             </div>
                             <div>
                                 <label className="text-xs text-gray-400 block mb-1">النوع</label>
-                                <select className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none appearance-none cursor-pointer" value={type} onChange={(e)=>setType(e.target.value)}><option className="bg-gray-900" value="summary">ملخص</option><option className="bg-gray-900" value="assignment">تكليف</option></select>
+                                <select className="w-full bg-black/20 rounded-xl p-3 text-white focus:bg-black/40 outline-none appearance-none cursor-pointer" value={type} onChange={(e)=>setType(e.target.value)}><option className="bg-gray-900" value="summary">ملخص</option><option className="bg-gray-900" value="assignment">تكليف</option></select>
                             </div>
                         </div>
 
-                        <div className="border-2 border-dashed border-white/10 rounded-xl p-6 text-center hover:bg-white/5 transition-all cursor-pointer relative">
+                        <div className="bg-black/10 rounded-xl p-6 text-center hover:bg-black/30 transition-all cursor-pointer relative border-2 border-dashed border-white/5 hover:border-blue-500/30">
                             <input type="file" onChange={handleFileChange} accept="image/*, application/pdf" multiple className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                             <div className="pointer-events-none">
                                 {files.length > 0 ? (
@@ -266,13 +232,13 @@ export default function AdminPage() {
                                     </div>
                                 ) : (
                                     <div className="text-gray-400 text-sm flex flex-col items-center gap-2">
-                                        <FaCloudUploadAlt className="text-2xl"/> <span>اضغط لاختيار الملفات</span>
+                                        <FaCloudUploadAlt className="text-2xl opacity-50"/> <span>اضغط لاختيار الملفات</span>
                                     </div>
                                 )}
                             </div>
                         </div>
 
-                        <button type="submit" disabled={uploading} className="w-full bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-xl font-bold transition-all disabled:opacity-50">
+                        <button type="submit" disabled={uploading} className="w-full bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-xl font-bold transition-all disabled:opacity-50 shadow-lg">
                             {uploading ? "جاري الرفع..." : "نشر الآن"}
                         </button>
                     </form>
@@ -282,32 +248,29 @@ export default function AdminPage() {
             {/* 2. قسم القوائم */}
             <div className="lg:col-span-2 space-y-6">
                 
-                {/* ⚠️ طلبات الانتظار */}
+                {/* ⚠️ طلبات الانتظار - بدون حواف */}
                 {pendingList.length > 0 && (
-                    <div className="bg-yellow-500/5 backdrop-blur-xl border border-yellow-500/20 rounded-3xl p-6">
+                    <div className="bg-yellow-500/5 backdrop-blur-xl rounded-3xl p-6">
                         <h2 className="text-xl font-bold text-yellow-500 mb-4 flex items-center gap-2">
                             ⚠️ طلبات قيد الانتظار ({pendingList.length})
                         </h2>
                         <div className="space-y-3">
                             {pendingList.map((item) => (
-                                <div key={item.id} className="bg-black/20 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-center gap-4 border border-white/5 hover:border-yellow-500/30 transition-all">
-                                    <div className="flex items-center gap-4 w-full cursor-pointer" onClick={() => openFile(item)}>
-                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl bg-yellow-500/10 text-yellow-500`}>
+                                <div key={item.id} className="bg-black/20 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-center gap-4 hover:bg-black/30 transition-all">
+                                    <div className="flex items-center gap-4 w-full cursor-pointer overflow-hidden" onClick={() => openFile(item)}>
+                                        <div className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center text-xl bg-yellow-500/10 text-yellow-500`}>
                                             {item.files && item.files[0]?.type?.includes('pdf') ? <FaFilePdf /> : <FaFileImage />}
                                         </div>
-                                        <div>
-                                            <h4 className="font-bold text-white text-lg hover:underline decoration-yellow-500/50">{item.title}</h4>
-                                            
-                                            {/* 👇👇👇 هنا يظهر اسم الطالب الفعلي 👇👇👇 */}
+                                        <div className="min-w-0 flex-1">
+                                            <h4 className="font-bold text-white text-lg truncate">{item.title}</h4>
                                             <div className="flex items-center gap-3 text-xs text-gray-400 mt-1">
                                                 <span className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded-md text-yellow-200">
                                                     <FaUser className="text-[10px]"/> {item.studentName || "طالب مجهول"}
                                                 </span>
-                                                <span>{item.subject}</span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2 w-full md:w-auto">
+                                    <div className="flex gap-2 w-full md:w-auto shrink-0">
                                         <button onClick={() => handleApprove(item.id, item.title)} className="bg-green-500/20 hover:bg-green-500/30 text-green-400 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all flex-1 md:flex-none justify-center">قبول <FaCheck/></button>
                                         <button onClick={() => handleDelete(item.id, item.title)} className="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all flex-1 md:flex-none justify-center">رفض <FaTimes/></button>
                                     </div>
@@ -317,28 +280,46 @@ export default function AdminPage() {
                     </div>
                 )}
 
-                {/* ✅ الملفات المنشورة */}
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
-                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-white/10 pb-4">
+                {/* ✅ الملفات المنشورة - بدون حواف وبشكل نظيف جداً */}
+                <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6">
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-200 border-b border-white/5 pb-4">
                         <FaLayerGroup className="text-green-400"/> الملفات المنشورة ({materialsList.length})
                     </h2>
-                    <div className="space-y-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+                    
+                    <div className="space-y-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-1">
                         {materialsList.map((item) => (
-                            <div key={item.id} className="bg-black/20 rounded-2xl p-4 flex justify-between items-center gap-4 border border-white/5 hover:border-blue-500/30 transition-all group">
-                                <div className="flex items-center gap-4 cursor-pointer overflow-hidden" onClick={() => openFile(item)}>
-                                    <div className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center text-lg ${item.type === 'summary' ? 'bg-green-500/10 text-green-400' : 'bg-orange-500/10 text-orange-400'}`}>
+                            // 👇 الكارت الجديد: بدون حدود، تباعد أفضل
+                            <div key={item.id} className="bg-black/20 rounded-2xl p-4 flex items-center gap-4 group hover:bg-black/30 transition-all">
+                                
+                                {/* الأيقونة والبيانات - قابلة للضغط */}
+                                <div className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer" onClick={() => openFile(item)}>
+                                    
+                                    {/* الأيقونة (ثابتة لا تنكمش shrink-0) */}
+                                    <div className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center text-xl ${item.type === 'summary' ? 'bg-green-500/10 text-green-400' : 'bg-orange-500/10 text-orange-400'}`}>
                                         {item.files && item.files[0]?.type?.includes('pdf') ? <FaFilePdf /> : <FaFileImage />}
                                     </div>
-                                    <div className="min-w-0">
-                                        <h4 className="font-bold text-white text-base truncate group-hover:text-blue-300 transition-colors">{item.title}</h4>
-                                        <div className="flex gap-2 text-xs text-gray-500">
+                                    
+                                    {/* النص (قابل للانكماش truncate) */}
+                                    <div className="min-w-0 flex-1">
+                                        <h4 className="font-bold text-white text-base truncate group-hover:text-blue-300 transition-colors pr-2">
+                                            {item.title}
+                                        </h4>
+                                        <div className="flex flex-wrap gap-2 text-xs text-gray-500 mt-0.5">
                                             <span>{item.subject}</span>
                                             <span className="text-gray-600">•</span>
                                             <span>{item.uploader || "Admin"}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <button onClick={() => handleDelete(item.id, item.title)} className="w-8 h-8 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-500/10 transition-all"><FaTrash size={14} /></button>
+
+                                {/* زر الحذف - محسّن (ثابت لا ينكمش) */}
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(item.id, item.title); }}
+                                    className="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center bg-red-500/5 text-red-400 hover:bg-red-500 hover:text-white transition-all"
+                                    title="حذف الملف"
+                                >
+                                    <FaTrash size={14} />
+                                </button>
                             </div>
                         ))}
                     </div>
