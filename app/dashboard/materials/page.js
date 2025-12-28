@@ -12,7 +12,7 @@ import {
   FaFileAlt,
   FaTimes,
   FaImage,
-  FaFilePdf
+  FaShare
 } from "react-icons/fa";
 
 import "./materials-design.css";
@@ -59,17 +59,42 @@ function MaterialsContent() {
     } catch (err) { console.error(err); }
   };
 
-  if (loading) return <div className="loading-spinner">جاري تحميل المواد...</div>;
+  const handleDownloadClick = async (materialId, fileUrl) => {
+    try {
+      const ref = doc(db, "materials", materialId);
+      await updateDoc(ref, { downloadCount: increment(1) });
+      
+      // فتح الرابط في نافذة جديدة لبدء التحميل
+      window.open(fileUrl, "_blank");
+    } catch (err) { console.error(err); }
+  };
+
+  const handleShare = async (material) => {
+    const shareData = {
+      title: material.title,
+      text: `شاهد "${material.title}" لمادة ${material.subject}`,
+      url: window.location.href
+    };
+    try {
+      if (navigator.share) await navigator.share(shareData);
+      else {
+        await navigator.clipboard.writeText(window.location.href);
+        alert("تم نسخ رابط الصفحة!");
+      }
+    } catch (err) { console.log("Share skipped"); }
+  };
+
+  if (loading) return <div className="loading-spinner">جاري التحميل...</div>;
 
   return (
     <div className="materials-page-container">
       <div className="materials-header-redesigned">
         <div className="header-icon-box"><FaBookOpen /></div>
         <h1>{subject}</h1>
-        <p className="header-subtitle">اختر الملخص لعرض ملفاته</p>
+        <p className="header-subtitle">اضغط على الملخص لعرض ملفاته</p>
       </div>
 
-      <div className="materials-grid-wrapper">
+      <div className="materials-grid-container">
         <div className="materials-grid">
           {materials.map(m => (
             <div key={m.id} className="material-card-redesigned" onClick={() => handleOpenMaterial(m)}>
@@ -87,28 +112,37 @@ function MaterialsContent() {
         </div>
       </div>
 
-      {/* مودال عرض الملفات للاختيار بين المعاينة أو التنزيل */}
       {selectedMaterial && (
-        <div className="modal active" onClick={() => setSelectedMaterial(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <span className="close-btn" onClick={() => setSelectedMaterial(null)}><FaTimes /></span>
-            <h2 className="modal-title">{selectedMaterial.title}</h2>
-            <p className="modal-desc">توجد {selectedMaterial.files?.length} ملفات متوفرة:</p>
+        <div className="modal-backdrop active" onClick={() => setSelectedMaterial(null)}>
+          <div className="modal-content-redesigned" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn-top" onClick={() => setSelectedMaterial(null)}><FaTimes /></button>
+            <h2 className="modal-title-main">{selectedMaterial.title}</h2>
             
-            <div className="files-list-container">
+            <div className="modal-stats-box">
+                <div className="stat-item-inner"><FaEye color="#00f260"/> {selectedMaterial.viewCount || 0}</div>
+                <div className="stat-divider"></div>
+                <div className="stat-item-inner"><FaDownload color="#3b82f6"/> {selectedMaterial.downloadCount || 0}</div>
+            </div>
+
+            <button className="btn-share-gradient" onClick={() => handleShare(selectedMaterial)}>
+                <FaShare /> مشاركة هذا المحتوى
+            </button>
+
+            <div className="files-scroll-area">
+              <h4 className="section-label">الملفات ({selectedMaterial.files?.length || 0}):</h4>
               {selectedMaterial.files?.map((file, index) => (
-                <div key={index} className="file-row">
-                  <div className="file-info">
-                    <FaImage className="file-icon" />
-                    <span>صورة رقم {index + 1}</span>
+                <div key={index} className="file-item-card">
+                  <div className="file-info-side">
+                    <FaImage className="image-icon-small" />
+                    <span>ملف رقم {index + 1}</span>
                   </div>
-                  <div className="file-actions">
-                    <button className="action-btn view" onClick={() => window.open(file.url, "_blank")}>
+                  <div className="file-actions-side">
+                    <button className="btn-action-small view" onClick={() => window.open(file.url, "_blank")}>
                       <FaEye /> معاينة
                     </button>
-                    <a href={file.url} download className="action-btn download">
-                      <FaDownload /> تنزيل
-                    </a>
+                    <button className="btn-action-small download" onClick={() => handleDownloadClick(selectedMaterial.id, file.url)}>
+                      <FaDownload /> تحميل
+                    </button>
                   </div>
                 </div>
               ))}
