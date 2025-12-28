@@ -1,18 +1,21 @@
 "use client";
-import { Suspense, useEffect, useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase";
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
+import { formatDistanceToNow } from "date-fns";
+import { ar } from "date-fns/locale";
 
 import {
   FaDownload,
   FaEye,
-  FaBookOpen,
-  FaClipboardList,
-  FaFileAlt,
-  FaTimes,
-  FaImage,
-  FaShareAlt
+  FaFilePdf,
+  FaFileImage,
+  FaUser,
+  FaClock,
+  FaArrowLeft,
+  FaShareAlt,
+  FaTimes
 } from "react-icons/fa";
 
 import "./materials-design.css";
@@ -40,9 +43,14 @@ function MaterialsContent() {
           id: doc.id,
           ...doc.data()
         }));
+        // ترتيب من الأحدث للأقدم
         data.sort((a, b) => new Date(b.date) - new Date(a.date));
         setMaterials(data);
-      } catch (err) { console.error(err); } finally { setLoading(false); }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
     }
     fetchData();
   }, [subject]);
@@ -54,59 +62,57 @@ function MaterialsContent() {
     } catch (err) { console.error(err); }
   };
 
-  const handleDownload = async (materialId, url) => {
+  const handleDownload = async (materialId, fileUrl) => {
     try {
       await updateDoc(doc(db, "materials", materialId), { downloadCount: increment(1) });
-      window.open(url, "_blank");
+      window.open(fileUrl, "_blank");
     } catch (err) { console.error(err); }
   };
 
-  if (loading) return <div className="loading-state">جاري تحميل المحتوى...</div>;
+  if (loading) return <div className="loader">جاري تحميل الملخصات...</div>;
 
   return (
-    <div className="materials-container">
-      <header className="page-header">
-        <div className="subject-icon"><FaBookOpen /></div>
-        <h1>{subject}</h1>
-      </header>
+    <div className="materials-wrapper">
+      <div className="page-header">
+        <button className="back-btn" onClick={() => window.history.back()}><FaArrowLeft /></button>
+        <h1>ملخصات {subject}</h1>
+      </div>
 
-      <div className="grid-wrapper">
-        <div className="materials-grid">
-          {materials.map(m => (
-            <div key={m.id} className="modern-card" onClick={() => handleOpenMaterial(m)}>
-              <div className={`type-icon ${m.type === 'assignment' ? 'red' : 'blue'}`}>
-                {m.type === 'assignment' ? <FaClipboardList /> : <FaFileAlt />}
-              </div>
+      <div className="materials-grid">
+        {materials.map((m) => (
+          <div key={m.id} className="old-style-card" onClick={() => handleOpenMaterial(m)}>
+            <div className="card-icon-area">
+               {m.type === 'assignment' ? <FaFilePdf className="pdf-icon"/> : <FaFileImage className="img-icon"/>}
+            </div>
+            <div className="card-info">
               <h3>{m.title}</h3>
-              <p className="uploader">بواسطة: <span>{m.uploader || "مجهول"}</span></p>
-              <div className="card-stats">
-                <span><FaEye /> {m.viewCount || 0}</span>
-                <span><FaDownload /> {m.downloadCount || 0}</span>
+              <div className="meta-info">
+                <span><FaUser /> {m.uploader || "مجهول"}</span>
+                <span><FaClock /> {m.date ? formatDistanceToNow(new Date(m.date), { addSuffix: true, locale: ar }) : "غير معروف"}</span>
               </div>
             </div>
-          ))}
-        </div>
+            <div className="card-footer">
+              <span><FaEye /> {m.viewCount || 0}</span>
+              <span><FaDownload /> {m.downloadCount || 0}</span>
+            </div>
+          </div>
+        ))}
       </div>
 
       {selectedMaterial && (
         <div className="modal-overlay" onClick={() => setSelectedMaterial(null)}>
-          <div className="modal-box" onClick={e => e.stopPropagation()}>
-            <button className="close-x" onClick={() => setSelectedMaterial(null)}><FaTimes /></button>
-            <h2 className="modal-title">{selectedMaterial.title}</h2>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <button className="close-modal" onClick={() => setSelectedMaterial(null)}><FaTimes /></button>
+            <h2>{selectedMaterial.title}</h2>
+            <p className="modal-meta">نشر بواسطة <b>{selectedMaterial.uploader}</b> منذ {formatDistanceToNow(new Date(selectedMaterial.date), { locale: ar })}</p>
             
-            <div className="modal-actions-bar">
-                <button className="share-btn-purple" onClick={() => navigator.share({title: selectedMaterial.title, url: window.location.href})}>
-                    <FaShareAlt /> مشاركة
-                </button>
-            </div>
-
             <div className="files-list">
-              {selectedMaterial.files?.map((file, i) => (
-                <div key={i} className="file-card">
-                  <div className="file-name"><FaImage /> ملف {i + 1}</div>
+              {selectedMaterial.files?.map((file, idx) => (
+                <div key={idx} className="file-row">
+                  <span className="file-name">صورة {idx + 1}</span>
                   <div className="file-btns">
-                    <button className="btn-v" onClick={() => window.open(file.url, "_blank")}><FaEye /> معاينة</button>
-                    <button className="btn-d" onClick={() => handleDownload(selectedMaterial.id, file.url)}><FaDownload /> تحميل</button>
+                    <button className="preview-btn" onClick={() => window.open(file.url, "_blank")}>معاينة</button>
+                    <button className="download-btn" onClick={() => handleDownload(selectedMaterial.id, file.url)}>تحميل</button>
                   </div>
                 </div>
               ))}
@@ -120,7 +126,7 @@ function MaterialsContent() {
 
 export default function MaterialsPage() {
   return (
-    <Suspense fallback={<div className="loading-state">جاري التحميل...</div>}>
+    <Suspense fallback={<div>Loading...</div>}>
       <MaterialsContent />
     </Suspense>
   );
