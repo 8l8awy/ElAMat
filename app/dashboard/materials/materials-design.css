@@ -10,6 +10,7 @@
     --text-primary: #ffffff;
     --text-muted: #a1a1aa;
     --accent-color: #00f260;
+    --danger-color: #ef4444;
 }
 
 /* تنسيق الحاوية */
@@ -168,7 +169,7 @@
     background: #000;
     width: 95vw;
     height: 90vh;
-    max-width: 1200px;
+    max-width: 1400px;
     border-radius: 12px;
     overflow: hidden;
     display: flex;
@@ -177,41 +178,44 @@
     border: 1px solid #333;
 }
 
-/* ✅ تعديل: ترتيب عناصر الهيدر */
+/* ✅ تعديل: الهيدر يفصل بين اليمين واليسار */
 .preview-header {
     padding: 15px 20px;
     background: #111;
     display: flex;
-    justify-content: flex-start; /* العناصر تبدأ من اليمين */
+    justify-content: space-between; /* يباعد بين المجموعة اليمنى وزر الإغلاق الأيسر */
     align-items: center;
     border-bottom: 1px solid #222;
     flex-shrink: 0;
-    gap: 15px; /* مسافة بين العناصر */
+    direction: rtl;
 }
 
-/* ✅ تعديل: العنوان يأخذ المساحة المتبقية */
 .preview-title {
     color: white; margin: 0; font-size: 1.1rem;
     display: flex; align-items: center; gap: 10px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    flex-grow: 1; /* يدفع زر الإغلاق لليسار */
 }
 
-/* ✅ تعديل: تنسيق زر الرابط الخارجي وزر الإغلاق */
-.btn-icon, .btn-icon.close {
-    background: transparent;
+/* ✅ تعديل: زر الإغلاق للمعاينة (ثابت وليس absolute) */
+.btn-icon.close-preview {
+    background: rgba(255, 255, 255, 0.1);
     border: none;
-    color: #aaa;
-    font-size: 1.3em;
+    color: #fff;
     cursor: pointer;
-    transition: color 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 5px;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    position: static; /* مهم جداً لكي لا يتداخل */
 }
-.btn-icon:hover { color: white; }
-.btn-icon.close:hover { color: var(--danger-color); }
+.btn-icon.close-preview:hover { background: #ef4444; }
+
+/* أزرار الأيقونات العامة */
+.btn-icon {
+    display: flex; align-items: center; justify-content: center;
+    color: #ccc; transition: 0.2s; background: rgba(255,255,255,0.05);
+    border: none; cursor: pointer; padding: 5px;
+}
+.btn-icon:hover { color: #fff; background: rgba(255,255,255,0.1); }
 
 .preview-body {
     flex: 1; position: relative; background: #0e0e0e;
@@ -226,7 +230,7 @@
 }
 .image-preview-scroll img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-/* زر الإغلاق للمودال العادي */
+/* زر الإغلاق للمودال العادي (Absolute) */
 .close-btn-redesigned {
     position: absolute; top: 15px; left: 15px;
     background: rgba(255, 255, 255, 0.1); 
