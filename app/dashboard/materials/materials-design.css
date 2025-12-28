@@ -177,21 +177,41 @@
     border: 1px solid #333;
 }
 
+/* ✅ تعديل: ترتيب عناصر الهيدر */
 .preview-header {
     padding: 15px 20px;
     background: #111;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start; /* العناصر تبدأ من اليمين */
     align-items: center;
     border-bottom: 1px solid #222;
     flex-shrink: 0;
+    gap: 15px; /* مسافة بين العناصر */
 }
 
+/* ✅ تعديل: العنوان يأخذ المساحة المتبقية */
 .preview-title {
     color: white; margin: 0; font-size: 1.1rem;
     display: flex; align-items: center; gap: 10px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    flex-grow: 1; /* يدفع زر الإغلاق لليسار */
 }
+
+/* ✅ تعديل: تنسيق زر الرابط الخارجي وزر الإغلاق */
+.btn-icon, .btn-icon.close {
+    background: transparent;
+    border: none;
+    color: #aaa;
+    font-size: 1.3em;
+    cursor: pointer;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+}
+.btn-icon:hover { color: white; }
+.btn-icon.close:hover { color: var(--danger-color); }
 
 .preview-body {
     flex: 1; position: relative; background: #0e0e0e;
@@ -206,7 +226,7 @@
 }
 .image-preview-scroll img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-/* زر الإغلاق */
+/* زر الإغلاق للمودال العادي */
 .close-btn-redesigned {
     position: absolute; top: 15px; left: 15px;
     background: rgba(255, 255, 255, 0.1); 
@@ -228,14 +248,14 @@
 .files-title { color: white; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
 .files-list-scroll { overflow-y: auto; max-height: 250px; padding-right: 5px; }
 
-/* --- عنصر الملف (تصحيح المحاذاة) --- */
+/* --- عنصر الملف --- */
 .file-item-redesigned {
     background: #222;
     padding: 12px;
     border-radius: 8px;
     margin-bottom: 8px;
     display: flex;
-    justify-content: space-between; /* يوزع العناصر للأطراف */
+    justify-content: space-between;
     align-items: center;
     flex-wrap: wrap; 
     gap: 10px;
@@ -246,8 +266,7 @@
     align-items: center;
     gap: 10px;
     overflow: hidden;
-    /* ✅ هذا هو التعديل الهام: */
-    flex: 1; /* يأخذ كل المساحة المتاحة ليدفع الأزرار لليسار */
+    flex: 1;
 }
 
 .file-name { color: #eee; font-size: 0.9rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
@@ -260,40 +279,33 @@
 }
 
 .btn-action {
-    padding: 8px 16px; 
-    border-radius: 8px; 
-    font-size: 0.85rem; 
-    cursor: pointer;
-    display: flex; align-items: center; gap: 6px; 
-    border: none; text-decoration: none; font-weight: 600;
+    padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; cursor: pointer;
+    display: flex; align-items: center; gap: 6px; border: none; text-decoration: none; font-weight: 600;
 }
-
-/* زر الفتح في صفحة جديدة (رمادي غامق) */
-.btn-open-new { 
-    background: #333; 
-    color: #fff; 
-    padding: 8px 12px; /* أصغر قليلاً لأنه مجرد أيقونة غالباً */
-}
-.btn-open-new:hover { background: #444; }
-
 .btn-preview-new { background: #333; color: #ccc; }
 .btn-download-new { background: var(--accent-color); color: #000; }
 
-/* للموبايل */
+/* موبايل */
 @media (max-width: 600px) {
+    .file-item-redesigned {
+        flex-direction: column;
+        align-items: stretch;
+    }
     .file-actions {
         width: 100%;
         display: flex;
         justify-content: space-between;
-        gap: 8px;
+        gap: 10px;
     }
     .btn-action {
-        flex: 1; /* توزيع بالتساوي */
+        flex: 1;
         justify-content: center;
         padding: 10px;
-        font-size: 0.8rem; /* تصغير الخط قليلاً ليتسع */
     }
-    .btn-open-new { flex: 0.5; } /* الزر الصغير يأخذ مساحة أقل */
+    .file-info {
+        flex: none;
+        width: 100%;
+    }
 }
 
 .loading-spinner, .empty-state-redesigned {
