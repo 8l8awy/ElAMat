@@ -255,38 +255,45 @@
 /* الأزرار (على اليسار) */
 .file-actions {
     display: flex;
-    gap: 10px; /* المسافة بين زر التحميل والمعاينة */
+    gap: 10px;
     flex-shrink: 0;
 }
 
 .btn-action {
-    padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; cursor: pointer;
-    display: flex; align-items: center; gap: 6px; border: none; text-decoration: none; font-weight: 600;
+    padding: 8px 16px; 
+    border-radius: 8px; 
+    font-size: 0.85rem; 
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px; 
+    border: none; text-decoration: none; font-weight: 600;
 }
+
+/* زر الفتح في صفحة جديدة (رمادي غامق) */
+.btn-open-new { 
+    background: #333; 
+    color: #fff; 
+    padding: 8px 12px; /* أصغر قليلاً لأنه مجرد أيقونة غالباً */
+}
+.btn-open-new:hover { background: #444; }
+
 .btn-preview-new { background: #333; color: #ccc; }
 .btn-download-new { background: var(--accent-color); color: #000; }
 
-/* موبايل */
+/* للموبايل */
 @media (max-width: 600px) {
-    .file-item-redesigned {
-        flex-direction: column;
-        align-items: stretch;
-    }
     .file-actions {
         width: 100%;
         display: flex;
         justify-content: space-between;
-        gap: 10px;
+        gap: 8px;
     }
     .btn-action {
-        flex: 1;
+        flex: 1; /* توزيع بالتساوي */
         justify-content: center;
         padding: 10px;
+        font-size: 0.8rem; /* تصغير الخط قليلاً ليتسع */
     }
-    .file-info {
-        flex: none; /* إلغاء التمدد في الموبايل */
-        width: 100%;
-    }
+    .btn-open-new { flex: 0.5; } /* الزر الصغير يأخذ مساحة أقل */
 }
 
 .loading-spinner, .empty-state-redesigned {
