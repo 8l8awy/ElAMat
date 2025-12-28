@@ -2,18 +2,18 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase"; 
-// ✅ تمت إضافة orderBy هنا
-import { collection, query, where, getDocs, doc, updateDoc, increment, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
 
+// ✅ استخدام أيقونات أساسية (FaDownload, FaShare) لضمان نجاح الـ Build
 import { 
   FaDownload, 
   FaEye, 
   FaFolderOpen, 
   FaFilePdf, 
   FaFileImage,
-  FaShare,     
+  FaShare,    
   FaTimes,
-  FaExternalLinkAlt      
+  FaExternalLinkAlt     
 } from "react-icons/fa"; 
 
 function MaterialsContent() {
@@ -25,15 +25,18 @@ function MaterialsContent() {
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
 
+  // دالة ذكية لمعرفة هل الملف PDF أم صورة
   const isPdfFile = (file) => {
     const name = file.name?.toLowerCase() || "";
     const url = file.url?.toLowerCase() || "";
     const type = file.type?.toLowerCase() || "";
 
+    // استبعاد الصور الصريحة
     if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".webp") ||
         url.includes(".png") || url.includes(".jpg") || url.includes(".jpeg")) {
         return false;
     }
+    // التأكد من أنه PDF
     return type.includes("pdf") || url.includes(".pdf") || name.includes(".pdf");
   };
 
@@ -58,12 +61,10 @@ function MaterialsContent() {
       if (!subject) return;
       setLoading(true);
       try {
-        // ✅ التعديل هنا: استخدام الفهرس الجديد للترتيب حسب تاريخ الإنشاء
         const q = query(
             collection(db, "materials"), 
             where("subject", "==", subject),
-            where("status", "==", "approved"),
-            orderBy("createdAt", "desc") // ترتيب من الأحدث للأقدم
+            where("status", "==", "approved")
         );
         const snapshot = await getDocs(q);
         
@@ -73,12 +74,10 @@ function MaterialsContent() {
             type: normalizeType(doc.data().type)
         }));
         
-        // ❌ لم نعد بحاجة للترتيب اليدوي هنا لأن الفايربيس قام به
-        // data.sort((a, b) => new Date(b.date) - new Date(a.date));
-        
+        data.sort((a, b) => new Date(b.date) - new Date(a.date));
         setMaterials(data);
       } catch (err) {
-        console.error("Error fetching materials:", err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -91,8 +90,7 @@ function MaterialsContent() {
     try {
       const ref = doc(db, "materials", material.id);
       await updateDoc(ref, { viewCount: increment(1) });
-      // تحديث الواجهة محلياً لتبدو أسرع
-      setMaterials(prev => prev.map(m => m.id === material.id ? {...m, viewCount: (m.viewCount || 0) + 1} : m));
+      material.viewCount = (material.viewCount || 0) + 1; 
     } catch (err) { console.error(err); }
   };
 
@@ -100,10 +98,6 @@ function MaterialsContent() {
     try {
         const ref = doc(db, "materials", id);
         await updateDoc(ref, { downloadCount: increment(1) });
-        // تحديث الواجهة محلياً
-        if(selectedMaterial && selectedMaterial.id === id) {
-            setSelectedMaterial(prev => ({...prev, downloadCount: (prev.downloadCount || 0) + 1}));
-        }
     } catch (err) { console.error(err); }
   };
 
@@ -234,9 +228,10 @@ function MaterialsContent() {
         </div>
       )}
 
+      {/* ✅ هذا هو الجزء المسؤول عن عرض الـ PDF بشكل صحيح (Object Tag) */}
       {previewFile && (
         <div className="modal active" onClick={() => setPreviewFile(null)} style={{display:'flex', zIndex: 3000}}>
-            
+           
            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{maxWidth: '900px', width: '95%', height: '90vh', display:'flex', flexDirection:'column', padding: '0', overflow: 'hidden', background: '#000'}}>
                
                 <div style={{padding:'15px', background:'#1a1a1a', display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid #333'}}>
@@ -273,7 +268,7 @@ function MaterialsContent() {
                                 <div style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100%', flexDirection:'column', color:'white'}}>
                                     <p>متصفحك لا يدعم عرض PDF مباشرة.</p>
                                     <a href={previewFile.url} target="_blank" rel="noreferrer" className="view-file-btn" style={{marginTop:'10px', background:'#00f260', color:'black', padding:'10px 20px', borderRadius:'5px', textDecoration:'none'}}>
-                                         اضغط هنا لتحميل الملف
+                                        اضغط هنا لتحميل الملف
                                     </a>
                                 </div>
                             </iframe>
