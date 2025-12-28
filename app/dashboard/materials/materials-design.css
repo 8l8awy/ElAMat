@@ -1,5 +1,5 @@
 /* =========================================
-   تصميم صفحة المواد - Matching Dashboard Style (Fixed Preview)
+   تصميم صفحة المواد - Final Fixed Layout
    ========================================= */
 
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
@@ -81,7 +81,7 @@
     position: relative;
     overflow: hidden;
     width: 100%;
-    max-width: 400px; /* لضمان عدم تمددها بشكل مبالغ فيه */
+    max-width: 400px;
     margin: 0 auto;
 }
 
@@ -140,11 +140,11 @@
     font-weight: 600;
 }
 
-/* --- المودال (التفاصيل العادية) --- */
+/* --- المودال (التفاصيل) --- */
 .modal-backdrop {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background-color: rgba(0,0,0,0.9); /* خلفية أغمق للتركيز */
+    background-color: rgba(0,0,0,0.9);
     backdrop-filter: blur(5px);
     display: flex; justify-content: center; align-items: center; z-index: 9999;
     padding: 10px;
@@ -160,15 +160,15 @@
     max-height: 90vh;
     display: flex; flex-direction: column;
     position: relative;
-    overflow-y: auto; /* يسمح بالتمرير داخل المودال إذا كان طويلاً */
+    overflow-y: auto;
 }
 
-/* --- مودال المعاينة (Preview Modal) - التعديل الكبير هنا --- */
+/* --- مودال المعاينة (Preview Modal) --- */
 .preview-mode .preview-content-container {
     background: #000;
-    width: 95vw;  /* ✅ عرض 95% من الشاشة */
-    height: 90vh; /* ✅ ارتفاع 90% من الشاشة */
-    max-width: 1200px; /* حد أقصى للشاشات الكبيرة جداً */
+    width: 95vw;
+    height: 90vh;
+    max-width: 1200px;
     border-radius: 12px;
     overflow: hidden;
     display: flex;
@@ -184,56 +184,33 @@
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid #222;
-    flex-shrink: 0; /* يمنع الهيدر من الانكماش */
+    flex-shrink: 0;
 }
 
 .preview-title {
-    color: white;
-    margin: 0;
-    font-size: 1.1rem;
+    color: white; margin: 0; font-size: 1.1rem;
     display: flex; align-items: center; gap: 10px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 .preview-body {
-    flex: 1; /* يأخذ باقي المساحة المتاحة */
-    position: relative;
-    background: #0e0e0e;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    flex: 1; position: relative; background: #0e0e0e;
+    overflow: hidden; display: flex; justify-content: center; align-items: center;
 }
 
-/* تنسيق iframe لملء المساحة */
-.pdf-viewer, .pdf-viewer iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    background: #fff;
-}
+.pdf-viewer, .pdf-viewer iframe { width: 100%; height: 100%; border: none; background: #fff; }
 
 .image-preview-scroll {
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 10px;
+    width: 100%; height: 100%; overflow: auto;
+    display: flex; justify-content: center; align-items: center; padding: 10px;
 }
-.image-preview-scroll img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-}
+.image-preview-scroll img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
 /* زر الإغلاق */
 .close-btn-redesigned {
     position: absolute; top: 15px; left: 15px;
     background: rgba(255, 255, 255, 0.1); 
-    border: none; color: #fff; 
-    font-size: 1.2rem; cursor: pointer;
+    border: none; color: #fff; font-size: 1.2rem; cursor: pointer;
     width: 36px; height: 36px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     z-index: 10;
@@ -251,39 +228,49 @@
 .files-title { color: white; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
 .files-list-scroll { overflow-y: auto; max-height: 250px; padding-right: 5px; }
 
-/* عنصر الملف */
+/* --- عنصر الملف (تصحيح المحاذاة) --- */
 .file-item-redesigned {
-    background: #222; padding: 12px; border-radius: 8px; margin-bottom: 8px;
-    display: flex; justify-content: space-between; align-items: center;
+    background: #222;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between; /* يوزع العناصر للأطراف */
+    align-items: center;
     flex-wrap: wrap; 
     gap: 10px;
 }
 
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
+    /* ✅ هذا هو التعديل الهام: */
+    flex: 1; /* يأخذ كل المساحة المتاحة ليدفع الأزرار لليسار */
+}
+
 .file-name { color: #eee; font-size: 0.9rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 
-/* ✅ تعديل: المسافة بين الأزرار */
+/* الأزرار (على اليسار) */
 .file-actions {
     display: flex;
-    gap: 10px; /* مسافة واضحة بين المعاينة والتحميل */
+    gap: 10px; /* المسافة بين زر التحميل والمعاينة */
     flex-shrink: 0;
 }
 
 .btn-action {
-    padding: 8px 16px; 
-    border-radius: 8px; 
-    font-size: 0.85rem; 
-    cursor: pointer;
-    display: flex; align-items: center; gap: 6px; 
-    border: none; text-decoration: none; font-weight: 600;
+    padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; cursor: pointer;
+    display: flex; align-items: center; gap: 6px; border: none; text-decoration: none; font-weight: 600;
 }
 .btn-preview-new { background: #333; color: #ccc; }
 .btn-download-new { background: var(--accent-color); color: #000; }
 
-/* للموبايل: ترتيب الأزرار */
+/* موبايل */
 @media (max-width: 600px) {
     .file-item-redesigned {
         flex-direction: column;
-        align-items: stretch; /* الأزرار تأخذ العرض الكامل */
+        align-items: stretch;
     }
     .file-actions {
         width: 100%;
@@ -292,9 +279,13 @@
         gap: 10px;
     }
     .btn-action {
-        flex: 1; /* تقسيم المساحة بالتساوي */
+        flex: 1;
         justify-content: center;
-        padding: 10px; /* تكبير منطقة اللمس */
+        padding: 10px;
+    }
+    .file-info {
+        flex: none; /* إلغاء التمدد في الموبايل */
+        width: 100%;
     }
 }
 
