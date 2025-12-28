@@ -9,7 +9,6 @@
     --grad: linear-gradient(90deg, #bd1c52 0%, #7c3aed 100%);
     --white: #ffffff;
 }
-
 .materials-wrapper {
     background-color: var(--dark-bg);
     min-height: 100vh;
