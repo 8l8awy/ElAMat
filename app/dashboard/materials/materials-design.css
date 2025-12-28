@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+
 :root {
     --card-bg: #1c1c1e;
     --border: #2c2c2e;
@@ -8,6 +9,7 @@
     --grad: linear-gradient(90deg, #bd1c52 0%, #7c3aed 100%);
     --white: #ffffff;
 }
+
 .materials-wrapper {
     background-color: var(--dark-bg);
     min-height: 100vh;
@@ -20,6 +22,7 @@
 .page-header { text-align: center; margin-bottom: 30px; }
 .page-header h1 { font-size: 1.8rem; font-weight: 900; }
 
+/* توسيط الشبكة بالكامل */
 .materials-grid-container {
     display: flex;
     justify-content: center;
@@ -37,7 +40,7 @@
 
 /* التصميم القديم المحسن */
 .old-style-card {
-    background: var(--card-bg) !important; /* إجبار الخلفية على الظهور */
+    background: var(--card-bg);
     border-radius: 20px;
     overflow: hidden;
     border: 1px solid var(--border);
@@ -60,19 +63,14 @@
 .blue-bg { background: rgba(10, 132, 255, 0.1); color: var(--blue); }
 
 .card-body { padding: 20px; text-align: center; }
-.card-body h3 { 
-    margin: 0 0 12px 0; 
-    font-size: 1.3rem; 
-    font-weight: 800; 
-    color: var(--white) !important; /* ضمان ظهور العنوان */
-}
+.card-body h3 { margin: 0 0 12px 0; font-size: 1.3rem; font-weight: 800; color: var(--white); }
 
 .meta-row {
     display: flex;
     flex-direction: column;
     gap: 8px;
     font-size: 0.9rem;
-    color: #aeaeb2 !important;
+    color: #aeaeb2;
 }
 .meta-row span { display: flex; align-items: center; justify-content: center; gap: 10px; }
 
@@ -85,14 +83,9 @@
     border-top: 1px solid var(--border);
 }
 
-.stat-pill {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: #aeaeb2;
-}
+.stat-pill { display: flex; align-items: center; gap: 6px; color: #aeaeb2; }
 
-/* المودال */
+/* المودال مع السكرول */
 .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.95);
     display: flex; align-items: center; justify-content: center; z-index: 9999;
@@ -104,17 +97,35 @@
     position: relative; border: 1px solid #333;
 }
 
-.close-x { position: absolute; top: 15px; left: 15px; background: #333; border: none; color: #fff; width: 35px; height: 35px; border-radius: 50%; }
+.close-x { position: absolute; top: 15px; left: 15px; background: #333; border: none; color: #fff; width: 35px; height: 35px; border-radius: 50%; cursor: pointer;}
 
 .share-btn-grad {
     background: var(--grad); border: none; color: white; width: 100%;
-    padding: 12px; border-radius: 12px; font-weight: 700; margin-bottom: 25px;
+    padding: 12px; border-radius: 12px; font-weight: 700; margin-bottom: 25px; cursor: pointer;
 }
 
+/* حاوية السكرول للملفات */
+.modal-files-list {
+    max-height: 380px !important; /* تحديد ارتفاع أقصى للسكرول */
+    overflow-y: auto !important;
+    padding: 10px 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center; /* توسيط الملفات */
+}
+
+/* تخصيص شكل شريط التمرير */
+.modal-files-list::-webkit-scrollbar { width: 6px; }
+.modal-files-list::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+.modal-files-list::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 10px; }
+
 .file-row-item {
+    width: 95%;
     background: #1c1c1e; padding: 15px; border-radius: 15px;
     display: flex; justify-content: space-between; align-items: center;
-    border: 1px solid var(--border); margin-bottom: 10px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
 }
 
 .file-btn-group { display: flex; gap: 8px; }
@@ -122,12 +133,10 @@
 .btn-p { background: #3a3a3c; color: #fff; }
 .btn-d { background: var(--green); color: #000; font-weight: bold; }
 
-/* إصلاح عرض الهاتف */
+/* تحسين الهاتف */
 @media (max-width: 600px) {
-    .materials-grid { 
-        grid-template-columns: 1fr !important; 
-        max-width: 330px !important; 
-    }
-    .card-body h3 { font-size: 1.2rem; }
+    .materials-grid { grid-template-columns: 1fr; max-width: 320px; }
     .file-row-item { flex-direction: column; gap: 12px; text-align: center; }
 }
+
+.loader { text-align: center; padding: 50px; color: var(--white); font-size: 1.2rem; }
