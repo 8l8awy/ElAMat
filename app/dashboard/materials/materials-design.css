@@ -4,7 +4,6 @@
     --bg-card: #18181b;
     --border-card: #27272a;
     --accent-color: #00f260;
-    --gradient-3: linear-gradient(90deg, #c026d3, #7c3aed);
 }
 
 .materials-page-container {
@@ -13,24 +12,32 @@
     padding: 40px 20px;
     font-family: 'Cairo', sans-serif;
     direction: rtl;
+    color: white;
 }
 
-/* --- الهيدر وتوسيط المحتوى --- */
+/* --- الهيدر --- */
 .materials-header-redesigned {
     text-align: center;
     margin-bottom: 50px;
 }
 
-.materials-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 25px;
-    max-width: 1200px;
-    margin: 0 auto;
-    justify-content: center; /* توسيط الكروت في الكمبيوتر */
+/* --- توسيط الملخصات --- */
+.materials-grid-wrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
 }
 
-/* --- الكارت الموحد (Centered) --- */
+.materials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+    max-width: 1200px;
+    width: 100%;
+    justify-content: center; /* توسيط العناصر داخل الجريد */
+}
+
+/* --- تصميم الكارت (Centered) --- */
 .material-card-redesigned {
     background-color: var(--bg-card);
     border: 1px solid var(--border-card);
@@ -46,25 +53,51 @@
 
 .card-bottom-pills {
     display: flex;
-    flex-direction: row; /* دائماً بجانب بعضها */
+    flex-direction: row;
     justify-content: center;
-    gap: 10px;
+    gap: 12px;
     margin-top: 20px;
-    width: 100%;
 }
 
 .pill-stat {
     background: #27272a;
-    padding: 8px 15px;
-    border-radius: 10px;
+    padding: 6px 14px;
+    border-radius: 8px;
     font-size: 0.8rem;
-    color: #a1a1aa;
     display: flex;
     align-items: center;
     gap: 6px;
+    color: #a1a1aa;
 }
 
-/* --- المودال وزر المشاركة المنسق --- */
+/* --- زر المشاركة (تنسيق مخصص) --- */
+.gradient-share-btn {
+    background: linear-gradient(90deg, #c026d3, #7c3aed);
+    border: none;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 12px;
+    font-weight: 700;
+    margin: 10px auto 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    width: fit-content; /* حجم الزر حسب المحتوى */
+}
+
+/* --- إصلاح الهاتف --- */
+@media (max-width: 600px) {
+    .materials-grid {
+        grid-template-columns: 1fr; /* كارت واحد في الصف */
+        max-width: 350px;
+    }
+    .pill-stat {
+        font-size: 0.75rem;
+    }
+}
+
+/* --- المودال --- */
 .modal {
     display: none;
     position: fixed;
@@ -73,7 +106,6 @@
     background: rgba(0, 0, 0, 0.95);
     backdrop-filter: blur(5px);
     align-items: center; justify-content: center;
-    padding: 20px;
 }
 .modal.active { display: flex; }
 
@@ -81,56 +113,13 @@
     background: #0f0f0f;
     border-radius: 32px;
     max-width: 600px;
-    width: 100%;
-    padding: 50px 30px 30px;
-    position: relative;
+    width: 90%;
+    padding: 40px 20px;
     border: 1px solid #333;
-    animation: modalAppear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* زر المشاركة (تصغير الحجم وتوسيطه) */
-.gradient-share {
-    background: var(--gradient-3) !important;
-    width: auto !important;
-    min-width: 200px;
-    margin: 0 auto 25px !important;
-    padding: 10px 25px !important;
-    border-radius: 12px !important;
-    color: #fff !important;
-    font-weight: 700;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    border: none;
-    cursor: pointer;
-}
-
-.close {
-    position: absolute; top: 20px; left: 20px;
-    font-size: 30px; color: #fff; cursor: pointer;
-    background: #333; width: 40px; height: 40px;
-    border-radius: 50%; display: flex; align-items: center; justify-content: center;
-}
-
-/* --- تعديلات الهاتف --- */
-@media (max-width: 600px) {
-    .materials-grid {
-        grid-template-columns: 1fr;
-        padding: 0 10px;
-    }
-    .material-card-redesigned {
-        align-items: center !important;
-    }
-    .card-bottom-pills {
-        flex-direction: row !important; /* ضمان بقائها بجانب بعضها في الهاتف */
-    }
-    .gradient-share {
-        width: 100% !important; /* في الهاتف فقط يكون عريضاً لسهولة الضغط */
-    }
+    animation: modalAppear 0.4s ease-out;
 }
 
 @keyframes modalAppear {
-    from { opacity: 0; transform: scale(0.9) translateY(20px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
 }
