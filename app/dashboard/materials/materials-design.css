@@ -241,3 +241,65 @@
     .modal-content { padding: 40px 20px 20px; }
     .modal-file-item { flex-direction: column; gap: 15px; text-align: center; }
 }
+/* --- تحسينات العرض على الهاتف (Mobile Fixes) --- */
+@media (max-width: 600px) {
+    /* 1. ضمان توسيط محتوى الكارت بالكامل */
+    .material-card-redesigned {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important; /* توسيط العناصر أفقيًا */
+        text-align: center !important;
+        padding: 25px 15px !important;
+    }
+
+    /* 2. إصلاح تراصف الإحصائيات لتكون بجانب بعضها */
+    .card-bottom-pills {
+        display: flex !important;
+        flex-direction: row !important; /* إجبار التراصف الأفقي */
+        justify-content: center !important;
+        gap: 8px !important;
+        width: 100% !important;
+        margin-top: 20px !important;
+    }
+
+    .pill-stat {
+        flex: 0 1 auto !important; /* منع العناصر من التمدد العشوائي */
+        padding: 6px 12px !important;
+        font-size: 0.75rem !important;
+        background-color: #27272a !important;
+        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+    }
+
+    /* 3. تنسيق أيقونة الكارت لتكون في المنتصف */
+    .card-big-icon {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        margin-bottom: 15px !important;
+    }
+
+    /* 4. تحسين شكل المودال على الشاشات الصغيرة */
+    .modal-content {
+        padding: 45px 20px 25px 20px !important;
+        border-radius: 24px !important;
+        width: 95% !important;
+    }
+
+    .modal-content h2 {
+        font-size: 1.8rem !important;
+    }
+
+    /* جعل أزرار الملفات تظهر بشكل أفضل في الهاتف */
+    .modal-file-item {
+        flex-direction: column !important;
+        gap: 12px !important;
+        padding: 15px !important;
+    }
+
+    .modal-file-item div {
+        justify-content: center !important;
+        width: 100% !important;
+    }
+}
