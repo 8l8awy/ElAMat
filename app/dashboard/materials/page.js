@@ -52,7 +52,6 @@ function MaterialsContent() {
       const ref = doc(db, "materials", material.id);
       await updateDoc(ref, { viewCount: increment(1) });
       
-      // فتح أول ملف متاح في المادة في صفحة خارجية مباشرة
       if (material.files && material.files.length > 0) {
         window.open(material.files[0].url, "_blank");
       }
