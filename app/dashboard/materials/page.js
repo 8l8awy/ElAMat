@@ -9,7 +9,10 @@ import {
   FaEye,
   FaBookOpen,
   FaClipboardList,
-  FaFileAlt
+  FaFileAlt,
+  FaTimes,
+  FaImage,
+  FaFilePdf
 } from "react-icons/fa";
 
 import "./materials-design.css";
@@ -20,6 +23,7 @@ function MaterialsContent() {
 
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedMaterial, setSelectedMaterial] = useState(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -48,13 +52,10 @@ function MaterialsContent() {
   }, [subject]);
 
   const handleOpenMaterial = async (material) => {
+    setSelectedMaterial(material);
     try {
       const ref = doc(db, "materials", material.id);
       await updateDoc(ref, { viewCount: increment(1) });
-      
-      if (material.files && material.files.length > 0) {
-        window.open(material.files[0].url, "_blank");
-      }
     } catch (err) { console.error(err); }
   };
 
@@ -65,7 +66,7 @@ function MaterialsContent() {
       <div className="materials-header-redesigned">
         <div className="header-icon-box"><FaBookOpen /></div>
         <h1>{subject}</h1>
-        <p className="header-subtitle">اضغط على المادة لفتحها في صفحة جديدة</p>
+        <p className="header-subtitle">اختر الملخص لعرض ملفاته</p>
       </div>
 
       <div className="materials-grid-wrapper">
@@ -85,6 +86,36 @@ function MaterialsContent() {
           ))}
         </div>
       </div>
+
+      {/* مودال عرض الملفات للاختيار بين المعاينة أو التنزيل */}
+      {selectedMaterial && (
+        <div className="modal active" onClick={() => setSelectedMaterial(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <span className="close-btn" onClick={() => setSelectedMaterial(null)}><FaTimes /></span>
+            <h2 className="modal-title">{selectedMaterial.title}</h2>
+            <p className="modal-desc">توجد {selectedMaterial.files?.length} ملفات متوفرة:</p>
+            
+            <div className="files-list-container">
+              {selectedMaterial.files?.map((file, index) => (
+                <div key={index} className="file-row">
+                  <div className="file-info">
+                    <FaImage className="file-icon" />
+                    <span>صورة رقم {index + 1}</span>
+                  </div>
+                  <div className="file-actions">
+                    <button className="action-btn view" onClick={() => window.open(file.url, "_blank")}>
+                      <FaEye /> معاينة
+                    </button>
+                    <a href={file.url} download className="action-btn download">
+                      <FaDownload /> تنزيل
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
