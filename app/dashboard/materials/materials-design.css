@@ -1,16 +1,16 @@
 /* =========================================
-   تصميم صفحة المواد - Matching Dashboard Style
+   تصميم صفحة المواد - Matching Dashboard Style (Fixed Mobile)
    ========================================= */
 
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
 
 :root {
-    --bg-page: #0a0a0a;       /* لون الخلفية الرئيسي */
-    --bg-card: #18181b;       /* لون البطاقة (رمادي داكن) */
-    --border-card: #27272a;   /* لون الحدود */
+    --bg-page: #0a0a0a;
+    --bg-card: #18181b;
+    --border-card: #27272a;
     --text-primary: #ffffff;
     --text-muted: #a1a1aa;
-    --accent-color: #00f260;  /* اللون الأخضر المميز */
+    --accent-color: #00f260;
 }
 
 /* تنسيق الحاوية */
@@ -60,27 +60,32 @@
 /* --- الشبكة (Grid) --- */
 .materials-grid {
     display: grid;
-    /* نفس توزيع الصفحة الرئيسية */
+    /* ✅ تعديل: توسيط العناصر في الشبكة */
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 25px;
     max-width: 1400px;
     margin: 0 auto;
+    justify-content: center; /* يضمن توسيط البطاقات إذا كان عددها قليلاً */
 }
 
-/* --- تصميم البطاقة (Card) - المطابق للصفحة الرئيسية --- */
+/* --- تصميم البطاقة (Card) --- */
 .material-card-redesigned {
-    background-color: var(--bg-card); /* خلفية رمادية داكنة */
+    background-color: var(--bg-card);
     border: 1px solid var(--border-card);
-    border-radius: 24px; /* زوايا دائرية كبيرة */
+    border-radius: 24px;
     padding: 30px 20px;
     display: flex;
     flex-direction: column;
-    align-items: center; /* توسيط كل شيء */
+    align-items: center;
     text-align: center;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     position: relative;
     overflow: hidden;
+    /* ✅ تعديل: ضمان عدم تمدد البطاقة بشكل زائد في الموبايل */
+    max-width: 400px; 
+    margin: 0 auto; /* توسيط البطاقة نفسها */
+    width: 100%;
 }
 
 .material-card-redesigned:hover {
@@ -89,7 +94,6 @@
     box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
 }
 
-/* الأيقونة الكبيرة في البطاقة */
 .card-big-icon {
     width: 60px;
     height: 60px;
@@ -101,17 +105,9 @@
     margin-bottom: 20px;
 }
 
-.icon-summary {
-    background-color: rgba(59, 130, 246, 0.1); /* خلفية زرقاء خفيفة */
-    color: #60a5fa; /* أيقونة زرقاء */
-}
+.icon-summary { background-color: rgba(59, 130, 246, 0.1); color: #60a5fa; }
+.icon-assignment { background-color: rgba(239, 68, 68, 0.1); color: #f87171; }
 
-.icon-assignment {
-    background-color: rgba(239, 68, 68, 0.1); /* خلفية حمراء خفيفة */
-    color: #f87171; /* أيقونة حمراء */
-}
-
-/* العنوان */
 .card-title {
     color: var(--text-primary);
     font-size: 1.3rem;
@@ -120,28 +116,23 @@
     line-height: 1.4;
 }
 
-/* اسم الناشر */
 .card-uploader {
     font-size: 0.9rem;
     color: var(--text-muted);
     margin-bottom: 25px;
 }
-.card-uploader span {
-    color: #e4e4e7;
-    font-weight: 600;
-}
+.card-uploader span { color: #e4e4e7; font-weight: 600; }
 
-/* الشارات السفلية (Pills) */
 .card-bottom-pills {
     display: flex;
     gap: 10px;
-    margin-top: auto; /* دفع الشارات للأسفل دائماً */
+    margin-top: auto;
     width: 100%;
     justify-content: center;
 }
 
 .pill-stat {
-    background-color: #27272a; /* خلفية داكنة للشارة */
+    background-color: #27272a;
     padding: 8px 16px;
     border-radius: 8px;
     font-size: 0.8rem;
@@ -152,10 +143,6 @@
     font-weight: 600;
 }
 
-.pill-stat svg {
-    font-size: 1rem;
-}
-
 /* --- المودال (Popup) --- */
 .modal-backdrop {
     position: fixed;
@@ -163,6 +150,7 @@
     background-color: rgba(0,0,0,0.85);
     backdrop-filter: blur(5px);
     display: flex; justify-content: center; align-items: center; z-index: 9999;
+    padding: 15px; /* هامش للموبايل */
 }
 
 .modal-content-redesigned {
@@ -170,7 +158,8 @@
     border: 1px solid #333;
     padding: 30px;
     border-radius: 20px;
-    width: 90%; max-width: 550px;
+    width: 100%; 
+    max-width: 500px;
     max-height: 90vh;
     display: flex; flex-direction: column;
     position: relative;
@@ -179,14 +168,28 @@
 .animate-pop-in { animation: popIn 0.3s ease; }
 @keyframes popIn { from {opacity: 0; transform: scale(0.95);} to {opacity: 1; transform: scale(1);} }
 
+/* ✅ تعديل: تحسين زر الإغلاق */
 .close-btn-redesigned {
-    position: absolute; top: 15px; left: 15px;
-    background: transparent; border: none; color: #888; font-size: 1.5rem; cursor: pointer;
+    position: absolute; 
+    top: 15px; 
+    left: 15px;
+    background: rgba(255, 255, 255, 0.05); /* خلفية خفيفة */
+    border: none; 
+    color: #aaa; 
+    font-size: 1.1rem; /* تصغير الخط */
+    cursor: pointer;
+    width: 32px;      /* عرض ثابت */
+    height: 32px;     /* ارتفاع ثابت */
+    border-radius: 50%; /* دائري */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
 }
-.close-btn-redesigned:hover { color: #fff; }
+.close-btn-redesigned:hover { background: #333; color: #fff; }
 
-.modal-title { text-align: center; color: white; margin-bottom: 10px; font-size: 1.8rem; }
-.modal-description { text-align: center; color: #aaa; margin-bottom: 20px; line-height: 1.6; }
+.modal-title { text-align: center; color: white; margin-bottom: 10px; font-size: 1.6rem; margin-top: 10px;}
+.modal-description { text-align: center; color: #aaa; margin-bottom: 20px; line-height: 1.6; font-size: 0.95rem; }
 
 .btn-share-redesigned {
     background: var(--accent-color); color: #000; width: 100%; padding: 12px;
@@ -195,18 +198,56 @@
 }
 
 .files-title { color: white; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
-.files-list-scroll { overflow-y: auto; max-height: 250px; }
+.files-list-scroll { overflow-y: auto; max-height: 250px; padding-right: 5px; }
+
+/* عنصر الملف في القائمة */
 .file-item-redesigned {
     background: #222; padding: 12px; border-radius: 8px; margin-bottom: 8px;
     display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; /* يسمح بالنزول للسطر التالي في الموبايل */
+    gap: 10px;
 }
-.file-name { color: #eee; font-size: 0.9rem; }
+
+.file-name { color: #eee; font-size: 0.9rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+/* ✅ تعديل: حاوية الأزرار (إضافة مسافة) */
+.file-actions {
+    display: flex;
+    gap: 10px; /* المسافة المفقودة */
+    flex-shrink: 0;
+}
+
 .btn-action {
-    padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;
-    display: flex; align-items: center; gap: 5px; border: none; text-decoration: none;
+    padding: 8px 14px; 
+    border-radius: 6px; 
+    font-size: 0.85rem; 
+    cursor: pointer;
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+    border: none; 
+    text-decoration: none;
+    font-weight: 600;
 }
 .btn-preview-new { background: #333; color: #ccc; }
-.btn-download-new { background: var(--accent-color); color: #000; font-weight: bold; }
+.btn-download-new { background: var(--accent-color); color: #000; }
+
+/* تحسينات خاصة للموبايل */
+@media (max-width: 600px) {
+    .file-item-redesigned {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .file-actions {
+        width: 100%;
+        display: flex;
+        gap: 10px;
+    }
+    .btn-action {
+        flex: 1; /* الأزرار تأخذ عرض كامل بالتساوي */
+        justify-content: center;
+    }
+}
 
 /* شاشة التحميل */
 .loading-spinner, .empty-state-redesigned {
