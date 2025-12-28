@@ -190,8 +190,7 @@ function MaterialsContent() {
       {previewFile && (
         <div className="modal-backdrop active preview-mode" onClick={() => setPreviewFile(null)}>
            <div className="preview-content-container" onClick={(e) => e.stopPropagation()}>
-                {/* تم لف العناصر بداخل Fragment واحد هنا لإصلاح الخطأ */}
-                <>
+              <div className="preview-main-wrapper"> {/* هذا هو الديف الأب الجديد الذي يمنع الخطأ */}
                   <div className="preview-header">
                       <h3 className="preview-title">{previewFile.name}</h3>
                       <div className="preview-actions">
@@ -201,13 +200,15 @@ function MaterialsContent() {
                   <div className="preview-body">
                       {previewFile.type === 'pdf' ? (
                           <object data={previewFile.url} type="application/pdf" width="100%" height="100%">
-                              <iframe src={previewFile.url} width="100%" height="100%"></iframe>
+                              <iframe src={previewFile.url} width="100%" height="100%" title="PDF Preview"></iframe>
                           </object>
                       ) : (
-                          <div className="image-preview-scroll"><img src={previewFile.url} alt="Preview" /></div>
+                          <div className="image-preview-scroll">
+                             <img src={previewFile.url} alt="Preview" style={{ maxWidth: "100%" }} />
+                          </div>
                       )}
                   </div>
-                </>
+              </div>
            </div>
         </div>
       )}
@@ -217,7 +218,7 @@ function MaterialsContent() {
 
 export default function MaterialsPage() {
   return (
-    <Suspense fallback={<div>جاري التحميل...</div>}>
+    <Suspense fallback={<div className="loading-spinner">جاري التحميل...</div>}>
       <MaterialsContent />
     </Suspense>
   );
