@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase";
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
+
 import {
   FaDownload,
   FaEye,
@@ -66,13 +67,6 @@ function MaterialsContent() {
     } catch (err) { console.error(err); }
   };
 
-  const handleDownloadStats = async (id) => {
-    try {
-      const ref = doc(db, "materials", id);
-      await updateDoc(ref, { downloadCount: increment(1) });
-    } catch (err) { console.error(err); }
-  };
-
   const handleShare = async (material) => {
     const shareData = {
       title: material.title,
@@ -88,7 +82,7 @@ function MaterialsContent() {
     } catch (err) { console.log("Share skipped"); }
   };
 
-  if (loading) return <div className="loading-spinner">جاري تحميل المواد...</div>;
+  if (loading) return <div className="loading-spinner">جاري التحميل...</div>;
 
   return (
     <div className="materials-page-container">
@@ -114,54 +108,36 @@ function MaterialsContent() {
         ))}
       </div>
 
-      {/* مودال التفاصيل بالتنسيق الجديد */}
       {selectedMaterial && (
         <div className={`modal ${selectedMaterial ? 'active' : ''}`} onClick={() => setSelectedMaterial(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <span className="close" onClick={() => setSelectedMaterial(null)}>&times;</span>
-            
             <h2>{selectedMaterial.title}</h2>
-            
-            <p>{selectedMaterial.desc || "لا يوجد وصف إضافي متاح لهذا الملف."}</p>
+            <p>{selectedMaterial.desc || "لا يوجد وصف إضافي."}</p>
 
             <div className="modal-info">
               <div className="modal-info-item">
-                <span>بواسطة: <strong>{selectedMaterial.uploader || "مجهول"}</strong></span>
-              </div>
-              <div className="modal-info-item" style={{ flexDirection: 'row', gap: '20px' }}>
-                <span className="pill-stat"><FaEye /> {selectedMaterial.viewCount || 0}</span>
-                <span className="pill-stat"><FaDownload /> {selectedMaterial.downloadCount || 0}</span>
+                <span>بواسطة: <strong>{selectedMaterial.uploader}</strong></span>
               </div>
             </div>
 
-            <button 
-              className="view-file-btn" 
-              style={{ width: '100%', marginBottom: '20px', background: 'var(--gradient-3)', color: '#fff' }} 
-              onClick={() => handleShare(selectedMaterial)}
-            >
-              <FaShare /> مشاركة هذا المحتوى
+            <button className="view-file-btn gradient-share" onClick={() => handleShare(selectedMaterial)}>
+              <FaShare /> مشاركة المحتوى
             </button>
 
             <div className="modal-files-scroll">
-              <h3 style={{ color: '#fff', marginBottom: '15px' }}>الملفات المرفقة:</h3>
+              <h3 className="files-title">الملفات المرفقة:</h3>
               {selectedMaterial.files?.map((file, index) => (
                 <div key={index} className="modal-file-item">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {isPdfFile(file) ? <FaFilePdf color="#ef4444" size={22} /> : <FaFileImage color="#3b82f6" size={22} />}
+                  <div className="file-info-group">
+                    {isPdfFile(file) ? <FaFilePdf color="#ef4444" size={20} /> : <FaFileImage color="#3b82f6" size={20} />}
                     <span>{file.name}</span>
                   </div>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button className="view-file-btn" onClick={() => setPreviewFile({ ...file, type: isPdfFile(file) ? 'pdf' : 'image' })}>
+                  <div className="file-actions-group">
+                    <button className="view-file-btn preview" onClick={() => setPreviewFile({ ...file, type: isPdfFile(file) ? 'pdf' : 'image' })}>
                       <FaEye /> معاينة
                     </button>
-                    <a 
-                      href={file.url} 
-                      className="view-file-btn" 
-                      style={{ background: '#fff', color: '#000' }} 
-                      onClick={() => handleDownloadStats(selectedMaterial.id)} 
-                      target="_blank" 
-                      rel="noreferrer"
-                    >
+                    <a href={file.url} className="view-file-btn download" target="_blank" rel="noreferrer">
                       <FaDownload /> تحميل
                     </a>
                   </div>
@@ -172,18 +148,15 @@ function MaterialsContent() {
         </div>
       )}
 
-      {/* مودال المعاينة (Preview) */}
       {previewFile && (
-        <div className="modal active" style={{ zIndex: 3000 }} onClick={() => setPreviewFile(null)}>
-          <div className="modal-content" style={{ maxWidth: '95vw', height: '90vh', padding: '60px 20px 20px' }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal active preview-mode" onClick={() => setPreviewFile(null)}>
+          <div className="modal-content preview-box" onClick={(e) => e.stopPropagation()}>
             <span className="close" onClick={() => setPreviewFile(null)}>&times;</span>
-            <div style={{ width: '100%', height: '100%', overflow: 'hidden', borderRadius: '12px' }}>
+            <div className="preview-body-frame">
               {previewFile.type === 'pdf' ? (
-                <iframe src={previewFile.url} width="100%" height="100%" style={{ border: 'none' }}></iframe>
+                <iframe src={previewFile.url} width="100%" height="100%"></iframe>
               ) : (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', background: '#000' }}>
-                  <img src={previewFile.url} alt="Preview" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
-                </div>
+                <img src={previewFile.url} alt="Preview" />
               )}
             </div>
           </div>
