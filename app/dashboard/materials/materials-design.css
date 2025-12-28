@@ -1,58 +1,36 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
 
 :root {
     --bg-card: #18181b;
     --border-card: #27272a;
-    --text-primary: #ffffff;
-    --text-muted: #a1a1aa;
     --accent-color: #00f260;
     --gradient-3: linear-gradient(90deg, #c026d3, #7c3aed);
-    --gradient-2: #00f260;
 }
 
-/* التنسيق العام */
 .materials-page-container {
     background-color: var(--bg-page);
     min-height: 100vh;
     padding: 40px 20px;
-    color: var(--text-primary);
     font-family: 'Cairo', sans-serif;
     direction: rtl;
 }
 
-/* --- الهيدر --- */
+/* --- الهيدر وتوسيط المحتوى --- */
 .materials-header-redesigned {
     text-align: center;
     margin-bottom: 50px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
 }
 
-.header-icon-box {
-    font-size: 2.5rem;
-    color: var(--accent-color);
-    margin-bottom: 15px;
-    background: rgba(0, 242, 96, 0.1);
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* --- الشبكة (Grid) --- */
 .materials-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 25px;
-    max-width: 1400px;
+    max-width: 1200px;
     margin: 0 auto;
+    justify-content: center; /* توسيط الكروت في الكمبيوتر */
 }
 
-/* --- تصميم البطاقة (Card) --- */
+/* --- الكارت الموحد (Centered) --- */
 .material-card-redesigned {
     background-color: var(--bg-card);
     border: 1px solid var(--border-card);
@@ -60,38 +38,33 @@
     padding: 30px 20px;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: center; /* توسيط المحتوى داخلياً */
     text-align: center;
-    transition: all 0.3s ease;
+    transition: 0.3s;
     cursor: pointer;
 }
 
-.material-card-redesigned:hover {
-    border-color: var(--accent-color);
-    transform: translateY(-5px);
+.card-bottom-pills {
+    display: flex;
+    flex-direction: row; /* دائماً بجانب بعضها */
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+    width: 100%;
 }
-
-.card-big-icon {
-    width: 60px; height: 60px; border-radius: 16px;
-    display: flex; justify-content: center; align-items: center;
-    font-size: 1.8rem; margin-bottom: 20px;
-}
-
-.icon-summary { background: rgba(59, 130, 246, 0.1); color: #60a5fa; }
-.icon-assignment { background: rgba(239, 68, 68, 0.1); color: #f87171; }
 
 .pill-stat {
-    background-color: #27272a;
-    padding: 8px 16px;
-    border-radius: 8px;
+    background: #27272a;
+    padding: 8px 15px;
+    border-radius: 10px;
     font-size: 0.8rem;
-    color: var(--text-muted);
+    color: #a1a1aa;
     display: flex;
     align-items: center;
     gap: 6px;
 }
 
-/* --- المودال (Modal) - التصميم الذي طلبته --- */
+/* --- المودال وزر المشاركة المنسق --- */
 .modal {
     display: none;
     position: fixed;
@@ -99,207 +72,65 @@
     left: 0; top: 0; width: 100%; height: 100%;
     background: rgba(0, 0, 0, 0.95);
     backdrop-filter: blur(5px);
-    align-items: center;
-    justify-content: center;
+    align-items: center; justify-content: center;
     padding: 20px;
 }
-
 .modal.active { display: flex; }
 
 .modal-content {
     background: #0f0f0f;
-    padding: 50px 45px 30px 45px;
     border-radius: 32px;
-    max-width: 650px;
-    max-height: 90vh;
+    max-width: 600px;
     width: 100%;
+    padding: 50px 30px 30px;
     position: relative;
     border: 1px solid #333;
     animation: modalAppear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* زر المشاركة (تصغير الحجم وتوسيطه) */
+.gradient-share {
+    background: var(--gradient-3) !important;
+    width: auto !important;
+    min-width: 200px;
+    margin: 0 auto 25px !important;
+    padding: 10px 25px !important;
+    border-radius: 12px !important;
+    color: #fff !important;
+    font-weight: 700;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    border: none;
+    cursor: pointer;
 }
 
-.modal-content::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; height: 3px;
-    background: var(--gradient-3);
-    background-size: 200% 100%;
-    animation: modalHeaderGradient 3s linear infinite;
+.close {
+    position: absolute; top: 20px; left: 20px;
+    font-size: 30px; color: #fff; cursor: pointer;
+    background: #333; width: 40px; height: 40px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
 }
 
-@keyframes modalHeaderGradient {
-    to { background-position: -200% 0; }
+/* --- تعديلات الهاتف --- */
+@media (max-width: 600px) {
+    .materials-grid {
+        grid-template-columns: 1fr;
+        padding: 0 10px;
+    }
+    .material-card-redesigned {
+        align-items: center !important;
+    }
+    .card-bottom-pills {
+        flex-direction: row !important; /* ضمان بقائها بجانب بعضها في الهاتف */
+    }
+    .gradient-share {
+        width: 100% !important; /* في الهاتف فقط يكون عريضاً لسهولة الضغط */
+    }
 }
 
 @keyframes modalAppear {
-    from { opacity: 0; transform: scale(0.9) translateY(30px); }
+    from { opacity: 0; transform: scale(0.9) translateY(20px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-/* زر الإغلاق */
-.close {
-    position: absolute;
-    top: 20px;
-    left: 25px; /* RTL */
-    font-size: 32px;
-    cursor: pointer;
-    color: #fff;
-    width: 45px; height: 45px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 50%;
-    background: #333;
-    transition: all 0.3s ease;
-}
-
-.close:hover {
-    background: #fff; color: #000;
-    transform: rotate(90deg) scale(1.1);
-}
-
-/* نصوص المودال */
-.modal-content h2 {
-    color: #fff;
-    font-size: 2.5rem;
-    font-weight: 900;
-    text-align: center;
-    margin-bottom: 15px;
-}
-
-.modal-content p {
-    color: #888;
-    line-height: 1.8;
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-/* صندوق الإحصائيات */
-.modal-info {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin: 25px 0;
-    padding: 20px;
-    background: #0a0a0a;
-    border-radius: 16px;
-    border: 1px solid #333;
-}
-
-.modal-info-item {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-
-/* قائمة الملفات */
-.modal-files-scroll {
-    max-height: 45vh;
-    overflow-y: auto;
-    direction: rtl;
-    padding-left: 10px;
-}
-
-.modal-files-scroll::-webkit-scrollbar { width: 6px; }
-.modal-files-scroll::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-
-.modal-file-item {
-    background: #1a1a1a;
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: 1px solid #333;
-    transition: 0.3s;
-}
-
-.modal-file-item:hover { border-color: #fff; background: #222; }
-
-/* الأزرار */
-.view-file-btn {
-    background: var(--accent-color);
-    color: #000;
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-weight: 700;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    border: none;
-    font-size: 14px;
-    transition: 0.3s;
-}
-
-.view-file-btn:hover { transform: translateY(-2px); opacity: 0.9; }
-
-/* شاشات الموبايل */
-@media (max-width: 600px) {
-    .modal-content { padding: 40px 20px 20px; }
-    .modal-file-item { flex-direction: column; gap: 15px; text-align: center; }
-}
-/* --- تحسينات العرض على الهاتف (Mobile Fixes) --- */
-@media (max-width: 600px) {
-    /* 1. ضمان توسيط محتوى الكارت بالكامل */
-    .material-card-redesigned {
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important; /* توسيط العناصر أفقيًا */
-        text-align: center !important;
-        padding: 25px 15px !important;
-    }
-
-    /* 2. إصلاح تراصف الإحصائيات لتكون بجانب بعضها */
-    .card-bottom-pills {
-        display: flex !important;
-        flex-direction: row !important; /* إجبار التراصف الأفقي */
-        justify-content: center !important;
-        gap: 8px !important;
-        width: 100% !important;
-        margin-top: 20px !important;
-    }
-
-    .pill-stat {
-        flex: 0 1 auto !important; /* منع العناصر من التمدد العشوائي */
-        padding: 6px 12px !important;
-        font-size: 0.75rem !important;
-        background-color: #27272a !important;
-        border-radius: 8px !important;
-        display: flex !important;
-        align-items: center !important;
-        gap: 5px !important;
-    }
-
-    /* 3. تنسيق أيقونة الكارت لتكون في المنتصف */
-    .card-big-icon {
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-        margin-bottom: 15px !important;
-    }
-
-    /* 4. تحسين شكل المودال على الشاشات الصغيرة */
-    .modal-content {
-        padding: 45px 20px 25px 20px !important;
-        border-radius: 24px !important;
-        width: 95% !important;
-    }
-
-    .modal-content h2 {
-        font-size: 1.8rem !important;
-    }
-
-    /* جعل أزرار الملفات تظهر بشكل أفضل في الهاتف */
-    .modal-file-item {
-        flex-direction: column !important;
-        gap: 12px !important;
-        padding: 15px !important;
-    }
-
-    .modal-file-item div {
-        justify-content: center !important;
-        width: 100% !important;
-    }
 }
