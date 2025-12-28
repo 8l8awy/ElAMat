@@ -5,8 +5,7 @@ import { collection, getDocs, query, orderBy, addDoc, serverTimestamp } from "fi
 import { useAuth } from "@/context/AuthContext"; 
 import { 
   FaCheckCircle, FaTimesCircle, FaClipboardList, FaArrowLeft, FaRedo, 
-  FaClock, FaTrophy, FaChartLine, FaStar, FaGraduationCap, 
-  FaMedal // تم إزالة أيقونات الصوت
+  FaClock, FaTrophy, FaMedal, FaGraduationCap
 } from "react-icons/fa";
 
 export default function ExamsPage() {
@@ -21,8 +20,6 @@ export default function ExamsPage() {
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [isExamStarted, setIsExamStarted] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-
-  // تم إزالة دالة playSound وحالة الصوت
 
   useEffect(() => {
     async function fetchExams() {
@@ -57,7 +54,6 @@ export default function ExamsPage() {
   };
 
   const startExam = (exam) => {
-    // تم إزالة playSound
     setSelectedExam(exam);
     setUserAnswers({});
     setShowResult(false);
@@ -71,7 +67,6 @@ export default function ExamsPage() {
   const handleSelect = (qIndex, optionIndex) => {
     if (showResult) return;
     setUserAnswers(prev => ({ ...prev, [qIndex]: optionIndex }));
-    // تم إزالة playSound
   };
 
   const saveResultToDb = async (finalScore, percentage) => {
@@ -112,7 +107,6 @@ export default function ExamsPage() {
     await saveResultToDb(calculatedScore, percentage);
 
     if (percentage >= 75) {
-      // تم إزالة أصوات النجاح والتصفيق
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 8000);
     }
@@ -121,7 +115,6 @@ export default function ExamsPage() {
   };
 
   const resetAll = () => {
-    // تم إزالة playSound
     setSelectedExam(null);
     setUserAnswers({});
     setShowResult(false);
@@ -146,7 +139,7 @@ export default function ExamsPage() {
   return (
     <div className="min-h-screen w-full text-white p-4 font-sans relative overflow-hidden" dir="rtl">
       
-      {/* خلفية تفاعلية خفيفة جداً */}
+      {/* خلفية تفاعلية خفيفة */}
       <div className="fixed inset-0 pointer-events-none">
          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[100px]"></div>
          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[100px]"></div>
@@ -160,49 +153,43 @@ export default function ExamsPage() {
         </div>
       )}
 
-      {/* تم إزالة زر التحكم بالصوت من هنا */}
-
       <div className="relative z-10">
         {!selectedExam ? (
+          // ... (كود قائمة الامتحانات الرئيسية يبقى كما هو أو يمكنك تطبيق نفس المبدأ عليه) ...
           <div className="w-full animate-fadeIn">
-            
-            {/* الهيدر */}
             <div className="text-center mb-8 pt-4">
               <h1 className="text-3xl md:text-5xl font-black bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
-                   الامتحانات
+                  منصة الامتحانات
               </h1>
               <p className="text-gray-400">
-                  أهلاً يا <span className="text-blue-400 font-bold">{user?.name}</span>، اختر امتحانك وابدأ ! 
+                  أهلاً بك يا <span className="text-blue-400 font-bold">{user?.name}</span>، اختر امتحانك وابدأ التحدي! 🚀
               </p>
             </div>
-
-            {/* شبكة الامتحانات */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
               {exams.map((exam, idx) => (
                 <div 
                   key={exam.id} 
                   onClick={() => startExam(exam)} 
-                  className="group relative h-full bg-white/5 hover:bg-white/10 backdrop-blur-lg border border-white/10 hover:border-white/20 rounded-3xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-pointer overflow-hidden"
+                  // هنا أيضاً قمت بتخفيف الحدود
+                  className="group relative h-full bg-white/5 hover:bg-white/10 backdrop-blur-lg rounded-3xl p-6 transition-all duration-300 hover:-translate-y-1 cursor-pointer overflow-hidden"
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  
+                  {/* ... محتوى كارت الامتحان ... */}
+                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   <div className="relative z-10 flex flex-col h-full">
                     <div className="flex items-start justify-between mb-4">
-                      <div className="w-16 h-16 bg-black/20 rounded-2xl flex items-center justify-center border border-white/5 group-hover:scale-110 transition-transform">
+                      <div className="w-16 h-16 bg-black/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
                         <FaClipboardList className="text-3xl text-blue-400"/>
                       </div>
-                      <span className="bg-green-500/20 text-green-400 text-xs font-bold px-3 py-1 rounded-full border border-green-500/20">متاح</span>
+                      <span className="bg-green-500/20 text-green-400 text-xs font-bold px-3 py-1 rounded-full">متاح</span>
                     </div>
-                    
                     <h3 className="text-xl font-bold text-white mb-2 line-clamp-1 group-hover:text-blue-200 transition-colors">{exam.subject}</h3>
                     <p className="text-gray-400 text-sm mb-6 line-clamp-2">{exam.title}</p>
-                    
                     <div className="mt-auto flex items-center gap-3 w-full">
-                        <div className="flex-1 bg-black/20 px-3 py-2 rounded-xl text-xs text-gray-300 flex items-center justify-center gap-2 border border-white/5">
+                        <div className="flex-1 bg-black/20 px-3 py-2 rounded-xl text-xs text-gray-300 flex items-center justify-center gap-2">
                             <FaClipboardList /> <span>{exam.questions?.length || 0} سؤال</span>
                         </div>
-                        <div className="flex-1 bg-black/20 px-3 py-2 rounded-xl text-xs text-gray-300 flex items-center justify-center gap-2 border border-white/5">
+                        <div className="flex-1 bg-black/20 px-3 py-2 rounded-xl text-xs text-gray-300 flex items-center justify-center gap-2">
                             <FaClock /> <span>{exam.questions?.length * 2} دقيقة</span>
                         </div>
                     </div>
@@ -212,11 +199,12 @@ export default function ExamsPage() {
             </div>
           </div>
         ) : (
-          <div className="max-w-5xl mx-auto w-full animate-fadeIn">
-            {/* شريط الامتحان */}
-            <div className="sticky top-2 z-40 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 mb-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xl">
+          <div className="max-w-4xl mx-auto w-full animate-fadeIn">
+            
+            {/* 1️⃣ شريط الامتحان العلوي (Sticky Header) - تم إزالة الحواف والظلال */}
+            <div className="sticky top-0 z-40 bg-black/30 backdrop-blur-xl p-4 mb-8 flex flex-col md:flex-row items-center justify-between gap-4 transition-all">
                <div className="flex items-center gap-4 w-full md:w-auto">
-                 <button onClick={resetAll} className="bg-white/10 hover:bg-white/20 p-3 rounded-xl transition-all border border-white/10">
+                 <button onClick={resetAll} className="bg-white/10 hover:bg-white/20 p-3 rounded-xl transition-all">
                     <FaArrowLeft />
                  </button>
                  <div>
@@ -246,103 +234,104 @@ export default function ExamsPage() {
                )}
             </div>
 
-            {/* بطاقة النتيجة */}
+            {/* 2️⃣ قسم النتيجة (Result Section) - تم إزالة بطاقة الحاوية والحدود */}
             {showResult && (
-              <div className="mb-8 animate-scaleIn">
-                 <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 text-center relative overflow-hidden">
-                    <div className={`w-28 h-28 mx-auto bg-gradient-to-br ${percentage >= 75 ? 'from-yellow-400 to-orange-500' : 'from-gray-600 to-gray-700'} rounded-full flex items-center justify-center shadow-xl mb-6 animate-bounce`}>
-                       {percentage >= 75 ? <FaTrophy className="text-5xl text-white"/> : <FaMedal className="text-5xl text-gray-300"/>}
+              <div className="mb-12 text-center animate-scaleIn pt-4">
+                    {/* الكأس / الميدالية */}
+                    <div className={`w-32 h-32 mx-auto bg-gradient-to-br ${percentage >= 75 ? 'from-yellow-400 to-orange-500' : 'from-gray-600 to-gray-700'} rounded-full flex items-center justify-center shadow-lg mb-6 animate-bounce`}>
+                       {percentage >= 75 ? <FaTrophy className="text-6xl text-white"/> : <FaMedal className="text-6xl text-gray-300"/>}
                     </div>
 
-                    <h2 className="text-4xl font-black text-white mb-2">
-                        {percentage >= 90 ? "جامد! " : percentage >= 75 ? "عاش! " : "كويس "}
+                    {/* النص الرئيسي */}
+                    <h2 className="text-5xl font-black text-white mb-4">
+                        {percentage >= 90 ? "! جامد" : percentage >= 75 ? "عاش! " : percentage >= 50 ? "رايق! " : "حاول تاني "}
                     </h2>
                     
-                    <div className="flex justify-center gap-4 mt-6">
-                        <div className="bg-white/5 p-4 rounded-2xl border border-white/5 min-w-[100px]">
-                            <span className="block text-3xl font-bold text-white">{score}</span>
-                            <span className="text-xs text-green-400">صحيح</span>
+                    {/* مربعات الإحصائيات - بدون حدود خارجية */}
+                    <div className="flex justify-center gap-4 mt-8 flex-wrap">
+                        <div className="bg-black/20 p-5 rounded-2xl min-w-[110px]">
+                            <span className="block text-4xl font-bold text-white mb-1">{score}</span>
+                            <span className="text-sm text-green-400 font-bold">صحيح</span>
                         </div>
-                        <div className="bg-white/5 p-4 rounded-2xl border border-white/5 min-w-[100px]">
-                            <span className="block text-3xl font-bold text-white">{totalQuestions - score}</span>
-                            <span className="text-xs text-red-400">خطأ</span>
+                        <div className="bg-black/20 p-5 rounded-2xl min-w-[110px]">
+                            <span className="block text-4xl font-bold text-white mb-1">{totalQuestions - score}</span>
+                            <span className="text-sm text-red-400 font-bold">خطأ</span>
                         </div>
-                        <div className="bg-white/5 p-4 rounded-2xl border border-white/5 min-w-[100px]">
-                            <span className={`block text-3xl font-bold ${percentage >= 50 ? 'text-blue-400' : 'text-red-400'}`}>{percentage.toFixed(0)}%</span>
-                            <span className="text-xs text-gray-400">النسبة</span>
+                        <div className="bg-black/20 p-5 rounded-2xl min-w-[110px]">
+                            <span className={`block text-4xl font-bold ${percentage >= 50 ? 'text-blue-400' : 'text-red-400'} mb-1`}>{percentage.toFixed(0)}%</span>
+                            <span className="text-sm text-gray-400 font-bold">النسبة</span>
                         </div>
                     </div>
 
-                    <div className="flex gap-4 justify-center mt-8">
-                        <button onClick={() => startExam(selectedExam)} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg flex items-center gap-2">
+                    {/* زر إعادة المحاولة */}
+                    <div className="flex gap-4 justify-center mt-10">
+                        <button onClick={() => startExam(selectedExam)} className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-2xl font-bold transition-all shadow-lg hover:shadow-blue-600/30 flex items-center gap-3 text-lg">
                             <FaRedo /> إعادة المحاولة
                         </button>
                     </div>
-                 </div>
               </div>
             )}
 
-            {/* الأسئلة */}
-            <div className="space-y-4">
+            {/* 3️⃣ قائمة الأسئلة (Questions List) - إزالة الحدود وجعل الخلفية مندمجة */}
+            <div className="space-y-6 pb-10">
               {selectedExam.questions.map((q, qIndex) => {
                 const isCorrect = userAnswers[qIndex] === q.correct;
                 const isAnswered = userAnswers.hasOwnProperty(qIndex);
                 
-                let borderColor = "border-white/5";
-                let bgColor = "bg-white/5";
+                // تحديد لون الخلفية فقط بدون حدود
+                let bgColor = "bg-black/20";
                 
                 if (showResult) {
                     if (isCorrect) {
-                        borderColor = "border-green-500/30";
                         bgColor = "bg-green-500/10";
                     } else if (isAnswered) {
-                        borderColor = "border-red-500/30";
                         bgColor = "bg-red-500/10";
                     }
                 } else if (isAnswered) {
-                    borderColor = "border-blue-500/30";
                     bgColor = "bg-blue-500/10";
                 }
 
                 return (
-                  <div key={qIndex} className={`${bgColor} backdrop-blur-md border ${borderColor} rounded-3xl p-6 transition-all duration-300`}>
+                  // تم إزالة border class هنا
+                  <div key={qIndex} className={`${bgColor} backdrop-blur-md rounded-3xl p-6 md:p-8 transition-all duration-300`}>
                     
-                    <div className="flex gap-4 mb-6">
-                       <span className="flex-shrink-0 w-10 h-10 bg-black/20 rounded-xl flex items-center justify-center font-bold text-blue-400 border border-white/5">
+                    <div className="flex gap-5 mb-6">
+                       <span className="flex-shrink-0 w-12 h-12 bg-black/20 rounded-xl flex items-center justify-center font-bold text-blue-400 text-lg">
                          {qIndex + 1}
                        </span>
-                       <h3 className="text-lg md:text-xl font-bold text-white leading-relaxed pt-1">
+                       <h3 className="text-xl md:text-2xl font-bold text-white leading-relaxed pt-1">
                          {q.question}
                        </h3>
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="space-y-4 mr-0 md:mr-16">
                        {q.options.map((option, optIndex) => {
-                          let btnClass = "bg-black/20 border-white/5 hover:bg-white/10 hover:border-white/10";
-                          let icon = <span className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-sm font-bold text-gray-400 border border-white/5">{String.fromCharCode(65 + optIndex)}</span>;
+                          // إزالة الحدود من الخيارات أيضاً
+                          let btnClass = "bg-black/20 hover:bg-white/10";
+                          let icon = <span className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-base font-bold text-gray-400">{String.fromCharCode(65 + optIndex)}</span>;
 
                           if (showResult) {
                              if (optIndex === q.correct) {
-                                btnClass = "bg-green-500/20 border-green-500/50 text-green-200";
-                                icon = <FaCheckCircle className="text-green-400 text-xl"/>;
+                                btnClass = "bg-green-500/20 text-green-200";
+                                icon = <FaCheckCircle className="text-green-400 text-2xl"/>;
                              } else if (userAnswers[qIndex] === optIndex) {
-                                btnClass = "bg-red-500/20 border-red-500/50 text-red-200";
-                                icon = <FaTimesCircle className="text-red-400 text-xl"/>;
+                                btnClass = "bg-red-500/20 text-red-200";
+                                icon = <FaTimesCircle className="text-red-400 text-2xl"/>;
                              } else {
-                                btnClass = "opacity-30 border-transparent grayscale";
+                                btnClass = "opacity-30 grayscale";
                              }
                           } else if (userAnswers[qIndex] === optIndex) {
-                             btnClass = "bg-blue-500/20 border-blue-500/50 text-blue-200 shadow-[0_0_15px_rgba(59,130,246,0.2)]";
-                             icon = <div className="w-4 h-4 bg-blue-400 rounded-full shadow-[0_0_10px_rgba(96,165,250,0.8)]"></div>;
+                             btnClass = "bg-blue-500/20 text-blue-200";
+                             icon = <div className="w-5 h-5 bg-blue-400 rounded-full shadow-[0_0_10px_rgba(96,165,250,0.8)]"></div>;
                           }
 
                           return (
                             <div 
                               key={optIndex}
                               onClick={() => handleSelect(qIndex, optIndex)}
-                              className={`relative flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all active:scale-[0.99] ${btnClass}`}
+                              className={`relative flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all active:scale-[0.99] ${btnClass}`}
                             >
-                               <span className="font-medium text-base pl-4">{option}</span>
+                               <span className="font-medium text-lg pl-4">{option}</span>
                                <div className="flex-shrink-0 ml-2">
                                   {icon}
                                </div>
@@ -355,17 +344,18 @@ export default function ExamsPage() {
               })}
             </div>
 
+            {/* زر التسليم */}
             {!showResult && (
-              <div className="mt-8 pb-8">
+              <div className="mt-8 pb-12">
                 <button 
                   onClick={submitExam}
                   disabled={answeredCount === 0}
-                  className={`w-full py-4 rounded-2xl font-bold text-xl shadow-xl transition-all transform hover:scale-[1.01] flex items-center justify-center gap-3 ${
+                  className={`w-full py-5 rounded-2xl font-bold text-2xl shadow-xl transition-all transform hover:scale-[1.01] flex items-center justify-center gap-3 ${
                     answeredCount === totalQuestions 
                     ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white" 
                     : answeredCount > 0
                     ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-                    : "bg-white/10 text-gray-500 cursor-not-allowed"
+                    : "bg-black/30 text-gray-500 cursor-not-allowed"
                   }`}
                 >
                   {answeredCount === totalQuestions ? <FaCheckCircle className="animate-bounce"/> : <FaClipboardList/>}
