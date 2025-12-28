@@ -8,7 +8,7 @@ import {
   FaDownload,
   FaEye,
   FaFilePdf,
-  FaFileImage,
+  FaImage,
   FaUser,
   FaClock,
   FaTimes,
@@ -25,7 +25,7 @@ function MaterialsContent() {
   const [loading, setLoading] = useState(true);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
 
-  // دالة يدوية لعرض الوقت لتجنب أخطاء المكتبات الخارجية أثناء الـ Build
+  // دالة عرض الوقت يدوياً لتجنب أخطاء المكتبات الخارجية أثناء الـ Build
   const timeAgo = (date) => {
     if (!date) return "غير معروف";
     const seconds = Math.floor((new Date() - new Date(date)) / 1000);
@@ -71,7 +71,7 @@ function MaterialsContent() {
     } catch (err) { console.error(err); }
   };
 
-  if (loading) return <div className="loader">جاري التحميل...</div>;
+  if (loading) return <div className="loader">جاري تحميل المحتوى...</div>;
 
   return (
     <div className="materials-wrapper">
@@ -79,23 +79,23 @@ function MaterialsContent() {
         <h1>ملخصات {subject}</h1>
       </div>
 
-      <div className="materials-scroll-area">
+      <div className="materials-grid-container">
         <div className="materials-grid">
           {materials.map((m) => (
             <div key={m.id} className="old-style-card" onClick={() => handleOpenMaterial(m)}>
               <div className={`card-banner ${m.type === 'assignment' ? 'red-bg' : 'blue-bg'}`}>
-                 {m.type === 'assignment' ? <FaFilePdf /> : <FaFileImage />}
+                 {m.type === 'assignment' ? <FaFilePdf /> : <FaImage />}
               </div>
               <div className="card-body">
                 <h3>{m.title}</h3>
                 <div className="meta-row">
-                  <span><FaUser /> {m.uploader || "مجهول"}</span>
-                  <span><FaClock /> {timeAgo(m.date)}</span>
+                  <span className="uploader-name"><FaUser /> {m.uploader || "مجهول"}</span>
+                  <span className="upload-time"><FaClock /> {timeAgo(m.date)}</span>
                 </div>
               </div>
               <div className="card-stats-footer">
-                <span><FaDownload /> {m.downloadCount || 0}</span>
-                <span><FaEye /> {m.viewCount || 0}</span>
+                <span className="stat-pill"><FaDownload /> {m.downloadCount || 0}</span>
+                <span className="stat-pill"><FaEye /> {m.viewCount || 0}</span>
               </div>
             </div>
           ))}
