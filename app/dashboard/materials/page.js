@@ -7,7 +7,6 @@ import { collection, query, where, getDocs, doc, updateDoc, increment } from "fi
 import {
   FaDownload,
   FaEye,
-  FaFolderOpen,
   FaFilePdf,
   FaFileImage,
   FaShare,
@@ -90,7 +89,6 @@ function MaterialsContent() {
     try {
       const ref = doc(db, "materials", material.id);
       await updateDoc(ref, { viewCount: increment(1) });
-      material.viewCount = (material.viewCount || 0) + 1;
     } catch (err) { console.error(err); }
   };
 
@@ -112,7 +110,7 @@ function MaterialsContent() {
             await navigator.share(shareData);
         } else {
             await navigator.clipboard.writeText(window.location.href);
-            alert("تم نسخ رابط الصفحة! يمكنك مشاركته الآن.");
+            alert("تم نسخ رابط الصفحة!");
         }
     } catch (err) { console.log("Share skipped"); }
   };
@@ -131,14 +129,12 @@ function MaterialsContent() {
   return (
     <div className="materials-page-container">
       <div className="materials-header-redesigned">
-          <div className="header-icon-box">
-             <FaBookOpen />
-          </div>
+          <div className="header-icon-box"><FaBookOpen /></div>
           <h1>{subject}</h1>
           <p className="header-subtitle">تصفح المحتوى المتاح</p>
       </div>
 
-      <div id="materialsList" className="materials-grid">
+      <div className="materials-grid">
         {materials.length === 0 ? (
             <div className="empty-state-redesigned">
                 <span className="empty-icon">📂</span>
@@ -151,12 +147,10 @@ function MaterialsContent() {
                         {m.type === 'assignment' ? <FaClipboardList /> : <FaFileAlt />}
                     </div>
                     <h3 className="card-title">{m.title}</h3>
-                    <div className="card-uploader">
-                        بواسطة: <span>{m.uploader || "مجهول"}</span>
-                    </div>
+                    <div className="card-uploader">بواسطة: <span>{m.uploader || "مجهول"}</span></div>
                     <div className="card-bottom-pills">
-                        <div className="pill-stat"><FaEye /> {m.viewCount || 0} مشاهدة</div>
-                        <div className="pill-stat"><FaDownload /> {m.downloadCount || 0} تحميل</div>
+                        <div className="pill-stat"><FaEye /> {m.viewCount || 0}</div>
+                        <div className="pill-stat"><FaDownload /> {m.downloadCount || 0}</div>
                     </div>
                 </div>
             ))
@@ -167,48 +161,26 @@ function MaterialsContent() {
         <div className="modal-backdrop active" onClick={() => setSelectedMaterial(null)}>
           <div className="modal-content-redesigned animate-pop-in" onClick={(e) => e.stopPropagation()}>
             <button className="close-btn-redesigned" onClick={() => setSelectedMaterial(null)}><FaTimes /></button>
-
             <h2 className="modal-title">{selectedMaterial.title}</h2>
-            
-            <p style={{textAlign:'center', color:'#94a3b8', marginTop:'-15px', marginBottom:'25px'}}>
-                نشر بواسطة: <span style={{color:'#00f260', fontWeight:'bold'}}>{selectedMaterial.uploader || "مجهول"}</span>
-            </p>
-
-            <p className="modal-description">{selectedMaterial.desc || "لا يوجد وصف إضافي."}</p>
-
-            <button className="btn-share-redesigned" onClick={() => handleShare(selectedMaterial)}>
-                <FaShare /> مشاركة
-            </button>
-
+            <p style={{textAlign:'center', color:'#94a3b8'}}>بواسطة: {selectedMaterial.uploader}</p>
+            <p className="modal-description">{selectedMaterial.desc}</p>
+            <button className="btn-share-redesigned" onClick={() => handleShare(selectedMaterial)}><FaShare /> مشاركة</button>
             <div className="modal-files-section">
               <h4 className="files-title">الملفات:</h4>
               <div className="files-list-scroll">
-                {selectedMaterial.files && selectedMaterial.files.length > 0 ? (
-                    selectedMaterial.files.map((file, index) => (
+                {selectedMaterial.files?.map((file, index) => (
                     <div key={index} className="file-item-redesigned">
                         <div className="file-info">
                             {isPdfFile(file) ? <FaFilePdf className="file-icon pdf"/> : <FaFileImage className="file-icon image"/>}
                             <span className="file-name">{file.name}</span>
                         </div>
-
                         <div className="file-actions">
-                            <a href={file.url} target="_blank" rel="noreferrer" className="btn-action btn-open-new" title="فتح في صفحة جديدة">
-                                <FaExternalLinkAlt />
-                            </a>
-
-                            <button onClick={() => handlePreviewFile(file)} className="btn-action btn-preview-new">
-                                <FaEye /> معاينة
-                            </button>
-                            
-                            <a href={getDownloadUrl(file.url)} onClick={() => handleDownloadStats(selectedMaterial.id)} className="btn-action btn-download-new" target="_blank" rel="noopener noreferrer">
-                                <FaDownload /> تحميل
-                            </a>
+                            <a href={file.url} target="_blank" rel="noreferrer" className="btn-action"><FaExternalLinkAlt /></a>
+                            <button onClick={() => handlePreviewFile(file)} className="btn-action"><FaEye /> معاينة</button>
+                            <a href={getDownloadUrl(file.url)} onClick={() => handleDownloadStats(selectedMaterial.id)} className="btn-action" target="_blank" rel="noopener noreferrer"><FaDownload /> تحميل</a>
                         </div>
                     </div>
-                    ))
-                ) : (
-                    <p className="no-files">لا توجد ملفات.</p>
-                )}
+                ))}
               </div>
             </div>
           </div>
@@ -217,28 +189,25 @@ function MaterialsContent() {
 
       {previewFile && (
         <div className="modal-backdrop active preview-mode" onClick={() => setPreviewFile(null)}>
-           <div className="preview-content-container animate-fade-in" onClick={(e) => e.stopPropagation()}>
-                <div className="preview-header">
-                    <h3 className="preview-title">
-                        {previewFile.type === 'pdf' ? <FaFilePdf className="file-icon pdf"/> : <FaFileImage className="file-icon image"/>}
-                        {previewFile.name}
-                    </h3>
-                    <div className="preview-actions">
-                        <a href={previewFile.url} target="_blank" rel="noreferrer" className="btn-icon"><FaExternalLinkAlt /></a>
-                        <button className="btn-icon close" onClick={() => setPreviewFile(null)}><FaTimes /></button>
-                    </div>
-                </div>
-                <div className="preview-body">
-                    {previewFile.type === 'pdf' ? (
-                        <object data={previewFile.url} type="application/pdf" width="100%" height="100%" className="pdf-viewer">
-                            <iframe src={previewFile.url} width="100%" height="100%" title="PDF Preview"></iframe>
-                        </object>
-                    ) : (
-                        <div className="image-preview-scroll">
-                           <img src={previewFile.url} alt="Preview" />
-                        </div>
-                    )}
-                </div>
+           <div className="preview-content-container" onClick={(e) => e.stopPropagation()}>
+                {/* تم لف العناصر بداخل Fragment واحد هنا لإصلاح الخطأ */}
+                <>
+                  <div className="preview-header">
+                      <h3 className="preview-title">{previewFile.name}</h3>
+                      <div className="preview-actions">
+                          <button className="btn-icon" onClick={() => setPreviewFile(null)}><FaTimes /></button>
+                      </div>
+                  </div>
+                  <div className="preview-body">
+                      {previewFile.type === 'pdf' ? (
+                          <object data={previewFile.url} type="application/pdf" width="100%" height="100%">
+                              <iframe src={previewFile.url} width="100%" height="100%"></iframe>
+                          </object>
+                      ) : (
+                          <div className="image-preview-scroll"><img src={previewFile.url} alt="Preview" /></div>
+                      )}
+                  </div>
+                </>
            </div>
         </div>
       )}
@@ -248,7 +217,7 @@ function MaterialsContent() {
 
 export default function MaterialsPage() {
   return (
-    <Suspense fallback={<div className="loading-spinner">جاري التحميل...</div>}>
+    <Suspense fallback={<div>جاري التحميل...</div>}>
       <MaterialsContent />
     </Suspense>
   );
