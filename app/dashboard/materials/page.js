@@ -13,10 +13,10 @@ import {
   FaShare,
   FaTimes,
   FaExternalLinkAlt,
-  FabookOpen // أيقونة إضافية للعنوان
+  FaBookOpen // ✅ تم التصحيح: حرف B أصبح كبيراً (Capital)
 } from "react-icons/fa";
 
-// ✅ استيراد ملف الـ CSS الجديد (تأكد من إنشاء هذا الملف)
+// ✅ استيراد ملف الـ CSS الجديد
 import "./materials-design.css";
 
 function MaterialsContent() {
@@ -28,7 +28,6 @@ function MaterialsContent() {
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
 
-  // ... (نفس دوال المساعدة: isPdfFile, getDownloadUrl, normalizeType - لم تتغير)
   const isPdfFile = (file) => {
     const name = file.name?.toLowerCase() || "";
     const url = file.url?.toLowerCase() || "";
@@ -55,8 +54,6 @@ function MaterialsContent() {
     if (["assignment", "تكليف", "تكاليف", "واجب"].includes(type)) return "assignment";
     return type;
   };
-  // ... (نهاية دوال المساعدة)
-
 
   useEffect(() => {
     async function fetchData() {
@@ -76,7 +73,6 @@ function MaterialsContent() {
             type: normalizeType(doc.data().type)
         }));
 
-        // الترتيب في المتصفح (الكود الذي يعمل حالياً)
         data.sort((a, b) => new Date(b.date) - new Date(a.date));
         setMaterials(data);
       } catch (err) {
@@ -88,8 +84,7 @@ function MaterialsContent() {
     fetchData();
   }, [subject]);
 
-  // ... (نفس دوال التعامل مع الأحداث: handleOpenMaterial, handleDownloadStats, handleShare, handlePreviewFile - لم تتغير)
-    const handleOpenMaterial = async (material) => {
+  const handleOpenMaterial = async (material) => {
     setSelectedMaterial(material);
     try {
       const ref = doc(db, "materials", material.id);
@@ -129,17 +124,15 @@ function MaterialsContent() {
         name: file.name
     });
   };
-  // ... (نهاية دوال التعامل مع الأحداث)
-
 
   if (loading) return <div className="loading-spinner">جاري تحميل المواد...</div>;
 
   return (
     <div className="materials-page-container">
-      {/* ✅ تصميم جديد للهيدر */}
       <div className="materials-header-redesigned">
           <div className="header-content">
-            <FabookOpen className="header-icon" />
+            {/* ✅ تم التصحيح هنا أيضاً */}
+            <FaBookOpen className="header-icon" />
             <h1>{subject}</h1>
           </div>
           <p className="header-subtitle">تصفح جميع الملخصات والتكليفات المتاحة لهذه المادة</p>
@@ -154,7 +147,6 @@ function MaterialsContent() {
             </div>
         ) : (
             materials.map(m => (
-                // ✅ استخدام كلاسات جديدة للبطاقة
                 <div key={m.id} className="material-card-redesigned" onClick={() => handleOpenMaterial(m)}>
                     <div className="card-top">
                         <span className={`type-badge ${m.type === 'assignment' ? 'badge-assignment' : 'badge-summary'}`}>
@@ -182,7 +174,6 @@ function MaterialsContent() {
         )}
       </div>
 
-      {/* ✅ مودال التفاصيل بتصميم جديد */}
       {selectedMaterial && !previewFile && (
         <div className="modal-backdrop active" onClick={() => setSelectedMaterial(null)}>
           <div className="modal-content-redesigned animate-pop-in" onClick={(e) => e.stopPropagation()}>
@@ -249,7 +240,6 @@ function MaterialsContent() {
         </div>
       )}
 
-      {/* ✅ مودال المعاينة (Preview Modal) - تم تحسينه قليلاً */}
       {previewFile && (
         <div className="modal-backdrop active preview-mode" onClick={() => setPreviewFile(null)}>
            <div className="preview-content-container animate-fade-in" onClick={(e) => e.stopPropagation()}>
