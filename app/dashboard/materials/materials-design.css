@@ -240,13 +240,245 @@
     z-index: 10;
 }
 
-.modal-title { text-align: center; color: white; margin-bottom: 10px; font-size: 1.6rem; margin-top: 15px; }
-.modal-description { text-align: center; color: #aaa; margin-bottom: 20px; line-height: 1.6; font-size: 0.95rem; }
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95); /* تم التعديل */
+  backdrop-filter: blur(5px);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
 
-.btn-share-redesigned {
-    background: var(--accent-color); color: #000; width: 100%; padding: 12px;
-    border-radius: 10px; border: none; font-weight: bold; cursor: pointer;
-    display: flex; justify-content: center; gap: 8px; margin-bottom: 20px;
+.modal.active {
+  display: flex;
+}
+
+.modal-content {
+  background: #0f0f0f; /* تم التعديل */
+  backdrop-filter: none;
+  padding: 50px 45px 30px 45px;
+  border-radius: 32px;
+  max-width: 650px;
+  max-height: 90vh;
+  width: 100%;
+  position: relative;
+  margin: auto;
+  box-shadow: none;
+  animation: modalAppear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid #333; /* تم التعديل */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-3); /* تم التعديل */
+  background-size: 200% 100%;
+  animation: modalHeaderGradient 3s linear infinite;
+}
+
+.modal-content::after {
+  content: none; /* إزالة التوهج الخلفي */
+}
+
+@keyframes modalHeaderGradient {
+  to { background-position: -200% 0; }
+}
+
+@keyframes modalGlow {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+  50% { transform: translate(-20%, -20%) scale(1.1); opacity: 0.8; }
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.close {
+  position: absolute;
+  top: 20px;
+  left: 25px; /* Adjusted to RTL */
+  right: auto;
+  font-size: 32px;
+  cursor: pointer;
+  color: #fff; /* تم التعديل */
+  transition: all 0.3s ease;
+  line-height: 1;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #333; /* تم التعديل */
+  z-index: 2;
+  border: 2px solid transparent;
+}
+
+.close:hover {
+  color: #000;
+  background: #fff; /* تم التعديل */
+  transform: rotate(90deg) scale(1.1);
+  border-color: #fff;
+  box-shadow: 0 5px 20px rgba(255, 255, 255, 0.3);
+}
+
+.close:active {
+  transform: rotate(90deg) scale(0.95);
+}
+
+.modal-content h2 {
+  background: none;
+  color: #fff; /* تم التعديل */
+  -webkit-text-fill-color: #fff;
+  background-clip: unset;
+  background-size: 200% 200%;
+  font-size: 3em;
+  margin-bottom: 15px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  text-shadow: none;
+}
+
+@keyframes titleGradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.modal-content p {
+  color: #888; /* تم التعديل */
+  line-height: 2;
+  margin: 20px 0;
+  font-size: 1.1em;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  font-weight: 500;
+}
+
+.modal-content p:first-of-type {
+  font-size: 1.15em;
+  color: #aaa; /* تم التعديل */
+  margin-top: 10px;
+  margin-bottom: 30px;
+  padding: 0 20px;
+}
+
+.modal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: 25px 0;
+  padding: 20px;
+  background: #0a0a0a; /* تم التعديل */
+  border-radius: 16px;
+  border: 1px solid #333; /* تم التعديل */
+}
+
+.modal-info-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 1.05em;
+  text-align: center;
+}
+
+.modal-info-item .icon {
+  font-size: 1.2em;
+}
+
+.modal-content strong {
+  color: #fff; /* تم التعديل */
+  font-weight: 800;
+  background: none;
+  -webkit-text-fill-color: #fff;
+}
+
+.modal-files-scroll {
+  max-height: 55vh;      
+  overflow-y: auto;      
+  margin-top: 10px;
+  padding-left: 10px;   /* Adjusted to RTL: space on the left */
+  padding-right: 0;
+  direction: rtl; /* Scrollbar on the left for RTL content */
+}
+
+/* Scrollbar Style for Modal (RTL) */
+.modal-files-scroll::-webkit-scrollbar {
+  width: 7px;
+}
+.modal-files-scroll::-webkit-scrollbar-thumb {
+  background: #333; /* تم التعديل */
+  border-radius: 10px;
+}
+
+.modal-file-item {
+  background: #1a1a1a; /* تم التعديل */
+  padding: 18px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #333; /* تم التعديل */
+  transition: all 0.3s ease;
+  direction: rtl;
+}
+
+.modal-file-item:hover {
+  border-color: #fff; /* تم التعديل */
+  background: #222; /* تم التعديل */
+}
+
+.modal-file-item span {
+  color: #ddd; /* تم التعديل */
+  font-weight: 600;
+  flex: 1;
+  text-align: right; /* RTL Fix */
+}
+
+.view-file-btn {
+  background: var(--gradient-2); /* تم التعديل */
+  color: #000; /* تم التعديل */
+  padding: 10px 24px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  display: inline-block;
+  font-size: 14px;
+  width: auto;
+  margin: 0;
+  box-shadow: none;
+  text-transform: none; /* Override general button uppercase */
+}
+
+.view-file-btn:hover {
+  transform: translateY(-2px);
+  background: #ccc;
 }
 
 .files-title { color: white; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
