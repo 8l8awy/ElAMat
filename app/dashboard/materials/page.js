@@ -3,8 +3,6 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase";
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
-import { formatDistanceToNow } from "date-fns";
-import { ar } from "date-fns/locale";
 
 import {
   FaDownload,
@@ -13,7 +11,6 @@ import {
   FaFileImage,
   FaUser,
   FaClock,
-  FaArrowLeft,
   FaShareAlt,
   FaTimes
 } from "react-icons/fa";
@@ -27,6 +24,23 @@ function MaterialsContent() {
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
+
+  // دالة بسيطة لعرض التاريخ بشكل "منذ..." بدون مكتبات خارجية
+  const timeAgo = (date) => {
+    if (!date) return "غير معروف";
+    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+    let interval = Math.floor(seconds / 31536000);
+    if (interval >= 1) return `منذ ${interval} سنة`;
+    interval = Math.floor(seconds / 2592000);
+    if (interval >= 1) return `منذ ${interval} شهر`;
+    interval = Math.floor(seconds / 86400);
+    if (interval >= 1) return `منذ ${interval} يوم`;
+    interval = Math.floor(seconds / 3600);
+    if (interval >= 1) return `منذ ${interval} ساعة`;
+    interval = Math.floor(seconds / 60);
+    if (interval >= 1) return `منذ ${interval} دقيقة`;
+    return "الآن";
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -43,14 +57,9 @@ function MaterialsContent() {
           id: doc.id,
           ...doc.data()
         }));
-        // ترتيب من الأحدث للأقدم
         data.sort((a, b) => new Date(b.date) - new Date(a.date));
         setMaterials(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+      } catch (err) { console.error(err); } finally { setLoading(false); }
     }
     fetchData();
   }, [subject]);
@@ -62,21 +71,20 @@ function MaterialsContent() {
     } catch (err) { console.error(err); }
   };
 
-  const handleDownload = async (materialId, fileUrl) => {
+  const handleDownload = async (materialId, url) => {
     try {
       await updateDoc(doc(db, "materials", materialId), { downloadCount: increment(1) });
-      window.open(fileUrl, "_blank");
+      window.open(url, "_blank");
     } catch (err) { console.error(err); }
   };
 
-  if (loading) return <div className="loader">جاري تحميل الملخصات...</div>;
+  if (loading) return <div className="loader">جاري تحميل المحتوى...</div>;
 
   return (
     <div className="materials-wrapper">
-      <div className="page-header">
-        <button className="back-btn" onClick={() => window.history.back()}><FaArrowLeft /></button>
+      <header className="page-header">
         <h1>ملخصات {subject}</h1>
-      </div>
+      </header>
 
       <div className="materials-grid">
         {materials.map((m) => (
@@ -88,7 +96,7 @@ function MaterialsContent() {
               <h3>{m.title}</h3>
               <div className="meta-info">
                 <span><FaUser /> {m.uploader || "مجهول"}</span>
-                <span><FaClock /> {m.date ? formatDistanceToNow(new Date(m.date), { addSuffix: true, locale: ar }) : "غير معروف"}</span>
+                <span><FaClock /> {timeAgo(m.date)}</span>
               </div>
             </div>
             <div className="card-footer">
@@ -103,13 +111,15 @@ function MaterialsContent() {
         <div className="modal-overlay" onClick={() => setSelectedMaterial(null)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <button className="close-modal" onClick={() => setSelectedMaterial(null)}><FaTimes /></button>
-            <h2>{selectedMaterial.title}</h2>
-            <p className="modal-meta">نشر بواسطة <b>{selectedMaterial.uploader}</b> منذ {formatDistanceToNow(new Date(selectedMaterial.date), { locale: ar })}</p>
+            <h2 style={{color: '#fff', marginBottom: '10px'}}>{selectedMaterial.title}</h2>
+            <p style={{color: '#aaa', fontSize: '0.9rem', marginBottom: '20px'}}>
+              نشر بواسطة {selectedMaterial.uploader} {timeAgo(selectedMaterial.date)}
+            </p>
             
             <div className="files-list">
               {selectedMaterial.files?.map((file, idx) => (
                 <div key={idx} className="file-row">
-                  <span className="file-name">صورة {idx + 1}</span>
+                  <span className="file-name">ملف {idx + 1}</span>
                   <div className="file-btns">
                     <button className="preview-btn" onClick={() => window.open(file.url, "_blank")}>معاينة</button>
                     <button className="download-btn" onClick={() => handleDownload(selectedMaterial.id, file.url)}>تحميل</button>
@@ -126,7 +136,7 @@ function MaterialsContent() {
 
 export default function MaterialsPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="loader">جاري التحميل...</div>}>
       <MaterialsContent />
     </Suspense>
   );
