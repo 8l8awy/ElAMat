@@ -25,7 +25,7 @@ function MaterialsContent() {
   const [loading, setLoading] = useState(true);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
 
-  // دالة عرض الوقت يدوياً لتجنب أخطاء المكتبات الخارجية أثناء الـ Build
+  // دالة يدوية لعرض الوقت لتجنب أخطاء المكتبات الخارجية أثناء الـ Build
   const timeAgo = (date) => {
     if (!date) return "غير معروف";
     const seconds = Math.floor((new Date() - new Date(date)) / 1000);
@@ -64,14 +64,18 @@ function MaterialsContent() {
     } catch (err) { console.error(err); }
   };
 
+  // إصلاح زر التحميل: استخدام نافذة جديدة وتحديث العداد
   const handleDownload = async (id, url) => {
+    if (!url) return;
     try {
-      await updateDoc(doc(db, "materials", id), { downloadCount: increment(1) });
+      // فتح الملف فوراً في تبويب جديد
       window.open(url, "_blank");
-    } catch (err) { console.error(err); }
+      // تحديث العداد في الخلفية
+      await updateDoc(doc(db, "materials", id), { downloadCount: increment(1) });
+    } catch (err) { console.error("Download error:", err); }
   };
 
-  if (loading) return <div className="loader">جاري تحميل المحتوى...</div>;
+  if (loading) return <div className="loader">جاري التحميل...</div>;
 
   return (
     <div className="materials-wrapper">
@@ -89,8 +93,8 @@ function MaterialsContent() {
               <div className="card-body">
                 <h3>{m.title}</h3>
                 <div className="meta-row">
-                  <span className="uploader-name"><FaUser /> {m.uploader || "مجهول"}</span>
-                  <span className="upload-time"><FaClock /> {timeAgo(m.date)}</span>
+                  <span><FaUser /> {m.uploader || "مجهول"}</span>
+                  <span><FaClock /> {timeAgo(m.date)}</span>
                 </div>
               </div>
               <div className="card-stats-footer">
