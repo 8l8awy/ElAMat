@@ -13,10 +13,10 @@ import {
   FaShare,
   FaTimes,
   FaExternalLinkAlt,
-  FaBookOpen // ✅ تم التصحيح: حرف B أصبح كبيراً (Capital)
+  FaBookOpen // ✅ الأيقونة مكتوبة بشكل صحيح الآن
 } from "react-icons/fa";
 
-// ✅ استيراد ملف الـ CSS الجديد
+// ✅ استيراد ملف الـ CSS
 import "./materials-design.css";
 
 function MaterialsContent() {
@@ -131,7 +131,6 @@ function MaterialsContent() {
     <div className="materials-page-container">
       <div className="materials-header-redesigned">
           <div className="header-content">
-            {/* ✅ تم التصحيح هنا أيضاً */}
             <FaBookOpen className="header-icon" />
             <h1>{subject}</h1>
           </div>
@@ -161,6 +160,13 @@ function MaterialsContent() {
 
                     <div className="card-content">
                         <h3 className="card-title">{m.title}</h3>
+                        
+                        {/* ✅ تعديل: عرض اسم الناشر (uploader) هنا */}
+                        <div style={{marginBottom:'10px', fontSize:'0.9em', color:'#94a3b8', display:'flex', alignItems:'center', gap:'5px'}}>
+                            <span>بواسطة:</span>
+                            <span style={{color:'#00f260', fontWeight:'600'}}>{m.uploader || "مجهول"}</span>
+                        </div>
+
                         <p className="card-desc">{m.desc || "لا يوجد وصف متاح..."}</p>
                     </div>
 
@@ -180,6 +186,11 @@ function MaterialsContent() {
             <button className="close-btn-redesigned" onClick={() => setSelectedMaterial(null)}><FaTimes /></button>
 
             <h2 className="modal-title">{selectedMaterial.title}</h2>
+
+            {/* ✅ تعديل: عرض اسم الناشر (uploader) في المودال أيضاً */}
+            <p style={{textAlign:'center', color:'#94a3b8', marginTop:'-15px', marginBottom:'25px'}}>
+                نشر بواسطة: <span style={{color:'#00f260', fontWeight:'bold'}}>{selectedMaterial.uploader || "مجهول"}</span>
+            </p>
 
             <div className="modal-stats-bar">
                 <div className="modal-stat stat-views">
