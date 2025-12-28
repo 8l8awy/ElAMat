@@ -9,9 +9,7 @@ import {
   FaEye,
   FaFilePdf,
   FaFileImage,
-  FaShare,
   FaTimes,
-  FaExternalLinkAlt,
   FaBookOpen,
   FaClipboardList,
   FaFileAlt
@@ -31,14 +29,6 @@ function MaterialsContent() {
     const name = file.name?.toLowerCase() || "";
     const url = file.url?.toLowerCase() || "";
     return name.endsWith(".pdf") || url.includes(".pdf");
-  };
-
-  const getDownloadUrl = (url) => {
-    if (!url) return "#";
-    if (url.includes("cloudinary.com") && url.includes("/upload/")) {
-      return url.replace("/upload/", "/upload/fl_attachment/");
-    }
-    return url;
   };
 
   useEffect(() => {
@@ -75,15 +65,6 @@ function MaterialsContent() {
     } catch (err) { console.error(err); }
   };
 
-  const handleDownloadStats = async (id) => {
-    try {
-        const ref = doc(db, "materials", id);
-        await updateDoc(ref, { downloadCount: increment(1) });
-    } catch (err) { console.error(err); }
-  };
-
-  if (loading) return <div className="loading-spinner">جاري تحميل المواد...</div>;
-
   return (
     <div className="materials-page-container">
       <div className="materials-header-redesigned">
@@ -101,11 +82,18 @@ function MaterialsContent() {
         ) : (
             materials.map(m => (
                 <div key={m.id} className="material-card-redesigned" onClick={() => handleOpenMaterial(m)}>
-                    <div className="card-big-icon">
+                    {/* استعادة الأيقونة الكبيرة الملونة */}
+                    <div className={`card-big-icon ${m.type === 'assignment' ? 'icon-assignment' : 'icon-summary'}`}>
                         {m.type === 'assignment' ? <FaClipboardList /> : <FaFileAlt />}
                     </div>
                     <h3 className="card-title">{m.title}</h3>
                     <div className="card-uploader">بواسطة: <span>{m.uploader || "مجهول"}</span></div>
+                    
+                    {/* استعادة الأرقام والإحصائيات أسفل الكارت */}
+                    <div className="card-bottom-pills">
+                        <div className="pill-stat"><FaEye /> {m.viewCount || 0}</div>
+                        <div className="pill-stat"><FaDownload /> {m.downloadCount || 0}</div>
+                    </div>
                 </div>
             ))
         )}
@@ -116,9 +104,10 @@ function MaterialsContent() {
           <div className="modal-content-redesigned animate-pop-in" onClick={(e) => e.stopPropagation()}>
             <button className="close-btn-redesigned" onClick={() => setSelectedMaterial(null)}><FaTimes /></button>
             <h2 className="modal-title">{selectedMaterial.title}</h2>
+            <p className="modal-description">{selectedMaterial.desc || "لا يوجد وصف إضافي."}</p>
             
             <div className="modal-files-section">
-              <h4 className="files-title">الملفات المتاحة:</h4>
+              <h4 className="files-title">الملفات:</h4>
               <div className="files-list-scroll">
                 {selectedMaterial.files?.map((file, index) => (
                     <div key={index} className="file-item-redesigned">
@@ -127,11 +116,10 @@ function MaterialsContent() {
                             <span className="file-name">{file.name}</span>
                         </div>
                         <div className="file-actions">
-                            {/* تم تحويل المعاينة لفتح الرابط مباشرة لتجنب أخطاء الـ Build */}
-                            <a href={file.url} target="_blank" rel="noreferrer" className="btn-action">
-                                <FaEye /> عرض الملف
+                            <a href={file.url} target="_blank" rel="noreferrer" className="btn-action btn-preview-new">
+                                <FaEye /> عرض
                             </a>
-                            <a href={getDownloadUrl(file.url)} onClick={() => handleDownloadStats(selectedMaterial.id)} className="btn-action" target="_blank" rel="noopener noreferrer">
+                            <a href={file.url} className="btn-action btn-download-new" target="_blank" rel="noopener noreferrer">
                                 <FaDownload /> تحميل
                             </a>
                         </div>
