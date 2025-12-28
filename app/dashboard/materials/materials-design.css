@@ -1,7 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
 
 :root {
-    --bg-card: #18181b;
+    --bg-page: #050505;
+    --bg-card: #121214;
     --border-card: #27272a;
     --accent-color: #00f260;
 }
@@ -15,13 +16,23 @@
     color: white;
 }
 
-/* --- الهيدر --- */
 .materials-header-redesigned {
     text-align: center;
     margin-bottom: 50px;
 }
 
-/* --- توسيط الملخصات --- */
+.header-icon-box {
+    font-size: 2.5rem;
+    color: var(--accent-color);
+    margin-bottom: 15px;
+    background: rgba(0, 242, 96, 0.1);
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    display: inline-flex;
+    justify-content: center; align-items: center;
+}
+
+/* --- توسيط الملخصات في المنتصف --- */
 .materials-grid-wrapper {
     display: flex;
     justify-content: center;
@@ -31,95 +42,64 @@
 .materials-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 25px;
+    gap: 30px;
     max-width: 1200px;
     width: 100%;
-    justify-content: center; /* توسيط العناصر داخل الجريد */
+    justify-content: center;
 }
 
-/* --- تصميم الكارت (Centered) --- */
 .material-card-redesigned {
     background-color: var(--bg-card);
     border: 1px solid var(--border-card);
-    border-radius: 24px;
-    padding: 30px 20px;
+    border-radius: 28px;
+    padding: 40px 20px;
     display: flex;
     flex-direction: column;
-    align-items: center; /* توسيط المحتوى داخلياً */
+    align-items: center;
     text-align: center;
-    transition: 0.3s;
+    transition: all 0.3s ease;
     cursor: pointer;
 }
+
+.material-card-redesigned:hover {
+    border-color: var(--accent-color);
+    transform: translateY(-8px);
+    background-color: #1a1a1d;
+}
+
+.card-big-icon {
+    width: 70px; height: 70px; border-radius: 20px;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 2rem; margin-bottom: 25px;
+}
+
+.icon-summary { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+.icon-assignment { background: rgba(239, 68, 68, 0.15); color: #f87171; }
 
 .card-bottom-pills {
     display: flex;
     flex-direction: row;
     justify-content: center;
     gap: 12px;
-    margin-top: 20px;
+    margin-top: 25px;
 }
 
 .pill-stat {
     background: #27272a;
-    padding: 6px 14px;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    display: flex; align-items: center; gap: 8px;
     color: #a1a1aa;
-}
-
-/* --- زر المشاركة (تنسيق مخصص) --- */
-.gradient-share-btn {
-    background: linear-gradient(90deg, #c026d3, #7c3aed);
-    border: none;
-    color: white;
-    padding: 12px 30px;
-    border-radius: 12px;
-    font-weight: 700;
-    margin: 10px auto 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    width: fit-content; /* حجم الزر حسب المحتوى */
 }
 
 /* --- إصلاح الهاتف --- */
 @media (max-width: 600px) {
     .materials-grid {
-        grid-template-columns: 1fr; /* كارت واحد في الصف */
+        grid-template-columns: 1fr;
         max-width: 350px;
     }
-    .pill-stat {
-        font-size: 0.75rem;
+    .material-card-redesigned {
+        padding: 30px 15px;
     }
-}
-
-/* --- المودال --- */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 2000;
-    left: 0; top: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.95);
-    backdrop-filter: blur(5px);
-    align-items: center; justify-content: center;
-}
-.modal.active { display: flex; }
-
-.modal-content {
-    background: #0f0f0f;
-    border-radius: 32px;
-    max-width: 600px;
-    width: 90%;
-    padding: 40px 20px;
-    border: 1px solid #333;
-    animation: modalAppear 0.4s ease-out;
-}
-
-@keyframes modalAppear {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
 }
