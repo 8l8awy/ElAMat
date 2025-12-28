@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase";
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
@@ -7,10 +7,6 @@ import { collection, query, where, getDocs, doc, updateDoc, increment } from "fi
 import {
   FaDownload,
   FaEye,
-  FaFilePdf,
-  FaFileImage,
-  FaShare,
-  FaTimes,
   FaBookOpen,
   FaClipboardList,
   FaFileAlt
@@ -24,14 +20,6 @@ function MaterialsContent() {
 
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMaterial, setSelectedMaterial] = useState(null);
-  const [previewFile, setPreviewFile] = useState(null);
-
-  const isPdfFile = (file) => {
-    const name = file.name?.toLowerCase() || "";
-    const url = file.url?.toLowerCase() || "";
-    return name.endsWith(".pdf") || url.includes(".pdf");
-  };
 
   useEffect(() => {
     async function fetchData() {
@@ -60,40 +48,28 @@ function MaterialsContent() {
   }, [subject]);
 
   const handleOpenMaterial = async (material) => {
-    setSelectedMaterial(material);
     try {
       const ref = doc(db, "materials", material.id);
       await updateDoc(ref, { viewCount: increment(1) });
+      
+      // فتح أول ملف متاح في المادة في صفحة خارجية مباشرة
+      if (material.files && material.files.length > 0) {
+        window.open(material.files[0].url, "_blank");
+      }
     } catch (err) { console.error(err); }
   };
 
-  const handleShare = async (material) => {
-    const shareData = {
-      title: material.title,
-      text: `شاهد "${material.title}" لمادة ${material.subject}`,
-      url: window.location.href
-    };
-    try {
-      if (navigator.share) await navigator.share(shareData);
-      else {
-        await navigator.clipboard.writeText(window.location.href);
-        alert("تم نسخ رابط الصفحة!");
-      }
-    } catch (err) { console.log("Share skipped"); }
-  };
-
-  if (loading) return <div className="loading-spinner">جاري التحميل...</div>;
+  if (loading) return <div className="loading-spinner">جاري تحميل المواد...</div>;
 
   return (
     <div className="materials-page-container">
       <div className="materials-header-redesigned">
         <div className="header-icon-box"><FaBookOpen /></div>
         <h1>{subject}</h1>
-        <p className="header-subtitle">تصفح المحتوى المتاح</p>
+        <p className="header-subtitle">اضغط على المادة لفتحها في صفحة جديدة</p>
       </div>
 
-      {/* حاوية الكروت مع خاصية التوسيط */}
-      <div className="materials-grid-wrapper"> 
+      <div className="materials-grid-wrapper">
         <div className="materials-grid">
           {materials.map(m => (
             <div key={m.id} className="material-card-redesigned" onClick={() => handleOpenMaterial(m)}>
@@ -110,37 +86,6 @@ function MaterialsContent() {
           ))}
         </div>
       </div>
-
-      {selectedMaterial && (
-        <div className={`modal ${selectedMaterial ? 'active' : ''}`} onClick={() => setSelectedMaterial(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <span className="close" onClick={() => setSelectedMaterial(null)}>&times;</span>
-            <h2>{selectedMaterial.title}</h2>
-            <div className="modal-info">
-              <span>بواسطة: <strong>{selectedMaterial.uploader}</strong></span>
-            </div>
-            
-            <button className="gradient-share-btn" onClick={() => handleShare(selectedMaterial)}>
-              <FaShare /> مشاركة المحتوى
-            </button>
-
-            <div className="modal-files-scroll">
-              {selectedMaterial.files?.map((file, index) => (
-                <div key={index} className="modal-file-item">
-                  <div className="file-info-text">
-                    {isPdfFile(file) ? <FaFilePdf color="#ef4444" size={20} /> : <FaFileImage color="#3b82f6" size={20} />}
-                    <span>{file.name}</span>
-                  </div>
-                  <div className="file-actions-btns">
-                    <button className="view-btn preview" onClick={() => setPreviewFile({ ...file, type: isPdfFile(file) ? 'pdf' : 'image' })}>معاينة</button>
-                    <a href={file.url} className="view-btn download" target="_blank" rel="noreferrer">تحميل</a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
