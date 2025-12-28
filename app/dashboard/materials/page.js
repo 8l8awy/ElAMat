@@ -13,8 +13,7 @@ import {
   FaTimes,
   FaBookOpen,
   FaClipboardList,
-  FaFileAlt,
-  FaExternalLinkAlt
+  FaFileAlt
 } from "react-icons/fa";
 
 import "./materials-design.css";
@@ -116,73 +115,75 @@ function MaterialsContent() {
         ))}
       </div>
 
+      {/* مودال التفاصيل بالتنسيق الجديد */}
       {selectedMaterial && (
-        <div className="modal-backdrop active" onClick={() => setSelectedMaterial(null)}>
-          <div className="modal-content-redesigned animate-pop-in" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn-redesigned" onClick={() => setSelectedMaterial(null)}><FaTimes /></button>
-            <h2 className="modal-title">{selectedMaterial.title}</h2>
+        <div className={`modal ${selectedMaterial ? 'active' : ''}`} onClick={() => setSelectedMaterial(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <span className="close" onClick={() => setSelectedMaterial(null)}>&times;</span>
+            
+            <h2>{selectedMaterial.title}</h2>
+            
+            <p>{selectedMaterial.desc || "لا يوجد وصف إضافي متاح لهذا الملف."}</p>
 
-            {/* صندوق الإحصائيات (المشاهدة والتحميل) */}
-            <div className="modal-stats-container">
-              <div className="modal-stat-item">
-                <FaEye color="#00ff88" size={20} />
-                <span style={{ color: '#fff', marginTop: '5px' }}>{selectedMaterial.viewCount || 0}</span>
+            <div className="modal-info">
+              <div className="modal-info-item">
+                <span>بواسطة: <strong>{selectedMaterial.uploader || "مجهول"}</strong></span>
               </div>
-              <div className="modal-divider"></div>
-              <div className="modal-stat-item">
-                <FaDownload color="#3b82f6" size={20} />
-                <span style={{ color: '#fff', marginTop: '5px' }}>{selectedMaterial.downloadCount || 0}</span>
+              <div className="modal-info-item" style={{ flexDirection: 'row', gap: '20px' }}>
+                <span className="pill-stat"><FaEye /> {selectedMaterial.viewCount || 0}</span>
+                <span className="pill-stat"><FaDownload /> {selectedMaterial.downloadCount || 0}</span>
               </div>
             </div>
 
-            <button className="btn-share-redesigned gradient-btn" onClick={() => handleShare(selectedMaterial)}>
-              <FaShare /> مشاركة
+            <button 
+              className="view-file-btn" 
+              style={{ width: '100%', marginBottom: '20px', background: 'var(--gradient-3)', color: '#fff' }} 
+              onClick={() => handleShare(selectedMaterial)}
+            >
+              <FaShare /> مشاركة هذا المحتوى
             </button>
 
-            <div className="modal-files-section">
-              <h4 className="files-title">الملفات:</h4>
-              <div className="files-list-scroll">
-                {selectedMaterial.files?.map((file, index) => (
-                  <div key={index} className="file-item-redesigned">
-                    <div className="file-info">
-                      <span className="file-name">{file.name}</span>
-                      {isPdfFile(file) ? <FaFilePdf color="#ef4444" /> : <FaFileImage color="#3b82f6" />}
-                    </div>
-                    <div className="file-actions">
-                      <button onClick={() => setPreviewFile({ ...file, type: isPdfFile(file) ? 'pdf' : 'image' })} className="btn-action btn-preview-new">
-                        <FaEye /> معاينة
-                      </button>
-                      <a href={file.url} onClick={() => handleDownloadStats(selectedMaterial.id)} className="btn-action btn-download-new" target="_blank" rel="noopener noreferrer">
-                        <FaDownload /> تحميل
-                      </a>
-                    </div>
+            <div className="modal-files-scroll">
+              <h3 style={{ color: '#fff', marginBottom: '15px' }}>الملفات المرفقة:</h3>
+              {selectedMaterial.files?.map((file, index) => (
+                <div key={index} className="modal-file-item">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {isPdfFile(file) ? <FaFilePdf color="#ef4444" size={22} /> : <FaFileImage color="#3b82f6" size={22} />}
+                    <span>{file.name}</span>
                   </div>
-                ))}
-              </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button className="view-file-btn" onClick={() => setPreviewFile({ ...file, type: isPdfFile(file) ? 'pdf' : 'image' })}>
+                      <FaEye /> معاينة
+                    </button>
+                    <a 
+                      href={file.url} 
+                      className="view-file-btn" 
+                      style={{ background: '#fff', color: '#000' }} 
+                      onClick={() => handleDownloadStats(selectedMaterial.id)} 
+                      target="_blank" 
+                      rel="noreferrer"
+                    >
+                      <FaDownload /> تحميل
+                    </a>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       )}
 
-      {/* مودال المعاينة (Preview) المصلح برمجياً */}
+      {/* مودال المعاينة (Preview) */}
       {previewFile && (
-        <div className="modal-backdrop active preview-mode" onClick={() => setPreviewFile(null)}>
-          <div className="preview-content-container" onClick={(e) => e.stopPropagation()}>
-            <div className="preview-header">
-              <div className="preview-title">
-                <FaExternalLinkAlt />
-                <span>{previewFile.name}</span>
-              </div>
-              <button className="btn-icon close-preview" onClick={() => setPreviewFile(null)}>
-                <FaTimes />
-              </button>
-            </div>
-            <div className="preview-body">
+        <div className="modal active" style={{ zIndex: 3000 }} onClick={() => setPreviewFile(null)}>
+          <div className="modal-content" style={{ maxWidth: '95vw', height: '90vh', padding: '60px 20px 20px' }} onClick={(e) => e.stopPropagation()}>
+            <span className="close" onClick={() => setPreviewFile(null)}>&times;</span>
+            <div style={{ width: '100%', height: '100%', overflow: 'hidden', borderRadius: '12px' }}>
               {previewFile.type === 'pdf' ? (
-                <iframe src={previewFile.url} className="pdf-viewer" title="PDF Preview"></iframe>
+                <iframe src={previewFile.url} width="100%" height="100%" style={{ border: 'none' }}></iframe>
               ) : (
-                <div className="image-preview-scroll">
-                  <img src={previewFile.url} alt="Preview" />
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', background: '#000' }}>
+                  <img src={previewFile.url} alt="Preview" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
                 </div>
               )}
             </div>
