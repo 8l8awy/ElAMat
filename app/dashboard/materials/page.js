@@ -12,10 +12,10 @@ import {
   FaFileImage,
   FaShare,
   FaTimes,
-  FaExternalLinkAlt,
+  FaExternalLinkAlt, // ✅ الأيقونة الجديدة
   FaBookOpen,
-  FaClipboardList, // أيقونة للتكليفات
-  FaFileAlt        // أيقونة للملخصات
+  FaClipboardList,
+  FaFileAlt
 } from "react-icons/fa";
 
 import "./materials-design.css";
@@ -131,7 +131,6 @@ function MaterialsContent() {
   return (
     <div className="materials-page-container">
       <div className="materials-header-redesigned">
-          {/* أيقونة واسم المادة في الهيدر */}
           <div className="header-icon-box">
              <FaBookOpen />
           </div>
@@ -148,36 +147,22 @@ function MaterialsContent() {
         ) : (
             materials.map(m => (
                 <div key={m.id} className="material-card-redesigned" onClick={() => handleOpenMaterial(m)}>
-                    
-                    {/* 1. الأيقونة الكبيرة في المنتصف (مثل التصميم الرئيسي) */}
                     <div className={`card-big-icon ${m.type === 'assignment' ? 'icon-assignment' : 'icon-summary'}`}>
                         {m.type === 'assignment' ? <FaClipboardList /> : <FaFileAlt />}
                     </div>
-
-                    {/* 2. العنوان في المنتصف */}
                     <h3 className="card-title">{m.title}</h3>
-
-                    {/* 3. اسم الناشر بشكل بسيط */}
                     <div className="card-uploader">
                         بواسطة: <span>{m.uploader || "مجهول"}</span>
                     </div>
-
-                    {/* 4. الشارات (Stats Pills) في الأسفل تماماً */}
                     <div className="card-bottom-pills">
-                        <div className="pill-stat">
-                            <FaEye /> {m.viewCount || 0} مشاهدة
-                        </div>
-                        <div className="pill-stat">
-                            <FaDownload /> {m.downloadCount || 0} تحميل
-                        </div>
+                        <div className="pill-stat"><FaEye /> {m.viewCount || 0} مشاهدة</div>
+                        <div className="pill-stat"><FaDownload /> {m.downloadCount || 0} تحميل</div>
                     </div>
-                    
                 </div>
             ))
         )}
       </div>
 
-      {/* --- المودال (التفاصيل) لم يتغير كثيراً لأنه ممتاز --- */}
       {selectedMaterial && !previewFile && (
         <div className="modal-backdrop active" onClick={() => setSelectedMaterial(null)}>
           <div className="modal-content-redesigned animate-pop-in" onClick={(e) => e.stopPropagation()}>
@@ -205,13 +190,25 @@ function MaterialsContent() {
                             {isPdfFile(file) ? <FaFilePdf className="file-icon pdf"/> : <FaFileImage className="file-icon image"/>}
                             <span className="file-name">{file.name}</span>
                         </div>
+
+                        {/* ✅ قسم الأزرار المحدث */}
                         <div className="file-actions">
-                            <button onClick={() => handlePreviewFile(file)} className="btn-action btn-preview-new">
-                            <FaEye /> معاينة
-                            </button>
-                            <a href={getDownloadUrl(file.url)} onClick={() => handleDownloadStats(selectedMaterial.id)} className="btn-action btn-download-new" target="_blank" rel="noopener noreferrer">
-                            <FaDownload /> تحميل
+                            
+                            {/* 1. زر فتح في صفحة جديدة (على اليمين في العربية) */}
+                            <a href={file.url} target="_blank" rel="noreferrer" className="btn-action btn-open-new" title="فتح في صفحة جديدة">
+                                <FaExternalLinkAlt />
                             </a>
+
+                            {/* 2. زر المعاينة */}
+                            <button onClick={() => handlePreviewFile(file)} className="btn-action btn-preview-new">
+                                <FaEye /> معاينة
+                            </button>
+                            
+                            {/* 3. زر التحميل (على اليسار) */}
+                            <a href={getDownloadUrl(file.url)} onClick={() => handleDownloadStats(selectedMaterial.id)} className="btn-action btn-download-new" target="_blank" rel="noopener noreferrer">
+                                <FaDownload /> تحميل
+                            </a>
+
                         </div>
                     </div>
                     ))
@@ -224,7 +221,7 @@ function MaterialsContent() {
         </div>
       )}
 
-      {/* --- مودال المعاينة (Preview) --- */}
+      {/* --- مودال المعاينة الكبير --- */}
       {previewFile && (
         <div className="modal-backdrop active preview-mode" onClick={() => setPreviewFile(null)}>
            <div className="preview-content-container animate-fade-in" onClick={(e) => e.stopPropagation()}>
