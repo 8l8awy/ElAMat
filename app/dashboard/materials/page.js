@@ -222,18 +222,32 @@ function MaterialsContent() {
       )}
 
       {/* --- مودال المعاينة الكبير --- */}
-      {previewFile && (
-        <div className="modal-backdrop active preview-mode" onClick={() => setPreviewFile(null)}>
-           <div className="preview-content-container animate-fade-in" onClick={(e) => e.stopPropagation()}>
-                <div className="preview-header">
-                    <h3 className="preview-title">
-                        {previewFile.type === 'pdf' ? <FaFilePdf className="file-icon pdf"/> : <FaFileImage className="file-icon image"/>}
-                        {previewFile.name}
-                    </h3>
-                    <div className="preview-actions">
-                        <a href={previewFile.url} target="_blank" rel="noreferrer" className="btn-icon"><FaExternalLinkAlt /></a>
-                        <button className="btn-icon close" onClick={() => setPreviewFile(null)}><FaTimes /></button>
-                    </div>
+{/* ... داخل مودال المعاينة ... */}
+
+<div className="preview-header">
+    
+    {/* المجموعة اليمنى: زر الرابط + العنوان */}
+    <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
+        {/* 1. زر فتح في نافذة جديدة (على اليمين) */}
+        <a href={previewFile.url} target="_blank" rel="noreferrer" className="btn-icon" title="فتح في صفحة جديدة" style={{border: '1px solid #333', borderRadius: '50%', width: '36px', height: '36px'}}>
+            <FaExternalLinkAlt size={16} />
+        </a>
+
+        {/* 2. العنوان */}
+        <h3 className="preview-title">
+            {previewFile.type === 'pdf' ? <FaFilePdf className="file-icon pdf"/> : <FaFileImage className="file-icon image"/>}
+            <span style={{maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
+                {previewFile.name}
+            </span>
+        </h3>
+    </div>
+
+    {/* المجموعة اليسرى: زر الإغلاق */}
+    <button className="btn-icon close-preview" onClick={() => setPreviewFile(null)}>
+        <FaTimes size={20} />
+    </button>
+</div>
+
                 </div>
                 <div className="preview-body">
                     {previewFile.type === 'pdf' ? (
