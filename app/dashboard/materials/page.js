@@ -1,17 +1,23 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { db, auth } from "../../../lib/firebase"; 
+import { db } from "../../../lib/firebase";
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
-import { onAuthStateChanged, signOut } from "firebase/auth";
 
 import {
-  FaDownload, FaEye, FaFolderOpen, FaFilePdf, FaFileImage, FaShare,
-  FaTimes, FaExternalLinkAlt, FaBookOpen, FaClipboardList, FaFileAlt,
-  FaUserCircle, FaSignOutAlt 
+  FaDownload,
+  FaEye,
+  FaFolderOpen,
+  FaFilePdf,
+  FaFileImage,
+  FaShare,
+  FaTimes,
+  FaExternalLinkAlt, // ✅ الأيقونة الجديدة
+  FaBookOpen,
+  FaClipboardList,
+  FaFileAlt
 } from "react-icons/fa";
 
-import LoginModal from "./LoginModal"; 
 import "./materials-design.css";
 
 function MaterialsContent() {
@@ -22,23 +28,6 @@ function MaterialsContent() {
   const [loading, setLoading] = useState(true);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
-  
-  // حالات المستخدم
-  const [user, setUser] = useState(null);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-
-  // مراقبة تسجيل الدخول
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // تسجيل الخروج
-  const handleLogout = async () => {
-    await signOut(auth);
-  };
 
   const isPdfFile = (file) => {
     const name = file.name?.toLowerCase() || "";
@@ -141,32 +130,6 @@ function MaterialsContent() {
 
   return (
     <div className="materials-page-container">
-      
-      {/* زر تسجيل الدخول */}
-      <div style={{position: 'absolute', top: '25px', left: '25px', zIndex: 100}}>
-        {user ? (
-            <div style={{display: 'flex', alignItems: 'center', gap: '10px', background: '#18181b', padding: '8px 15px', borderRadius: '30px', border: '1px solid #333'}}>
-                <img src={user.photoURL} alt="User" style={{width: '32px', height: '32px', borderRadius: '50%'}} />
-                <span style={{color: 'white', fontSize: '0.9rem', fontWeight:'bold'}}>{user.displayName?.split(" ")[0]}</span>
-                <button onClick={handleLogout} style={{background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.2rem', paddingRight: '10px', borderRight: '1px solid #333', display:'flex', alignItems:'center'}}>
-                    <FaSignOutAlt />
-                </button>
-            </div>
-        ) : (
-            <button 
-                onClick={() => setIsLoginOpen(true)}
-                style={{
-                    background: 'var(--accent-color)', color: '#000', border: 'none',
-                    padding: '10px 20px', borderRadius: '25px', fontWeight: 'bold',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
-                    boxShadow: '0 4px 15px rgba(0, 242, 96, 0.2)'
-                }}
-            >
-                <FaUserCircle size={18} /> تسجيل دخول
-            </button>
-        )}
-      </div>
-
       <div className="materials-header-redesigned">
           <div className="header-icon-box">
              <FaBookOpen />
@@ -228,16 +191,24 @@ function MaterialsContent() {
                             <span className="file-name">{file.name}</span>
                         </div>
 
+                        {/* ✅ قسم الأزرار المحدث */}
                         <div className="file-actions">
+                            
+                            {/* 1. زر فتح في صفحة جديدة (على اليمين في العربية) */}
                             <a href={file.url} target="_blank" rel="noreferrer" className="btn-action btn-open-new" title="فتح في صفحة جديدة">
                                 <FaExternalLinkAlt />
                             </a>
+
+                            {/* 2. زر المعاينة */}
                             <button onClick={() => handlePreviewFile(file)} className="btn-action btn-preview-new">
                                 <FaEye /> معاينة
                             </button>
+                            
+                            {/* 3. زر التحميل (على اليسار) */}
                             <a href={getDownloadUrl(file.url)} onClick={() => handleDownloadStats(selectedMaterial.id)} className="btn-action btn-download-new" target="_blank" rel="noopener noreferrer">
                                 <FaDownload /> تحميل
                             </a>
+
                         </div>
                     </div>
                     ))
@@ -250,29 +221,20 @@ function MaterialsContent() {
         </div>
       )}
 
-      {/* مودال المعاينة الكبير */}
+      {/* --- مودال المعاينة الكبير --- */}
       {previewFile && (
         <div className="modal-backdrop active preview-mode" onClick={() => setPreviewFile(null)}>
            <div className="preview-content-container animate-fade-in" onClick={(e) => e.stopPropagation()}>
-                
                 <div className="preview-header">
-                    <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
-                        <a href={previewFile.url} target="_blank" rel="noreferrer" className="btn-icon" title="فتح في صفحة جديدة" style={{border: '1px solid #333', borderRadius: '50%', width: '36px', height: '36px'}}>
-                            <FaExternalLinkAlt size={16} />
-                        </a>
-                        <h3 className="preview-title">
-                            {previewFile.type === 'pdf' ? <FaFilePdf className="file-icon pdf"/> : <FaFileImage className="file-icon image"/>}
-                            <span style={{maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
-                                {previewFile.name}
-                            </span>
-                        </h3>
+                    <h3 className="preview-title">
+                        {previewFile.type === 'pdf' ? <FaFilePdf className="file-icon pdf"/> : <FaFileImage className="file-icon image"/>}
+                        {previewFile.name}
+                    </h3>
+                    <div className="preview-actions">
+                        <a href={previewFile.url} target="_blank" rel="noreferrer" className="btn-icon"><FaExternalLinkAlt /></a>
+                        <button className="btn-icon close" onClick={() => setPreviewFile(null)}><FaTimes /></button>
                     </div>
-
-                    <button className="btn-icon close-preview" onClick={() => setPreviewFile(null)}>
-                        <FaTimes size={20} />
-                    </button>
                 </div>
-
                 <div className="preview-body">
                     {previewFile.type === 'pdf' ? (
                         <object data={previewFile.url} type="application/pdf" width="100%" height="100%" className="pdf-viewer">
@@ -287,12 +249,6 @@ function MaterialsContent() {
            </div>
         </div>
       )}
-
-      <LoginModal 
-        isOpen={isLoginOpen} 
-        onClose={() => setIsLoginOpen(false)}
-        onLoginSuccess={() => setIsLoginOpen(false)}
-      />
     </div>
   );
 }
