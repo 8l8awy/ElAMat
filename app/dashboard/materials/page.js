@@ -13,7 +13,7 @@ import {
   FaShare,
   FaTimes,
   FaExternalLinkAlt,
-  FaBookOpen // ✅ الأيقونة مكتوبة بشكل صحيح الآن
+  FaBookOpen // ✅ تم التصحيح: حرف B أصبح كبيراً
 } from "react-icons/fa";
 
 // ✅ استيراد ملف الـ CSS
@@ -161,7 +161,6 @@ function MaterialsContent() {
                     <div className="card-content">
                         <h3 className="card-title">{m.title}</h3>
                         
-                        {/* ✅ تعديل: عرض اسم الناشر (uploader) هنا */}
                         <div style={{marginBottom:'10px', fontSize:'0.9em', color:'#94a3b8', display:'flex', alignItems:'center', gap:'5px'}}>
                             <span>بواسطة:</span>
                             <span style={{color:'#00f260', fontWeight:'600'}}>{m.uploader || "مجهول"}</span>
@@ -187,7 +186,6 @@ function MaterialsContent() {
 
             <h2 className="modal-title">{selectedMaterial.title}</h2>
 
-            {/* ✅ تعديل: عرض اسم الناشر (uploader) في المودال أيضاً */}
             <p style={{textAlign:'center', color:'#94a3b8', marginTop:'-15px', marginBottom:'25px'}}>
                 نشر بواسطة: <span style={{color:'#00f260', fontWeight:'bold'}}>{selectedMaterial.uploader || "مجهول"}</span>
             </p>
