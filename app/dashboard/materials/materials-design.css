@@ -5,7 +5,6 @@
     --border-card: #27272a;
     --accent-color: #00f260;
 }
-
 .materials-page-container {
     background-color: var(--bg-page);
     min-height: 100vh;
