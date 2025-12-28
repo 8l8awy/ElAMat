@@ -1,15 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { db } from "../../../lib/firebase"; 
+import { db } from "@/lib/firebase"; 
 import { collection, addDoc, deleteDoc, updateDoc, doc, getDocs, query, where, serverTimestamp, orderBy, onSnapshot } from "firebase/firestore";
-import { FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaFileImage, FaLock, FaCheck, FaTimes, FaExternalLinkAlt } from "react-icons/fa";
+import { FaCheckCircle, FaSpinner, FaTrash, FaFilePdf, FaFileImage, FaLock, FaCheck, FaTimes, FaExternalLinkAlt, FaUser, FaCloudUploadAlt, FaLayerGroup } from "react-icons/fa";
 
 export default function AdminPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // ☁️ بيانات Cloudinary
+  // ☁️ إعدادات Cloudinary
   const CLOUD_NAME = "dhj0extnk"; 
   const UPLOAD_PRESET = "ml_default"; 
 
@@ -27,9 +27,8 @@ export default function AdminPage() {
   const [type, setType] = useState("summary");
   const [files, setFiles] = useState([]); 
    
-  // ✅ قوائم منفصلة للمنشورات والطلبات المعلقة
-  const [materialsList, setMaterialsList] = useState([]); // الملفات المقبولة
-  const [pendingList, setPendingList] = useState([]);     // طلبات الطلاب المعلقة
+  const [materialsList, setMaterialsList] = useState([]); 
+  const [pendingList, setPendingList] = useState([]);     
    
   const [loadingList, setLoadingList] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -37,7 +36,7 @@ export default function AdminPage() {
 
   const subjects = ["مبادئ الاقتصاد", "لغة اجنبية (1)", "مبادئ المحاسبة المالية", "مبادئ القانون", "مبادئ ادارة الاعمال"];
 
-  // ✅ 1. الفحص الذكي عند فتح الصفحة
+  // 1. الفحص الأمني
   useEffect(() => {
     const checkAccess = async () => {
       const savedCode = localStorage.getItem("adminCode");
@@ -57,7 +56,6 @@ export default function AdminPage() {
     checkAccess();
   }, []);
 
-  // دالة التحقق من الكود
   const verifyCode = async (codeToVerify, isAutoCheck = false) => {
     if (!isAutoCheck) setCheckingCode(true);
 
@@ -100,11 +98,11 @@ export default function AdminPage() {
     await verifyCode(inputCode);
   };
 
-  // ✅ جلب البيانات وفصلها (مقبولة vs معلقة)
+  // جلب البيانات
   useEffect(() => {
     if (!isAuthenticated) return;
     
-    const q = query(collection(db, "materials"), orderBy("date", "desc"));
+    const q = query(collection(db, "materials"), orderBy("createdAt", "desc"));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const allData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -120,7 +118,6 @@ export default function AdminPage() {
     return () => unsubscribe();
   }, [isAuthenticated]);
 
-  // ✅ دالة جديدة لفتح الملف في صفحة جديدة
   const openFile = (item) => {
     let url = item.fileUrl; 
     if (!url && item.files && item.files.length > 0) {
@@ -134,7 +131,6 @@ export default function AdminPage() {
     }
   };
 
-  // ✅ دوال التعامل مع الطلبات (حذف / قبول)
   const handleDelete = async (id, title) => { if (confirm(`حذف "${title}" نهائياً؟`)) await deleteDoc(doc(db, "materials", id)); };
    
   const handleApprove = async (id, title) => {
@@ -153,7 +149,6 @@ export default function AdminPage() {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", UPLOAD_PRESET);
-    // ⚠️ هام: استخدام auto بدلاً من image للسماح بالـ PDF
     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, { method: "POST", body: formData });
     const data = await res.json();
     return data.secure_url;
@@ -167,17 +162,17 @@ export default function AdminPage() {
     try {
       for (let file of files) {
         const url = await uploadToCloudinary(file);
-        // ✅ نحفظ نوع الملف بدقة لكي يعمل كود العرض
         uploadedFilesData.push({ 
             name: file.name, 
             url: url, 
-            type: file.type // مهم: هذا يخزن 'application/pdf' للملفات
+            type: file.type 
         });
       }
       await addDoc(collection(db, "materials"), {
         title, desc, subject, type, files: uploadedFilesData,
         date: new Date().toISOString(), 
         status: "approved", 
+        uploader: "Admin",
         viewCount: 0, downloadCount: 0, createdAt: serverTimestamp(),
       });
       setUploading(false); setTitle(""); setDesc(""); setFiles([]); setMessage("تم الرفع بنجاح! ");
@@ -189,41 +184,31 @@ export default function AdminPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div style={{height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#fff'}}>
-        <FaSpinner className="fa-spin" size={40} color="#333" />
-      </div>
-    );
-  }
+  // --- واجهات التحميل والخطأ ---
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-black"><FaSpinner className="animate-spin text-4xl text-blue-500" /></div>;
 
   if (showFake404) {
     return (
-      <div style={{
-        height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        fontFamily: '-apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Fira Sans", Avenir, "Helvetica Neue", "Lucida Grande", sans-serif'
-      }}>
-        <h1 style={{fontSize: '2rem', fontWeight: '600', margin: '0 0 10px 0'}}>404</h1>
-        <h2 style={{fontSize: '14px', fontWeight: 'normal', margin: 0}}>This page could not be found.</h2>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white text-black font-sans">
+        <h1 className="text-4xl font-bold border-r border-gray-300 pr-4 mr-4">404</h1>
+        <div className="text-sm">This page could not be found.</div>
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div style={{
-        height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#000', color: 'white', fontFamily: 'sans-serif'
-      }}>
-        <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '50px 40px', borderRadius: '20px', textAlign: 'center', border: '1px solid #333', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', width: '100%', maxWidth: '400px' }}>
-          <h1 style={{fontSize: '1.8rem', marginBottom: '10px', fontWeight: 'bold'}}>Admin Access</h1>
-          <p style={{color: '#888', marginBottom: '30px', fontSize: '0.9rem'}}>Please enter your code</p>
-          <form onSubmit={handleManualLogin}>
-            <div style={{marginBottom: '20px', position: 'relative'}}>
-                <FaLock style={{position: 'absolute', left: '15px', top: '15px', color: '#666'}} />
+      <div className="min-h-screen flex items-center justify-center bg-black text-white font-sans p-4">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-10 rounded-3xl w-full max-w-md shadow-2xl">
+          <h1 className="text-3xl font-bold mb-2 text-center">Admin Access</h1>
+          <p className="text-gray-400 mb-8 text-center text-sm">Please enter your security code</p>
+          <form onSubmit={handleManualLogin} className="space-y-4">
+            <div className="relative">
+                <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input type="password" placeholder="Security Code" value={inputCode} onChange={(e) => setInputCode(e.target.value)}
-                    style={{ width: '100%', padding: '15px 15px 15px 45px', borderRadius: '10px', border: '1px solid #444', background: '#111', color: 'white', fontSize: '1rem', outline: 'none' }} />
+                    className="w-full bg-black/20 border border-white/10 rounded-xl p-4 pl-12 text-white outline-none focus:border-blue-500 transition-all" />
             </div>
-            <button type="submit" disabled={checkingCode} style={{ background: 'white', color: 'black', border: 'none', padding: '15px', borderRadius: '10px', fontWeight: 'bold', fontSize: '1rem', width: '100%', cursor: 'pointer', opacity: checkingCode ? 0.7 : 1 }}>
+            <button type="submit" disabled={checkingCode} className="w-full bg-white text-black p-4 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-70">
               {checkingCode ? "Verifying..." : "Login"}
             </button>
           </form>
@@ -232,121 +217,134 @@ export default function AdminPage() {
     );
   }
 
+  // --- واجهة الأدمن الرئيسية ---
   return (
-    <div className="admin-container">
-      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px'}}>
-        <h1 style={{color: 'white', fontSize: '2rem'}}>لوحة التحكم 🚀</h1>
+    <div className="min-h-screen w-full text-white p-4 font-sans relative overflow-hidden" dir="rtl">
+      
+      {/* خلفية تفاعلية */}
+      <div className="fixed inset-0 pointer-events-none">
+         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[100px]"></div>
+         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[100px]"></div>
       </div>
 
-      {message && <div style={{background: 'rgba(0, 242, 96, 0.2)', color: '#00f260', padding: '15px', borderRadius: '10px', textAlign: 'center', marginBottom: '20px', border: '1px solid #00f260'}}><FaCheckCircle /> {message}</div>}
-
-      <form onSubmit={handleUpload} style={{borderBottom: '1px solid #333', paddingBottom: '30px', marginBottom: '30px'}}>
-        <div className="form-group"><label>العنوان</label><input type="text" className="form-input" value={title} onChange={(e)=>setTitle(e.target.value)} required /></div>
-        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
-            <div className="form-group"><label>المادة</label><select className="form-select" value={subject} onChange={(e)=>setSubject(e.target.value)}>{subjects.map((s,i)=><option key={i} value={s}>{s}</option>)}</select></div>
-            <div className="form-group"><label>النوع</label><select className="form-select" value={type} onChange={(e)=>setType(e.target.value)}><option value="summary">ملخص</option><option value="assignment">تكليف</option></select></div>
+      <div className="relative z-10 w-full max-w-6xl mx-auto pt-6">
+        <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-black bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">لوحة التحكم 🚀</h1>
+            <span className="bg-blue-500/10 text-blue-400 px-4 py-2 rounded-xl text-sm border border-blue-500/20 font-bold">Admin Mode</span>
         </div>
-        
-        {/* منطقة رفع الملفات المحسنة */}
-        <div className="form-group">
-            <label>الملفات (صور أو PDF)</label>
-            <div className="upload-area" style={{padding: '20px', border: '2px dashed #444', textAlign:'center'}}>
-                <input 
-                    type="file" 
-                    onChange={handleFileChange} 
-                    // ✅ التعديل هنا لضمان قبول الـ PDF بشكل صحيح في جميع الأجهزة
-                    accept="image/*, application/pdf" 
-                    multiple 
-                    style={{display:'none'}}
-                    id="file-upload"
-                />
-                <label htmlFor="file-upload" style={{cursor:'pointer', display:'block'}}>
-                    {files.length > 0 ? (
-                        <div style={{textAlign:'right'}}>
-                            <p style={{color: '#00f260', marginBottom:'10px'}}>تم اختيار {files.length} ملفات:</p>
-                            {files.map((f, i) => (
-                                <div key={i} style={{fontSize:'0.9rem', color:'#ccc', display:'flex', alignItems:'center', gap:'5px', marginBottom:'5px'}}>
-                                    {f.type.includes('pdf') ? <FaFilePdf color="#ef4444"/> : <FaFileImage color="#3b82f6"/>} 
-                                    {f.name}
+
+        {message && <div className="bg-green-500/10 text-green-400 p-4 rounded-xl text-center mb-6 border border-green-500/20 flex items-center justify-center gap-2 font-bold animate-fadeIn"><FaCheckCircle /> {message}</div>}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* 1. قسم الرفع */}
+            <div className="lg:col-span-1">
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-xl sticky top-4">
+                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><FaCloudUploadAlt className="text-blue-400"/> رفع ملف جديد</h2>
+                    <form onSubmit={handleUpload} className="space-y-4">
+                        <div>
+                            <label className="text-xs text-gray-400 block mb-1">العنوان</label>
+                            <input type="text" className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none" value={title} onChange={(e)=>setTitle(e.target.value)} required />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="text-xs text-gray-400 block mb-1">المادة</label>
+                                <select className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none appearance-none cursor-pointer" value={subject} onChange={(e)=>setSubject(e.target.value)}>{subjects.map((s,i)=><option key={i} className="bg-gray-900" value={s}>{s}</option>)}</select>
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-400 block mb-1">النوع</label>
+                                <select className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none appearance-none cursor-pointer" value={type} onChange={(e)=>setType(e.target.value)}><option className="bg-gray-900" value="summary">ملخص</option><option className="bg-gray-900" value="assignment">تكليف</option></select>
+                            </div>
+                        </div>
+
+                        <div className="border-2 border-dashed border-white/10 rounded-xl p-6 text-center hover:bg-white/5 transition-all cursor-pointer relative">
+                            <input type="file" onChange={handleFileChange} accept="image/*, application/pdf" multiple className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                            <div className="pointer-events-none">
+                                {files.length > 0 ? (
+                                    <div className="text-green-400 text-sm font-bold flex flex-col items-center gap-1">
+                                        <FaCheckCircle className="text-xl"/> تم اختيار {files.length} ملفات
+                                    </div>
+                                ) : (
+                                    <div className="text-gray-400 text-sm flex flex-col items-center gap-2">
+                                        <FaCloudUploadAlt className="text-2xl"/> <span>اضغط لاختيار الملفات</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <button type="submit" disabled={uploading} className="w-full bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-xl font-bold transition-all disabled:opacity-50">
+                            {uploading ? "جاري الرفع..." : "نشر الآن"}
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {/* 2. قسم القوائم */}
+            <div className="lg:col-span-2 space-y-6">
+                
+                {/* ⚠️ طلبات الانتظار */}
+                {pendingList.length > 0 && (
+                    <div className="bg-yellow-500/5 backdrop-blur-xl border border-yellow-500/20 rounded-3xl p-6">
+                        <h2 className="text-xl font-bold text-yellow-500 mb-4 flex items-center gap-2">
+                            ⚠️ طلبات قيد الانتظار ({pendingList.length})
+                        </h2>
+                        <div className="space-y-3">
+                            {pendingList.map((item) => (
+                                <div key={item.id} className="bg-black/20 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-center gap-4 border border-white/5 hover:border-yellow-500/30 transition-all">
+                                    <div className="flex items-center gap-4 w-full cursor-pointer" onClick={() => openFile(item)}>
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl bg-yellow-500/10 text-yellow-500`}>
+                                            {item.files && item.files[0]?.type?.includes('pdf') ? <FaFilePdf /> : <FaFileImage />}
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-white text-lg hover:underline decoration-yellow-500/50">{item.title}</h4>
+                                            
+                                            {/* 👇👇👇 هنا يظهر اسم الطالب الفعلي 👇👇👇 */}
+                                            <div className="flex items-center gap-3 text-xs text-gray-400 mt-1">
+                                                <span className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded-md text-yellow-200">
+                                                    <FaUser className="text-[10px]"/> {item.studentName || "طالب مجهول"}
+                                                </span>
+                                                <span>{item.subject}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 w-full md:w-auto">
+                                        <button onClick={() => handleApprove(item.id, item.title)} className="bg-green-500/20 hover:bg-green-500/30 text-green-400 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all flex-1 md:flex-none justify-center">قبول <FaCheck/></button>
+                                        <button onClick={() => handleDelete(item.id, item.title)} className="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all flex-1 md:flex-none justify-center">رفض <FaTimes/></button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
-                    ) : (
-                        <div>
-                            <p style={{color: '#888', fontSize:'2em', margin:0}}>📂</p>
-                            <p style={{color: '#888'}}>اضغط لاختيار صور أو ملفات PDF</p>
-                        </div>
-                    )}
-                </label>
+                    </div>
+                )}
+
+                {/* ✅ الملفات المنشورة */}
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2 border-b border-white/10 pb-4">
+                        <FaLayerGroup className="text-green-400"/> الملفات المنشورة ({materialsList.length})
+                    </h2>
+                    <div className="space-y-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+                        {materialsList.map((item) => (
+                            <div key={item.id} className="bg-black/20 rounded-2xl p-4 flex justify-between items-center gap-4 border border-white/5 hover:border-blue-500/30 transition-all group">
+                                <div className="flex items-center gap-4 cursor-pointer overflow-hidden" onClick={() => openFile(item)}>
+                                    <div className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center text-lg ${item.type === 'summary' ? 'bg-green-500/10 text-green-400' : 'bg-orange-500/10 text-orange-400'}`}>
+                                        {item.files && item.files[0]?.type?.includes('pdf') ? <FaFilePdf /> : <FaFileImage />}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h4 className="font-bold text-white text-base truncate group-hover:text-blue-300 transition-colors">{item.title}</h4>
+                                        <div className="flex gap-2 text-xs text-gray-500">
+                                            <span>{item.subject}</span>
+                                            <span className="text-gray-600">•</span>
+                                            <span>{item.uploader || "Admin"}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onClick={() => handleDelete(item.id, item.title)} className="w-8 h-8 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-500/10 transition-all"><FaTrash size={14} /></button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
             </div>
-        </div>
-
-        <button type="submit" className="submit-btn" disabled={uploading}>{uploading ? "جاري الرفع..." : "رفع ونشر"}</button>
-      </form>
-
-      {/* ✅ قسم طلبات الطلاب الجديدة */}
-      {pendingList.length > 0 && (
-        <div style={{marginBottom: '40px', border: '1px solid #eab308', borderRadius: '15px', padding: '20px', background: 'rgba(234, 179, 8, 0.05)'}}>
-          <h2 style={{color: '#eab308', marginTop: 0, display: 'flex', alignItems: 'center', gap: '10px'}}>
-              ⚠️ طلبات قيد الانتظار ({pendingList.length})
-          </h2>
-          <div style={{display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px'}}>
-            {pendingList.map((item) => (
-                <div key={item.id} style={{background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                    <div 
-                        onClick={() => openFile(item)} 
-                        style={{display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer'}}
-                        title="اضغط لفتح الملف"
-                    >
-                        <h4 style={{color: 'white', margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'underline', textDecorationColor: '#666'}}>
-                            <FaFilePdf style={{color: '#ccc'}} /> {item.title} 
-                            <span style={{fontSize: '0.8rem', background: '#333', padding: '2px 6px', borderRadius: '4px', textDecoration: 'none'}}>طالب</span>
-                        </h4>
-                        <div style={{display: 'flex', gap: '10px', fontSize: '0.85rem'}}>
-                            <span style={{color: '#ccc'}}>📌 {item.subject}</span>
-                        </div>
-                    </div>
-                    <div style={{display: 'flex', gap: '10px'}}>
-                        <button onClick={() => handleApprove(item.id, item.title)} style={{background: '#00f260', color: '#000', border: 'none', padding: '8px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold'}}>
-                            قبول <FaCheck />
-                        </button>
-                        <button onClick={() => handleDelete(item.id, item.title)} style={{background: 'rgba(255, 77, 77, 0.2)', color: '#ff4d4d', border: '1px solid rgba(255, 77, 77, 0.3)', padding: '8px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px'}}>
-                            رفض <FaTimes />
-                        </button>
-                    </div>
-                </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* قسم الملفات المنشورة */}
-      <div>
-        <h2 style={{color: 'white', borderRight: '4px solid #00f260', paddingRight: '10px'}}>الملفات المنشورة ({materialsList.length})</h2>
-        <div style={{display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px'}}>
-            {materialsList.map((item) => (
-                <div key={item.id} style={{background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                    <div 
-                        onClick={() => openFile(item)}
-                        style={{display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer'}}
-                        title="اضغط لفتح الملف"
-                    >
-                        <h4 style={{color: 'white', margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'underline', textDecorationColor: '#666'}}>
-                            {/* فحص نوع الملف لعرض الأيقونة المناسبة */}
-                            {item.files && item.files[0] && item.files[0].type && item.files[0].type.includes('pdf') 
-                                ? <FaFilePdf style={{color: '#ef4444'}} /> 
-                                : <FaFileImage style={{color: '#3b82f6'}} />
-                            }
-                            {item.title} <FaExternalLinkAlt size={12} color="#888"/>
-                        </h4>
-                        <div style={{display: 'flex', gap: '10px', fontSize: '0.85rem'}}>
-                            <span style={{color: '#ccc', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '6px'}}>📌 {item.subject}</span>
-                            <span style={{color: item.type === 'summary' ? '#00f260' : '#ff9f43', background: item.type === 'summary' ? 'rgba(0, 242, 96, 0.1)' : 'rgba(255, 159, 67, 0.1)', padding: '2px 8px', borderRadius: '6px'}}>{item.type === 'assignment' ? 'تكليف' : 'ملخص'}</span>
-                        </div>
-                    </div>
-                    <button onClick={() => handleDelete(item.id, item.title)} style={{background: 'transparent', color: '#ff4d4d', border: '1px solid rgba(255, 77, 77, 0.3)', width: '35px', height: '35px', borderRadius: '8px', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center'}}><FaTrash size={14} /></button>
-                </div>
-            ))}
         </div>
       </div>
     </div>
