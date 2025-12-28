@@ -12,7 +12,7 @@ import {
   FaFileAlt,
   FaTimes,
   FaImage,
-  FaFilePdf
+  FaShareAlt
 } from "react-icons/fa";
 
 import "./materials-design.css";
@@ -42,11 +42,7 @@ function MaterialsContent() {
         }));
         data.sort((a, b) => new Date(b.date) - new Date(a.date));
         setMaterials(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+      } catch (err) { console.error(err); } finally { setLoading(false); }
     }
     fetchData();
   }, [subject]);
@@ -54,61 +50,63 @@ function MaterialsContent() {
   const handleOpenMaterial = async (material) => {
     setSelectedMaterial(material);
     try {
-      const ref = doc(db, "materials", material.id);
-      await updateDoc(ref, { viewCount: increment(1) });
+      await updateDoc(doc(db, "materials", material.id), { viewCount: increment(1) });
     } catch (err) { console.error(err); }
   };
 
-  if (loading) return <div className="loading-spinner">جاري تحميل المواد...</div>;
+  const handleDownload = async (materialId, url) => {
+    try {
+      await updateDoc(doc(db, "materials", materialId), { downloadCount: increment(1) });
+      window.open(url, "_blank");
+    } catch (err) { console.error(err); }
+  };
+
+  if (loading) return <div className="loading-state">جاري تحميل المحتوى...</div>;
 
   return (
-    <div className="materials-page-container">
-      <div className="materials-header-redesigned">
-        <div className="header-icon-box"><FaBookOpen /></div>
+    <div className="materials-container">
+      <header className="page-header">
+        <div className="subject-icon"><FaBookOpen /></div>
         <h1>{subject}</h1>
-        <p className="header-subtitle">اختر الملخص لعرض ملفاته</p>
-      </div>
+      </header>
 
-      <div className="materials-grid-wrapper">
+      <div className="grid-wrapper">
         <div className="materials-grid">
           {materials.map(m => (
-            <div key={m.id} className="material-card-redesigned" onClick={() => handleOpenMaterial(m)}>
-              <div className={`card-big-icon ${m.type === 'assignment' ? 'icon-assignment' : 'icon-summary'}`}>
+            <div key={m.id} className="modern-card" onClick={() => handleOpenMaterial(m)}>
+              <div className={`type-icon ${m.type === 'assignment' ? 'red' : 'blue'}`}>
                 {m.type === 'assignment' ? <FaClipboardList /> : <FaFileAlt />}
               </div>
-              <h3 className="card-title">{m.title}</h3>
-              <div className="card-uploader">بواسطة: <span>{m.uploader || "مجهول"}</span></div>
-              <div className="card-bottom-pills">
-                <div className="pill-stat"><FaEye /> {m.viewCount || 0}</div>
-                <div className="pill-stat"><FaDownload /> {m.downloadCount || 0}</div>
+              <h3>{m.title}</h3>
+              <p className="uploader">بواسطة: <span>{m.uploader || "مجهول"}</span></p>
+              <div className="card-stats">
+                <span><FaEye /> {m.viewCount || 0}</span>
+                <span><FaDownload /> {m.downloadCount || 0}</span>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* مودال عرض الملفات للاختيار بين المعاينة أو التنزيل */}
       {selectedMaterial && (
-        <div className="modal active" onClick={() => setSelectedMaterial(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <span className="close-btn" onClick={() => setSelectedMaterial(null)}><FaTimes /></span>
+        <div className="modal-overlay" onClick={() => setSelectedMaterial(null)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()}>
+            <button className="close-x" onClick={() => setSelectedMaterial(null)}><FaTimes /></button>
             <h2 className="modal-title">{selectedMaterial.title}</h2>
-            <p className="modal-desc">توجد {selectedMaterial.files?.length} ملفات متوفرة:</p>
             
-            <div className="files-list-container">
-              {selectedMaterial.files?.map((file, index) => (
-                <div key={index} className="file-row">
-                  <div className="file-info">
-                    <FaImage className="file-icon" />
-                    <span>صورة رقم {index + 1}</span>
-                  </div>
-                  <div className="file-actions">
-                    <button className="action-btn view" onClick={() => window.open(file.url, "_blank")}>
-                      <FaEye /> معاينة
-                    </button>
-                    <a href={file.url} download className="action-btn download">
-                      <FaDownload /> تنزيل
-                    </a>
+            <div className="modal-actions-bar">
+                <button className="share-btn-purple" onClick={() => navigator.share({title: selectedMaterial.title, url: window.location.href})}>
+                    <FaShareAlt /> مشاركة
+                </button>
+            </div>
+
+            <div className="files-list">
+              {selectedMaterial.files?.map((file, i) => (
+                <div key={i} className="file-card">
+                  <div className="file-name"><FaImage /> ملف {i + 1}</div>
+                  <div className="file-btns">
+                    <button className="btn-v" onClick={() => window.open(file.url, "_blank")}><FaEye /> معاينة</button>
+                    <button className="btn-d" onClick={() => handleDownload(selectedMaterial.id, file.url)}><FaDownload /> تحميل</button>
                   </div>
                 </div>
               ))}
@@ -122,7 +120,7 @@ function MaterialsContent() {
 
 export default function MaterialsPage() {
   return (
-    <Suspense fallback={<div className="loading-spinner">جاري التحميل...</div>}>
+    <Suspense fallback={<div className="loading-state">جاري التحميل...</div>}>
       <MaterialsContent />
     </Suspense>
   );
