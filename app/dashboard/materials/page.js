@@ -11,7 +11,6 @@ import {
   FaFileImage,
   FaUser,
   FaClock,
-  FaArrowLeft,
   FaTimes,
   FaShareAlt
 } from "react-icons/fa";
@@ -26,7 +25,7 @@ function MaterialsContent() {
   const [loading, setLoading] = useState(true);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
 
-  // دالة عرض الوقت يدوياً لتجنب خطأ date-fns في الـ Build
+  // دالة يدوية لعرض الوقت لتجنب أخطاء المكتبات الخارجية أثناء الـ Build
   const timeAgo = (date) => {
     if (!date) return "غير معروف";
     const seconds = Math.floor((new Date() - new Date(date)) / 1000);
@@ -95,8 +94,8 @@ function MaterialsContent() {
                 </div>
               </div>
               <div className="card-stats-footer">
-                <span><FaEye /> {m.viewCount || 0}</span>
                 <span><FaDownload /> {m.downloadCount || 0}</span>
+                <span><FaEye /> {m.viewCount || 0}</span>
               </div>
             </div>
           ))}
