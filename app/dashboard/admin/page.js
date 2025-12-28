@@ -145,6 +145,7 @@ export default function AdminPage() {
         date: new Date().toISOString(), 
         status: "approved", 
         uploader: "Admin",
+        studentName: "Admin", // افتراضي للأدمن
         viewCount: 0, downloadCount: 0, createdAt: serverTimestamp(),
       });
       setUploading(false); setTitle(""); setDesc(""); setFiles([]); setMessage("تم الرفع بنجاح! ");
@@ -203,7 +204,7 @@ export default function AdminPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            {/* 1. قسم الرفع - بدون حواف */}
+            {/* 1. قسم الرفع */}
             <div className="lg:col-span-1">
                 <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 shadow-xl sticky top-4">
                     <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-gray-200"><FaCloudUploadAlt className="text-blue-400"/> رفع ملف جديد</h2>
@@ -248,7 +249,7 @@ export default function AdminPage() {
             {/* 2. قسم القوائم */}
             <div className="lg:col-span-2 space-y-6">
                 
-                {/* ⚠️ طلبات الانتظار - بدون حواف */}
+                {/* ⚠️ طلبات الانتظار */}
                 {pendingList.length > 0 && (
                     <div className="bg-yellow-500/5 backdrop-blur-xl rounded-3xl p-6">
                         <h2 className="text-xl font-bold text-yellow-500 mb-4 flex items-center gap-2">
@@ -280,7 +281,7 @@ export default function AdminPage() {
                     </div>
                 )}
 
-                {/* ✅ الملفات المنشورة - بدون حواف وبشكل نظيف جداً */}
+                {/* ✅ الملفات المنشورة */}
                 <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6">
                     <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-200 border-b border-white/5 pb-4">
                         <FaLayerGroup className="text-green-400"/> الملفات المنشورة ({materialsList.length})
@@ -288,31 +289,27 @@ export default function AdminPage() {
                     
                     <div className="space-y-3 max-h-[600px] overflow-y-auto custom-scrollbar pr-1">
                         {materialsList.map((item) => (
-                            // 👇 الكارت الجديد: بدون حدود، تباعد أفضل
                             <div key={item.id} className="bg-black/20 rounded-2xl p-4 flex items-center gap-4 group hover:bg-black/30 transition-all">
                                 
-                                {/* الأيقونة والبيانات - قابلة للضغط */}
                                 <div className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer" onClick={() => openFile(item)}>
-                                    
-                                    {/* الأيقونة (ثابتة لا تنكمش shrink-0) */}
                                     <div className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center text-xl ${item.type === 'summary' ? 'bg-green-500/10 text-green-400' : 'bg-orange-500/10 text-orange-400'}`}>
                                         {item.files && item.files[0]?.type?.includes('pdf') ? <FaFilePdf /> : <FaFileImage />}
                                     </div>
                                     
-                                    {/* النص (قابل للانكماش truncate) */}
                                     <div className="min-w-0 flex-1">
                                         <h4 className="font-bold text-white text-base truncate group-hover:text-blue-300 transition-colors pr-2">
                                             {item.title}
                                         </h4>
-                                        <div className="flex flex-wrap gap-2 text-xs text-gray-500 mt-0.5">
+                                        <div className="flex items-center gap-3 text-xs text-gray-400 mt-1">
                                             <span>{item.subject}</span>
-                                            <span className="text-gray-600">•</span>
-                                            <span>{item.uploader || "Admin"}</span>
+                                            {/* 👇👇 عرض اسم الناشر هنا 👇👇 */}
+                                            <span className="flex items-center gap-1 text-blue-300">
+                                                 <FaUser className="text-[10px]"/> {item.studentName || item.uploader || "Admin"}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* زر الحذف - محسّن (ثابت لا ينكمش) */}
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); handleDelete(item.id, item.title); }}
                                     className="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center bg-red-500/5 text-red-400 hover:bg-red-500 hover:text-white transition-all"
