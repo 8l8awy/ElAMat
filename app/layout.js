@@ -21,7 +21,7 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  const isClosed = false; // التحكم في إغلاق الموقع
+  const isClosed = true; // التحكم في إغلاق الموقع
   const GA_MEASUREMENT_ID = ''; 
 
   // 2. بيانات جوجل المنظمة (Schema Markup) - اللوجو
