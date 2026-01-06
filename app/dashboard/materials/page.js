@@ -5,16 +5,7 @@ import { db } from "../../../lib/firebase";
 import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
 
 import {
-  FaDownload,
-  FaEye,
-  FaFilePdf,
-  FaImage,
-  FaUser,
-  FaClock,
-  FaTimes,
-  FaShareAlt,
-  FaSearch,
-  FaFileExport
+  FaDownload, FaEye, FaFilePdf, FaImage, FaUser, FaClock, FaTimes, FaShareAlt, FaSearch, FaFileExport
 } from "react-icons/fa";
 
 import "./materials-design.css";
@@ -78,7 +69,7 @@ function MaterialsContent() {
     } catch (err) { window.open(url, "_blank"); }
   };
 
-  // دالة تحويل الصور لـ PDF المحدثة (تحل مشكلة الصفحات البيضاء)
+  // دالة تحويل PDF المتطورة للملفات الكبيرة
   const downloadAsPDF = async (material) => {
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
@@ -87,49 +78,57 @@ function MaterialsContent() {
           <title>${material.title}</title>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@700&display=swap');
-            body { margin: 0; padding: 20px; text-align: center; font-family: 'Cairo', sans-serif; background: #fff; }
-            .img-wrap { width: 100%; page-break-after: always; margin-bottom: 20px; }
-            img { max-width: 100%; height: auto; display: block; margin: 0 auto; border: 1px solid #eee; }
-            .loader-msg { padding: 100px; font-size: 24px; color: #333; }
-            @media print { .loader-msg { display: none; } }
+            body { margin: 0; padding: 0; background: #f0f0f0; font-family: 'Cairo', sans-serif; }
+            .page-wrap { background: #fff; width: 100%; margin: 0; padding: 20px 0; page-break-after: always; display: flex; justify-content: center; }
+            img { max-width: 95%; height: auto; display: block; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+            .status-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+            .progress-bar { width: 300px; height: 10px; background: #eee; border-radius: 5px; margin-top: 20px; overflow: hidden; }
+            .progress-fill { height: 100%; background: #0a84ff; width: 0%; transition: 0.2s; }
+            @media print { .status-overlay { display: none; } body { background: #fff; } }
           </style>
         </head>
         <body>
-          <div id="L" class="loader-msg">جاري تحميل وتجهيز الصور...</div>
-          <div id="C"></div>
+          <div id="loader" class="status-overlay">
+            <h2 dir="rtl">جاري معالجة ${material.files.length} صفحة...</h2>
+            <div class="progress-bar"><div id="fill" class="progress-fill"></div></div>
+            <p id="stat" dir="rtl" style="margin-top:10px;">تم تحميل 0 من ${material.files.length}</p>
+          </div>
+          <div id="content"></div>
+          <script>
+            const images = ${JSON.stringify(material.files.map(f => f.url))};
+            const content = document.getElementById('content');
+            const fill = document.getElementById('fill');
+            const stat = document.getElementById('stat');
+            let loaded = 0;
+
+            async function render() {
+              for (let url of images) {
+                await new Promise((resolve) => {
+                  const img = new Image();
+                  img.crossOrigin = "anonymous";
+                  img.src = url;
+                  img.onload = () => {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'page-wrap';
+                    wrap.appendChild(img);
+                    content.appendChild(wrap);
+                    loaded++;
+                    fill.style.width = (loaded / images.length * 100) + '%';
+                    stat.innerText = 'تم تحميل ' + loaded + ' من ' + images.length;
+                    resolve();
+                  };
+                  img.onerror = () => { loaded++; resolve(); };
+                });
+              }
+              document.getElementById('loader').style.display = 'none';
+              setTimeout(() => { window.print(); }, 1000);
+            }
+            render();
+          </script>
         </body>
       </html>
     `);
-
-    const contentDiv = printWindow.document.getElementById('C');
-    const loader = printWindow.document.getElementById('L');
-
-    const loadImage = (url) => {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous"; 
-        img.src = url;
-        img.onload = () => resolve(img);
-        img.onerror = () => resolve(null); // تخطي الصور التالفة
-      });
-    };
-
-    try {
-      const imageUrls = material.files.map(f => f.url);
-      const loadedImages = await Promise.all(imageUrls.map(url => loadImage(url)));
-
-      loadedImages.forEach(img => {
-        if (img) {
-          const wrap = printWindow.document.createElement('div');
-          wrap.className = 'img-wrap';
-          wrap.appendChild(img);
-          contentDiv.appendChild(wrap);
-        }
-      });
-
-      loader.style.display = 'none';
-      setTimeout(() => { printWindow.print(); }, 800);
-    } catch (e) { printWindow.close(); }
+    printWindow.document.close();
   };
 
   if (loading) return <div className="loader">جاري التحميل...</div>;
@@ -177,8 +176,6 @@ function MaterialsContent() {
               <button className="share-btn-grad" onClick={() => navigator.share({title: selectedMaterial.title, url: window.location.href})}>
                  <FaShareAlt /> مشاركة
               </button>
-
-              {/* التحقق: يظهر زر التصدير فقط إذا كانت جميع الملفات صوراً وليس PDF */}
               {!selectedMaterial.files?.some(f => f.url.toLowerCase().includes('.pdf')) && (
                 <button className="pdf-export-btn" onClick={() => downloadAsPDF(selectedMaterial)}>
                    <FaFileExport /> تحميل كـ PDF
@@ -197,9 +194,7 @@ function MaterialsContent() {
                     </span>
                     <div className="file-btn-group">
                       <button className="btn-p" onClick={() => window.open(file.url, "_blank")}>معاينة</button>
-                      <button className="btn-d" onClick={() => handleDownload(selectedMaterial.id, file.url, `file_${idx+1}.${isPDF?'pdf':'jpg'}`)}>
-                        تحميل
-                      </button>
+                      <button className="btn-d" onClick={() => handleDownload(selectedMaterial.id, file.url, `file_${idx + 1}.${isPDF ? 'pdf' : 'jpg'}`)}>تحميل</button>
                     </div>
                   </div>
                 );
@@ -214,8 +209,6 @@ function MaterialsContent() {
 
 export default function MaterialsPage() {
   return (
-    <Suspense fallback={<div className="loader">جاري التحميل...</div>}>
-      <MaterialsContent />
-    </Suspense>
+    <Suspense fallback={<div className="loader">جاري التحميل...</div>}><MaterialsContent /></Suspense>
   );
 }
