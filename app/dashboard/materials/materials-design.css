@@ -227,3 +227,48 @@
         flex-direction: column;
     }
 }
+/* ضمان ظهور المحتوى وتوسيطه في الهاتف */
+.materials-grid-container {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+    overflow-x: hidden;
+}
+
+/* تفعيل السكرول داخل المودال بشكل صحيح */
+.modal-files-list {
+    max-height: 400px !important; /* ارتفاع محدد لإجبار السكرول */
+    overflow-y: auto !important;  /* تمرير عمودي */
+    padding: 15px 5px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 15px !important;
+    border-top: 1px solid #333;
+    margin-top: 20px;
+}
+
+/* تخصيص شكل السكرول ليكون واضحاً */
+.modal-files-list::-webkit-scrollbar {
+    width: 8px;
+}
+.modal-files-list::-webkit-scrollbar-thumb {
+    background: #0a84ff; /* لون أزرق واضح */
+    border-radius: 10px;
+}
+
+/* إصلاح شكل صف الملف في الهاتف */
+@media (max-width: 600px) {
+    .file-row-item {
+        flex-direction: column !important;
+        padding: 20px !important;
+        gap: 15px !important;
+        text-align: center !important;
+        width: 90% !important;
+        margin: 0 auto;
+    }
+    
+    .file-btn-group {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+}
