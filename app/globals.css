@@ -1981,3 +1981,56 @@ cubic-bezier(0.34, 1.56, 0.64, 1);
   cursor: not-allowed;
   transform: none;
 }
+/* --- تنسيق صندوق البحث العالمي --- */
+.search-box-container {
+    position: relative;
+    max-width: 600px;
+    margin: 20px auto;
+    width: 100%;
+}
+
+.search-input-modern {
+    width: 100%;
+    padding: 15px 50px 15px 20px;
+    border-radius: 15px;
+    border: 1px solid var(--border);
+    background: #1c1c1e;
+    color: white;
+    font-size: 1rem;
+    font-family: 'Cairo', sans-serif;
+    outline: none;
+    transition: 0.3s;
+}
+
+.search-input-modern:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 10px rgba(10, 132, 255, 0.2);
+}
+
+.search-inner-icon {
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8e8e93;
+    font-size: 1.2rem;
+}
+
+.subject-tag {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px 10px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    color: var(--blue);
+    margin-bottom: 10px;
+}
+
+.no-results {
+    text-align: center;
+    padding: 50px;
+    color: #8e8e93;
+    font-size: 1.1rem;
+}
