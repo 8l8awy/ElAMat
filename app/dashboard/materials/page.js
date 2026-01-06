@@ -20,7 +20,6 @@ function MaterialsContent() {
   const [loading, setLoading] = useState(true);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [progress, setProgress] = useState(0);
 
   const timeAgo = (date) => {
     if (!date) return "غير معروف";
@@ -54,6 +53,14 @@ function MaterialsContent() {
     setFilteredMaterials(materials.filter(m => m.title.toLowerCase().includes(value) || m.uploader?.toLowerCase().includes(value)));
   };
 
+  // --- تم إضافة هذه الوظيفة لحل الخطأ الذي واجهته ---
+  const handleOpenMaterial = async (material) => {
+    setSelectedMaterial(material);
+    try {
+      await updateDoc(doc(db, "materials", material.id), { viewCount: increment(1) });
+    } catch (err) { console.error(err); }
+  };
+
   const handleDownload = async (id, url, fileName) => {
     if (!url) return;
     try {
@@ -71,11 +78,8 @@ function MaterialsContent() {
     } catch (err) { window.open(url, "_blank"); }
   };
 
-  // دالة PDF النهائية والمضمونة لعدد صفحات غير محدود
   const downloadAsPDF = async (material) => {
     setIsGenerating(true);
-    setProgress(0);
-    
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
       <html>
@@ -84,7 +88,7 @@ function MaterialsContent() {
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@700&display=swap');
             body { margin: 0; padding: 0; background: #fff; font-family: 'Cairo', sans-serif; }
-            .p-wrap { width: 100%; page-break-after: always; display: flex; justify-content: center; align-items: center; padding: 0; margin: 0; }
+            .p-wrap { width: 100%; page-break-after: always; display: flex; justify-content: center; }
             img { max-width: 100%; height: auto; display: block; }
             .overlay { position: fixed; inset: 0; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; }
             .prog-bg { width: 250px; height: 8px; background: #f0f0f0; border-radius: 4px; margin-top: 15px; overflow: hidden; }
@@ -95,7 +99,6 @@ function MaterialsContent() {
         <body>
           <div id="loader" class="overlay">
             <h3 dir="rtl">جاري معالجة ${material.files.length} صفحة...</h3>
-            <p id="stat" dir="rtl">بدء التحميل...</p>
             <div class="prog-bg"><div id="fill" class="prog-fill"></div></div>
           </div>
           <div id="content"></div>
@@ -103,9 +106,7 @@ function MaterialsContent() {
             const images = ${JSON.stringify(material.files.map(f => f.url))};
             const content = document.getElementById('content');
             const fill = document.getElementById('fill');
-            const stat = document.getElementById('stat');
             let loaded = 0;
-
             async function start() {
               for (let url of images) {
                 await new Promise((resolve) => {
@@ -118,9 +119,7 @@ function MaterialsContent() {
                     wrap.appendChild(img);
                     content.appendChild(wrap);
                     loaded++;
-                    const p = Math.round((loaded / images.length) * 100);
-                    fill.style.width = p + '%';
-                    stat.innerText = 'تمت معالجة ' + loaded + ' من ' + images.length;
+                    fill.style.width = (loaded / images.length * 100) + '%';
                     resolve();
                   };
                   img.onerror = () => { loaded++; resolve(); };
