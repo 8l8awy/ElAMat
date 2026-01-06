@@ -12,7 +12,8 @@ import {
   FaUser,
   FaClock,
   FaTimes,
-  FaShareAlt
+  FaShareAlt,
+  FaSearch // إضافة أيقونة البحث
 } from "react-icons/fa";
 
 import "./materials-design.css";
@@ -22,10 +23,11 @@ function MaterialsContent() {
   const subject = searchParams.get("subject");
 
   const [materials, setMaterials] = useState([]);
+  const [filteredMaterials, setFilteredMaterials] = useState([]); // للمساعدة في البحث
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
 
-  // دالة يدوية لعرض الوقت لتجنب أخطاء المكتبات الخارجية أثناء الـ Build
   const timeAgo = (date) => {
     if (!date) return "غير معروف";
     const seconds = Math.floor((new Date() - new Date(date)) / 1000);
@@ -33,8 +35,6 @@ function MaterialsContent() {
     if (interval >= 1) return `منذ ${interval} يوم`;
     interval = Math.floor(seconds / 3600);
     if (interval >= 1) return `منذ ${interval} ساعة`;
-    interval = Math.floor(seconds / 60);
-    if (interval >= 1) return `منذ ${interval} دقيقة`;
     return "الآن";
   };
 
@@ -52,10 +52,22 @@ function MaterialsContent() {
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         data.sort((a, b) => new Date(b.date) - new Date(a.date));
         setMaterials(data);
+        setFilteredMaterials(data); // تعيين البيانات الأولية
       } catch (err) { console.error(err); } finally { setLoading(false); }
     }
     fetchData();
   }, [subject]);
+
+  // دالة تصفية البحث الفوري
+  const handleSearch = (e) => {
+    const value = e.target.value.toLowerCase();
+    setSearchTerm(value);
+    const filtered = materials.filter(m => 
+      m.title.toLowerCase().includes(value) || 
+      m.uploader?.toLowerCase().includes(value)
+    );
+    setFilteredMaterials(filtered);
+  };
 
   const handleOpenMaterial = async (material) => {
     setSelectedMaterial(material);
@@ -64,15 +76,11 @@ function MaterialsContent() {
     } catch (err) { console.error(err); }
   };
 
-  // إصلاح زر التحميل: استخدام نافذة جديدة وتحديث العداد
   const handleDownload = async (id, url) => {
-    if (!url) return;
     try {
-      // فتح الملف فوراً في تبويب جديد
       window.open(url, "_blank");
-      // تحديث العداد في الخلفية
       await updateDoc(doc(db, "materials", id), { downloadCount: increment(1) });
-    } catch (err) { console.error("Download error:", err); }
+    } catch (err) { console.error(err); }
   };
 
   if (loading) return <div className="loader">جاري التحميل...</div>;
@@ -81,11 +89,23 @@ function MaterialsContent() {
     <div className="materials-wrapper">
       <div className="page-header">
         <h1>ملخصات {subject}</h1>
+        
+        {/* شريط البحث المدمج في الهيدر */}
+        <div className="search-bar-wrapper">
+          <input 
+            type="text" 
+            placeholder="ابحث عن ملخص أو اسم ناشر..." 
+            value={searchTerm}
+            onChange={handleSearch}
+            className="search-input"
+          />
+          <FaSearch className="search-icon" />
+        </div>
       </div>
 
       <div className="materials-grid-container">
         <div className="materials-grid">
-          {materials.map((m) => (
+          {filteredMaterials.map((m) => (
             <div key={m.id} className="old-style-card" onClick={() => handleOpenMaterial(m)}>
               <div className={`card-banner ${m.type === 'assignment' ? 'red-bg' : 'blue-bg'}`}>
                  {m.type === 'assignment' ? <FaFilePdf /> : <FaImage />}
@@ -93,7 +113,7 @@ function MaterialsContent() {
               <div className="card-body">
                 <h3>{m.title}</h3>
                 <div className="meta-row">
-                  <span><FaUser /> {m.uploader || "مجهول"}</span>
+                  <span><FaUser /> {uploader || "مجهول"}</span>
                   <span><FaClock /> {timeAgo(m.date)}</span>
                 </div>
               </div>
@@ -111,11 +131,9 @@ function MaterialsContent() {
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <button className="close-x" onClick={() => setSelectedMaterial(null)}><FaTimes /></button>
             <h2 className="modal-title">{selectedMaterial.title}</h2>
-            
             <button className="share-btn-grad" onClick={() => navigator.share({title: selectedMaterial.title, url: window.location.href})}>
-               <FaShareAlt /> مشاركة هذا المحتوى
+               <FaShareAlt /> مشاركة
             </button>
-
             <div className="modal-files-list">
               {selectedMaterial.files?.map((file, idx) => (
                 <div key={idx} className="file-row-item">
