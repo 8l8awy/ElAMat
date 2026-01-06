@@ -2,18 +2,10 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { db } from "../../../lib/firebase";
-import { collection, query, where, getDocs, doc, updateDoc, increment } from "firebase/firestore";
-
+import { doc, updateDoc, increment, collection, query, where, getDocs } from "firebase/firestore";
+// ملاحظة: سنستخدم jsPDF للتحويل، تأكد من تثبيتها لاحقاً أو سنعتمد على طباعة المتصفح للسهولة حالياً
 import {
-  FaDownload,
-  FaEye,
-  FaFilePdf,
-  FaImage,
-  FaUser,
-  FaClock,
-  FaTimes,
-  FaShareAlt,
-  FaSearch // إضافة أيقونة البحث
+  FaDownload, FaEye, FaFilePdf, FaImage, FaUser, FaClock, FaTimes, FaShareAlt, FaSearch, FaFileExport
 } from "react-icons/fa";
 
 import "./materials-design.css";
@@ -21,9 +13,8 @@ import "./materials-design.css";
 function MaterialsContent() {
   const searchParams = useSearchParams();
   const subject = searchParams.get("subject");
-
   const [materials, setMaterials] = useState([]);
-  const [filteredMaterials, setFilteredMaterials] = useState([]); // للمساعدة في البحث
+  const [filteredMaterials, setFilteredMaterials] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
@@ -43,37 +34,33 @@ function MaterialsContent() {
       if (!subject) return;
       setLoading(true);
       try {
-        const q = query(
-          collection(db, "materials"),
-          where("subject", "==", subject),
-          where("status", "==", "approved")
-        );
+        const q = query(collection(db, "materials"), where("subject", "==", subject), where("status", "==", "approved"));
         const snapshot = await getDocs(q);
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         data.sort((a, b) => new Date(b.date) - new Date(a.date));
         setMaterials(data);
-        setFilteredMaterials(data); // تعيين البيانات الأولية
+        setFilteredMaterials(data);
       } catch (err) { console.error(err); } finally { setLoading(false); }
     }
     fetchData();
   }, [subject]);
 
-  // دالة تصفية البحث الفوري
   const handleSearch = (e) => {
     const value = e.target.value.toLowerCase();
     setSearchTerm(value);
-    const filtered = materials.filter(m => 
-      m.title.toLowerCase().includes(value) || 
-      m.uploader?.toLowerCase().includes(value)
-    );
-    setFilteredMaterials(filtered);
+    setFilteredMaterials(materials.filter(m => m.title.toLowerCase().includes(value) || m.uploader?.toLowerCase().includes(value)));
   };
 
-  const handleOpenMaterial = async (material) => {
-    setSelectedMaterial(material);
-    try {
-      await updateDoc(doc(db, "materials", material.id), { viewCount: increment(1) });
-    } catch (err) { console.error(err); }
+  // دالة تحويل الصور لـ PDF (تستخدم طباعة المتصفح لتحويل الصور لملف واحد فوري)
+  const downloadAsPDF = (material) => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`<html><head><title>${material.title}</title><style>img{width:100%;margin-bottom:20px;display:block;page-break-after:always;}</style></head><body>`);
+    material.files.forEach(file => {
+      printWindow.document.write(`<img src="${file.url}" />`);
+    });
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.print();
   };
 
   const handleDownload = async (id, url) => {
@@ -89,16 +76,8 @@ function MaterialsContent() {
     <div className="materials-wrapper">
       <div className="page-header">
         <h1>ملخصات {subject}</h1>
-        
-        {/* شريط البحث المدمج في الهيدر */}
         <div className="search-bar-wrapper">
-          <input 
-            type="text" 
-            placeholder="ابحث عن ملخص أو اسم ناشر..." 
-            value={searchTerm}
-            onChange={handleSearch}
-            className="search-input"
-          />
+          <input type="text" placeholder="ابحث عن ملخص..." value={searchTerm} onChange={handleSearch} className="search-input" />
           <FaSearch className="search-icon" />
         </div>
       </div>
@@ -106,7 +85,7 @@ function MaterialsContent() {
       <div className="materials-grid-container">
         <div className="materials-grid">
           {filteredMaterials.map((m) => (
-            <div key={m.id} className="old-style-card" onClick={() => handleOpenMaterial(m)}>
+            <div key={m.id} className="old-style-card" onClick={() => { setSelectedMaterial(m); updateDoc(doc(db, "materials", m.id), { viewCount: increment(1) }); }}>
               <div className={`card-banner ${m.type === 'assignment' ? 'red-bg' : 'blue-bg'}`}>
                  {m.type === 'assignment' ? <FaFilePdf /> : <FaImage />}
               </div>
@@ -118,8 +97,8 @@ function MaterialsContent() {
                 </div>
               </div>
               <div className="card-stats-footer">
-                <span className="stat-pill"><FaDownload /> {m.downloadCount || 0}</span>
-                <span className="stat-pill"><FaEye /> {m.viewCount || 0}</span>
+                <span><FaDownload /> {m.downloadCount || 0}</span>
+                <span><FaEye /> {m.viewCount || 0}</span>
               </div>
             </div>
           ))}
@@ -131,9 +110,17 @@ function MaterialsContent() {
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <button className="close-x" onClick={() => setSelectedMaterial(null)}><FaTimes /></button>
             <h2 className="modal-title">{selectedMaterial.title}</h2>
-            <button className="share-btn-grad" onClick={() => navigator.share({title: selectedMaterial.title, url: window.location.href})}>
-               <FaShareAlt /> مشاركة
-            </button>
+            
+            <div className="modal-top-actions">
+              <button className="share-btn-grad" onClick={() => navigator.share({title: selectedMaterial.title, url: window.location.href})}>
+                 <FaShareAlt /> مشاركة
+              </button>
+              {/* زر تحويل الـ PDF الجديد */}
+              <button className="pdf-export-btn" onClick={() => downloadAsPDF(selectedMaterial)}>
+                 <FaFileExport /> تحميل كـ PDF مجمع
+              </button>
+            </div>
+
             <div className="modal-files-list">
               {selectedMaterial.files?.map((file, idx) => (
                 <div key={idx} className="file-row-item">
@@ -154,8 +141,6 @@ function MaterialsContent() {
 
 export default function MaterialsPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <MaterialsContent />
-    </Suspense>
+    <Suspense fallback={<div>Loading...</div>}><MaterialsContent /></Suspense>
   );
 }
