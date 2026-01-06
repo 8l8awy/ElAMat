@@ -1,203 +1,83 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
 
 :root {
-    --card-bg: #1c1c1e;
-    --border: #2c2c2e;
-    --blue: #0a84ff;
-    --red: #ff453a;
-    --green: #32d74b;
+     --card-bg: #1c1c1e; --border: #2c2c2e;
+    --blue: #0a84ff; --red: #ff453a; --green: #32d74b;
     --grad: linear-gradient(90deg, #bd1c52 0%, #7c3aed 100%);
-    --white: #ffffff;
 }
 
 .materials-wrapper {
-    background-color: var(--dark-bg);
-    min-height: 100vh;
-    padding: 30px 15px;
-    direction: rtl;
-    font-family: 'Cairo', sans-serif;
-    color: var(--white);
+    background-color: var(--dark-bg); min-height: 100vh; padding: 30px 15px;
+    direction: rtl; font-family: 'Cairo', sans-serif; color: white;
 }
 
-/* --- الهيدر والبحث --- */
-.page-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 40px;
-    text-align: center;
-}
+.page-header { text-align: center; margin-bottom: 30px; }
 
-.page-header h1 { font-size: 1.8rem; font-weight: 900; margin-bottom: 10px; }
-
-.search-bar-wrapper {
-    position: relative;
-    max-width: 500px;
-    margin: 10px auto;
-    width: 90%;
-}
-
-.search-input {
-    width: 100%;
-    padding: 12px 45px 12px 15px;
-    border-radius: 12px;
-    background: #1c1c1e;
-    border: 1px solid #333;
-    color: white;
-    font-family: 'Cairo', sans-serif;
-    outline: none;
-    transition: 0.3s;
-}
-
-.search-input:focus { border-color: var(--blue); box-shadow: 0 0 8px rgba(10, 132, 255, 0.3); }
-
-.search-icon {
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #8e8e93;
-}
-
-/* --- شبكة الملخصات وتوسيطها --- */
-.materials-grid-container {
-    display: flex !important;
-    justify-content: center !important;
-    width: 100% !important;
-    overflow-x: hidden;
-}
+/* توسيط الشبكة */
+.materials-grid-container { display: flex; justify-content: center; width: 100%; overflow-x: hidden; }
 
 .materials-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 25px;
-    width: 100%;
-    max-width: 1200px;
-    justify-content: center;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px; width: 100%; max-width: 1200px; justify-content: center;
 }
 
-/* --- الكارت (التصميم القديم المحسن) --- */
+/* الكروت */
 .old-style-card {
-    background: var(--card-bg);
-    border-radius: 20px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    cursor: pointer;
-    transition: 0.3s;
-    display: flex;
-    flex-direction: column;
+    background: var(--card-bg); border-radius: 20px; overflow: hidden;
+    border: 1px solid var(--border); cursor: pointer; transition: 0.3s;
 }
-
 .old-style-card:hover { transform: translateY(-5px); border-color: var(--blue); }
 
-.card-banner {
-    height: 120px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3.5rem;
-}
+.card-banner { height: 120px; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; }
+.red-bg { background: rgba(255,69,58,0.1); color: var(--red); }
+.blue-bg { background: rgba(10,132,255,0.1); color: var(--blue); }
 
-.red-bg { background: rgba(255, 69, 58, 0.1); color: var(--red); }
-.blue-bg { background: rgba(10, 132, 255, 0.1); color: var(--blue); }
-
-.card-body { padding: 20px; text-align: center; }
-.card-body h3 { margin: 0 0 12px 0; font-size: 1.3rem; font-weight: 800; color: var(--white); }
-
-.meta-row {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    font-size: 0.9rem;
-    color: #aeaeb2;
-}
-
-.meta-row span { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.card-body h3 { margin: 0 0 10px 0; font-size: 1.2rem; text-align: center; }
+.meta-row { display: flex; flex-direction: column; gap: 5px; font-size: 0.85rem; color: #aeaeb2; align-items: center; }
 
 .card-stats-footer {
-    background: rgba(255,255,255,0.05);
-    padding: 12px;
-    display: flex;
-    justify-content: space-around;
-    font-size: 0.85rem;
-    border-top: 1px solid var(--border);
+    background: rgba(255,255,255,0.05); padding: 12px;
+    display: flex; justify-content: space-around; border-top: 1px solid var(--border);
 }
 
-/* --- المودال والسكرول --- */
+/* المودال والسكرول */
 .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.95);
     display: flex; align-items: center; justify-content: center; z-index: 9999;
 }
 
 .modal-card {
-    background: #111; width: 95%; max-width: 500px;
-    border-radius: 25px; padding: 45px 20px 20px;
-    position: relative; border: 1px solid #333;
+    background: #111; width: 95%; max-width: 500px; border-radius: 25px;
+    padding: 45px 20px 20px; position: relative; border: 1px solid #333;
 }
 
-.close-x {
-    position: absolute; top: 15px; left: 15px; background: #333;
-    border: none; color: #fff; width: 35px; height: 35px; border-radius: 50%; cursor: pointer;
-}
+.close-x { position: absolute; top: 15px; left: 15px; background: #333; border: none; color: #fff; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; }
 
 .modal-top-actions { display: flex; gap: 10px; margin-bottom: 20px; }
-
-.share-btn-grad, .pdf-export-btn {
-    flex: 1; padding: 12px; border-radius: 12px; border: none;
-    color: white; font-weight: bold; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-}
-
+.share-btn-grad, .pdf-export-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .share-btn-grad { background: var(--grad); }
-.pdf-export-btn { background: var(--red); transition: 0.3s; }
-.pdf-export-btn:hover { background: #ff2d55; transform: scale(1.02); }
+.pdf-export-btn { background: var(--red); }
 
-/* حاوية السكرول الإجبارية للملفات */
+/* السكرول الإجباري */
 .modal-files-list {
-    max-height: 400px !important;
-    overflow-y: auto !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 15px !important;
-    padding: 15px 5px !important;
-    border-top: 1px solid #333;
-    margin-top: 20px;
+    max-height: 400px !important; overflow-y: auto !important;
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 15px 5px; border-top: 1px solid #333; margin-top: 15px;
 }
 
-/* تخصيص السكرول بار */
-.modal-files-list::-webkit-scrollbar { width: 8px; }
-.modal-files-list::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+.modal-files-list::-webkit-scrollbar { width: 6px; }
 .modal-files-list::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 10px; }
 
 .file-row-item {
-    width: 95% !important;
     background: #1c1c1e; padding: 15px; border-radius: 15px;
-    display: flex; justify-content: space-between; align-items: center;
-    border: 1px solid var(--border);
-    flex-shrink: 0;
-    margin: 0 auto;
+    display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);
 }
 
 .file-btn-group { display: flex; gap: 8px; }
+.btn-p { background: #3a3a3c; color: white; padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer; }
+.btn-d { background: var(--green); color: black; font-weight: bold; padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer; }
 
-.btn-p, .btn-d { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.8rem; }
-.btn-p { background: #3a3a3c; color: #fff; }
-.btn-d { background: var(--green); color: #000; font-weight: bold; }
-
-/* --- استجابة الهاتف --- */
 @media (max-width: 600px) {
-    .materials-grid { grid-template-columns: 1fr; max-width: 330px; }
-    
-    .modal-top-actions { flex-direction: column; gap: 10px; }
-    
-    .file-row-item {
-        flex-direction: column !important;
-        padding: 20px !important;
-        gap: 15px !important;
-        text-align: center !important;
-    }
-    
-    .file-btn-group { width: 100% !important; justify-content: center !important; }
+    .modal-top-actions { flex-direction: column; }
+    .file-row-item { flex-direction: column; gap: 12px; text-align: center; }
 }
-
-.loader { text-align: center; padding: 50px; color: var(--white); font-size: 1.2rem; }
