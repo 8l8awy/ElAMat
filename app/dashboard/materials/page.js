@@ -77,7 +77,7 @@ function MaterialsContent() {
     } catch (err) { window.open(url, "_blank"); }
   };
 
-  // دالة تحويل PDF المتقدمة للملفات الضخمة
+  // دالة PDF المتطورة لحل مشكلة الصور المقطوعة والصفحات البيضاء
   const downloadAsPDF = async (material) => {
     setIsGenerating(true);
     const printWindow = window.open('', '_blank');
@@ -88,20 +88,21 @@ function MaterialsContent() {
           <title>${material.title}</title>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@700&display=swap');
+            @page { size: auto; margin: 0; }
             body { margin: 0; padding: 0; background: #fff; font-family: 'Cairo', sans-serif; }
-            .page-box { width: 100%; height: auto; page-break-after: always; display: flex; justify-content: center; align-items: flex-start; }
-            img { max-width: 100%; height: auto; display: block; }
+            .pdf-page { width: 100%; page-break-after: always; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+            img { width: 100%; height: auto; display: block; object-fit: contain; }
             .loading-screen { position: fixed; inset: 0; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20000; }
-            .bar { width: 280px; height: 12px; background: #f0f0f0; border-radius: 6px; margin-top: 20px; overflow: hidden; border: 1px solid #ddd; }
-            .fill { height: 100%; background: #0a84ff; width: 0%; transition: 0.1s linear; }
+            .progress-container { width: 300px; height: 10px; background: #f0f0f0; border-radius: 5px; margin-top: 20px; overflow: hidden; }
+            .progress-bar { height: 100%; background: #0a84ff; width: 0%; transition: 0.1s linear; }
             @media print { .loading-screen { display: none; } }
           </style>
         </head>
         <body>
           <div id="loader" class="loading-screen">
             <h2 dir="rtl">جاري تحويل ${material.files.length} صفحة لـ PDF...</h2>
-            <div class="bar"><div id="progress" class="fill"></div></div>
-            <p id="counter" dir="rtl" style="margin-top:10px;">بدء المعالجة...</p>
+            <div class="progress-container"><div id="progress" class="progress-bar"></div></div>
+            <p id="counter" dir="rtl" style="margin-top:10px;">بدء التحميل...</p>
           </div>
           <div id="content"></div>
           <script>
@@ -123,12 +124,12 @@ function MaterialsContent() {
                     reader.readAsDataURL(blob);
                   });
 
-                  const div = document.createElement('div');
-                  div.className = 'page-box';
+                  const page = document.createElement('div');
+                  page.className = 'pdf-page';
                   const img = document.createElement('img');
                   img.src = base64;
-                  div.appendChild(img);
-                  content.appendChild(div);
+                  page.appendChild(img);
+                  content.appendChild(page);
 
                   current++;
                   progress.style.width = (current / total * 100) + '%';
@@ -136,8 +137,8 @@ function MaterialsContent() {
                 } catch (e) { current++; }
               }
               document.getElementById('loader').style.display = 'none';
-              // تأخير بسيط لضمان استقرار المعاينة في المتصفح
-              setTimeout(() => { window.print(); }, 1500);
+              // انتظار ثانية للتأكد من استقرار الصور في الذاكرة قبل الطباعة
+              setTimeout(() => { window.print(); }, 1200);
             }
             process();
           </script>
