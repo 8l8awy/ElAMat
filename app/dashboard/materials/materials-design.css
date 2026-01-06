@@ -19,26 +19,64 @@
     color: var(--white);
 }
 
-.page-header { text-align: center; margin-bottom: 30px; }
-.page-header h1 { font-size: 1.8rem; font-weight: 900; }
-
-/* توسيط الشبكة بالكامل */
-.materials-grid-container {
+/* --- الهيدر والبحث --- */
+.page-header {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.page-header h1 { font-size: 1.8rem; font-weight: 900; margin-bottom: 10px; }
+
+.search-bar-wrapper {
+    position: relative;
+    max-width: 500px;
+    margin: 10px auto;
+    width: 90%;
+}
+
+.search-input {
     width: 100%;
+    padding: 12px 45px 12px 15px;
+    border-radius: 12px;
+    background: #1c1c1e;
+    border: 1px solid #333;
+    color: white;
+    font-family: 'Cairo', sans-serif;
+    outline: none;
+    transition: 0.3s;
+}
+
+.search-input:focus { border-color: var(--blue); box-shadow: 0 0 8px rgba(10, 132, 255, 0.3); }
+
+.search-icon {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8e8e93;
+}
+
+/* --- شبكة الملخصات وتوسيطها --- */
+.materials-grid-container {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+    overflow-x: hidden;
 }
 
 .materials-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
+    gap: 25px;
     width: 100%;
     max-width: 1200px;
     justify-content: center;
 }
 
-/* التصميم القديم المحسن */
+/* --- الكارت (التصميم القديم المحسن) --- */
 .old-style-card {
     background: var(--card-bg);
     border-radius: 20px;
@@ -59,6 +97,7 @@
     justify-content: center;
     font-size: 3.5rem;
 }
+
 .red-bg { background: rgba(255, 69, 58, 0.1); color: var(--red); }
 .blue-bg { background: rgba(10, 132, 255, 0.1); color: var(--blue); }
 
@@ -72,6 +111,7 @@
     font-size: 0.9rem;
     color: #aeaeb2;
 }
+
 .meta-row span { display: flex; align-items: center; justify-content: center; gap: 10px; }
 
 .card-stats-footer {
@@ -83,9 +123,7 @@
     border-top: 1px solid var(--border);
 }
 
-.stat-pill { display: flex; align-items: center; gap: 6px; color: #aeaeb2; }
-
-/* المودال مع السكرول */
+/* --- المودال والسكرول --- */
 .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.95);
     display: flex; align-items: center; justify-content: center; z-index: 9999;
@@ -97,178 +135,69 @@
     position: relative; border: 1px solid #333;
 }
 
-.close-x { position: absolute; top: 15px; left: 15px; background: #333; border: none; color: #fff; width: 35px; height: 35px; border-radius: 50%; cursor: pointer;}
-
-.share-btn-grad {
-    background: var(--grad); border: none; color: white; width: 100%;
-    padding: 12px; border-radius: 12px; font-weight: 700; margin-bottom: 25px; cursor: pointer;
+.close-x {
+    position: absolute; top: 15px; left: 15px; background: #333;
+    border: none; color: #fff; width: 35px; height: 35px; border-radius: 50%; cursor: pointer;
 }
 
-/* حاوية السكرول للملفات */
+.modal-top-actions { display: flex; gap: 10px; margin-bottom: 20px; }
+
+.share-btn-grad, .pdf-export-btn {
+    flex: 1; padding: 12px; border-radius: 12px; border: none;
+    color: white; font-weight: bold; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+
+.share-btn-grad { background: var(--grad); }
+.pdf-export-btn { background: var(--red); transition: 0.3s; }
+.pdf-export-btn:hover { background: #ff2d55; transform: scale(1.02); }
+
+/* حاوية السكرول الإجبارية للملفات */
 .modal-files-list {
-    max-height: 380px !important; /* تحديد ارتفاع أقصى للسكرول */
+    max-height: 400px !important;
     overflow-y: auto !important;
-    padding: 10px 5px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    align-items: center; /* توسيط الملفات */
-}
-
-/* تخصيص شكل شريط التمرير */
-.modal-files-list::-webkit-scrollbar { width: 6px; }
-.modal-files-list::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
-.modal-files-list::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 10px; }
-
-.file-row-item {
-    width: 95%;
-    background: #1c1c1e; padding: 15px; border-radius: 15px;
-    display: flex; justify-content: space-between; align-items: center;
-    border: 1px solid var(--border);
-    flex-shrink: 0;
-}
-
-.file-btn-group { display: flex; gap: 8px; }
-.btn-p, .btn-d { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.8rem; }
-.btn-p { background: #3a3a3c; color: #fff; }
-.btn-d { background: var(--green); color: #000; font-weight: bold; }
-
-/* تحسين الهاتف */
-@media (max-width: 600px) {
-    .materials-grid { grid-template-columns: 1fr; max-width: 320px; }
-    .file-row-item { flex-direction: column; gap: 12px; text-align: center; }
-}
-
-.loader { text-align: center; padding: 50px; color: var(--white); font-size: 1.2rem; }
-/* --- تنسيق شريط البحث المدمج --- */
-.search-bar-wrapper {
-    position: relative;
-    max-width: 500px;
-    margin: 20px auto;
-    width: 90%;
-}
-
-.search-input {
-    width: 100%;
-    padding: 12px 45px 12px 15px;
-    border-radius: 12px;
-    background: #1c1c1e;
-    border: 1px solid #333;
-    color: white;
-    font-family: 'Cairo', sans-serif;
-    font-size: 0.95rem;
-    outline: none;
-    transition: 0.3s;
-}
-
-.search-input:focus {
-    border-color: #0a84ff;
-    box-shadow: 0 0 8px rgba(10, 132, 255, 0.3);
-}
-
-.search-icon {
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #8e8e93;
-}
-
-/* ضمان بقاء الهيدر في المنتصف */
-.page-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 40px;
-}
-/* --- زر تصدير PDF الجديد --- */
-.modal-top-actions {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 25px;
-}
-
-.pdf-export-btn {
-    flex: 1;
-    background: #ff453a; /* لون أحمر مميز للـ PDF */
-    border: none;
-    color: white;
-    padding: 12px;
-    border-radius: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: 0.3s;
-}
-
-.pdf-export-btn:hover {
-    background: #ff2d55;
-    transform: scale(1.02);
-}
-
-.share-btn-grad {
-    flex: 1; /* جعل الأزرار متساوية العرض */
-    margin-bottom: 0 !important;
-}
-
-/* تحسين السكرول داخل المودال ليظهر بوضوح */
-.modal-files-list {
-    max-height: 380px !important;
-    overflow-y: auto !important;
-    padding-right: 5px;
-}
-
-/* تنسيق للهاتف لجعل الأزرار تحت بعضها */
-@media (max-width: 600px) {
-    .modal-top-actions {
-        flex-direction: column;
-    }
-}
-/* ضمان ظهور المحتوى وتوسيطه في الهاتف */
-.materials-grid-container {
-    display: flex !important;
-    justify-content: center !important;
-    width: 100% !important;
-    overflow-x: hidden;
-}
-
-/* تفعيل السكرول داخل المودال بشكل صحيح */
-.modal-files-list {
-    max-height: 400px !important; /* ارتفاع محدد لإجبار السكرول */
-    overflow-y: auto !important;  /* تمرير عمودي */
-    padding: 15px 5px !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 15px !important;
+    padding: 15px 5px !important;
     border-top: 1px solid #333;
     margin-top: 20px;
 }
 
-/* تخصيص شكل السكرول ليكون واضحاً */
-.modal-files-list::-webkit-scrollbar {
-    width: 8px;
-}
-.modal-files-list::-webkit-scrollbar-thumb {
-    background: #0a84ff; /* لون أزرق واضح */
-    border-radius: 10px;
+/* تخصيص السكرول بار */
+.modal-files-list::-webkit-scrollbar { width: 8px; }
+.modal-files-list::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+.modal-files-list::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 10px; }
+
+.file-row-item {
+    width: 95% !important;
+    background: #1c1c1e; padding: 15px; border-radius: 15px;
+    display: flex; justify-content: space-between; align-items: center;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    margin: 0 auto;
 }
 
-/* إصلاح شكل صف الملف في الهاتف */
+.file-btn-group { display: flex; gap: 8px; }
+
+.btn-p, .btn-d { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.8rem; }
+.btn-p { background: #3a3a3c; color: #fff; }
+.btn-d { background: var(--green); color: #000; font-weight: bold; }
+
+/* --- استجابة الهاتف --- */
 @media (max-width: 600px) {
+    .materials-grid { grid-template-columns: 1fr; max-width: 330px; }
+    
+    .modal-top-actions { flex-direction: column; gap: 10px; }
+    
     .file-row-item {
         flex-direction: column !important;
         padding: 20px !important;
         gap: 15px !important;
         text-align: center !important;
-        width: 90% !important;
-        margin: 0 auto;
     }
     
-    .file-btn-group {
-        width: 100% !important;
-        justify-content: center !important;
-    }
+    .file-btn-group { width: 100% !important; justify-content: center !important; }
 }
+
+.loader { text-align: center; padding: 50px; color: var(--white); font-size: 1.2rem; }
