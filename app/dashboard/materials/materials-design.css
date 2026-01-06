@@ -181,3 +181,49 @@
     align-items: center;
     margin-bottom: 40px;
 }
+/* --- زر تصدير PDF الجديد --- */
+.modal-top-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.pdf-export-btn {
+    flex: 1;
+    background: #ff453a; /* لون أحمر مميز للـ PDF */
+    border: none;
+    color: white;
+    padding: 12px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: 0.3s;
+}
+
+.pdf-export-btn:hover {
+    background: #ff2d55;
+    transform: scale(1.02);
+}
+
+.share-btn-grad {
+    flex: 1; /* جعل الأزرار متساوية العرض */
+    margin-bottom: 0 !important;
+}
+
+/* تحسين السكرول داخل المودال ليظهر بوضوح */
+.modal-files-list {
+    max-height: 380px !important;
+    overflow-y: auto !important;
+    padding-right: 5px;
+}
+
+/* تنسيق للهاتف لجعل الأزرار تحت بعضها */
+@media (max-width: 600px) {
+    .modal-top-actions {
+        flex-direction: column;
+    }
+}
