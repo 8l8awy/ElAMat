@@ -53,7 +53,6 @@ function MaterialsContent() {
     setFilteredMaterials(materials.filter(m => m.title.toLowerCase().includes(value) || m.uploader?.toLowerCase().includes(value)));
   };
 
-  // --- تم إضافة هذه الوظيفة لحل الخطأ الذي واجهته ---
   const handleOpenMaterial = async (material) => {
     setSelectedMaterial(material);
     try {
@@ -78,9 +77,11 @@ function MaterialsContent() {
     } catch (err) { window.open(url, "_blank"); }
   };
 
+  // دالة تحويل PDF المتقدمة للملفات الضخمة
   const downloadAsPDF = async (material) => {
     setIsGenerating(true);
     const printWindow = window.open('', '_blank');
+    
     printWindow.document.write(`
       <html>
         <head>
@@ -88,47 +89,57 @@ function MaterialsContent() {
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@700&display=swap');
             body { margin: 0; padding: 0; background: #fff; font-family: 'Cairo', sans-serif; }
-            .p-wrap { width: 100%; page-break-after: always; display: flex; justify-content: center; }
+            .page-box { width: 100%; height: auto; page-break-after: always; display: flex; justify-content: center; align-items: flex-start; }
             img { max-width: 100%; height: auto; display: block; }
-            .overlay { position: fixed; inset: 0; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; }
-            .prog-bg { width: 250px; height: 8px; background: #f0f0f0; border-radius: 4px; margin-top: 15px; overflow: hidden; }
-            .prog-fill { height: 100%; background: #0a84ff; width: 0%; transition: 0.1s; }
-            @media print { .overlay { display: none; } }
+            .loading-screen { position: fixed; inset: 0; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20000; }
+            .bar { width: 280px; height: 12px; background: #f0f0f0; border-radius: 6px; margin-top: 20px; overflow: hidden; border: 1px solid #ddd; }
+            .fill { height: 100%; background: #0a84ff; width: 0%; transition: 0.1s linear; }
+            @media print { .loading-screen { display: none; } }
           </style>
         </head>
         <body>
-          <div id="loader" class="overlay">
-            <h3 dir="rtl">جاري معالجة ${material.files.length} صفحة...</h3>
-            <div class="prog-bg"><div id="fill" class="prog-fill"></div></div>
+          <div id="loader" class="loading-screen">
+            <h2 dir="rtl">جاري تحويل ${material.files.length} صفحة لـ PDF...</h2>
+            <div class="bar"><div id="progress" class="fill"></div></div>
+            <p id="counter" dir="rtl" style="margin-top:10px;">بدء المعالجة...</p>
           </div>
           <div id="content"></div>
           <script>
-            const images = ${JSON.stringify(material.files.map(f => f.url))};
+            const urls = ${JSON.stringify(material.files.map(f => f.url))};
             const content = document.getElementById('content');
-            const fill = document.getElementById('fill');
-            let loaded = 0;
-            async function start() {
-              for (let url of images) {
-                await new Promise((resolve) => {
-                  const img = new Image();
-                  img.crossOrigin = "anonymous";
-                  img.src = url;
-                  img.onload = () => {
-                    const wrap = document.createElement('div');
-                    wrap.className = 'p-wrap';
-                    wrap.appendChild(img);
-                    content.appendChild(wrap);
-                    loaded++;
-                    fill.style.width = (loaded / images.length * 100) + '%';
-                    resolve();
-                  };
-                  img.onerror = () => { loaded++; resolve(); };
-                });
+            const progress = document.getElementById('progress');
+            const counter = document.getElementById('counter');
+            let total = urls.length;
+            let current = 0;
+
+            async function process() {
+              for (let url of urls) {
+                try {
+                  const resp = await fetch(url);
+                  const blob = await resp.blob();
+                  const base64 = await new Promise((res) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => res(reader.result);
+                    reader.readAsDataURL(blob);
+                  });
+
+                  const div = document.createElement('div');
+                  div.className = 'page-box';
+                  const img = document.createElement('img');
+                  img.src = base64;
+                  div.appendChild(img);
+                  content.appendChild(div);
+
+                  current++;
+                  progress.style.width = (current / total * 100) + '%';
+                  counter.innerText = 'تمت معالجة ' + current + ' من ' + total;
+                } catch (e) { current++; }
               }
               document.getElementById('loader').style.display = 'none';
-              setTimeout(() => { window.print(); }, 1200);
+              // تأخير بسيط لضمان استقرار المعاينة في المتصفح
+              setTimeout(() => { window.print(); }, 1500);
             }
-            start();
+            process();
           </script>
         </body>
       </html>
@@ -184,7 +195,7 @@ function MaterialsContent() {
               </button>
               {!selectedMaterial.files?.some(f => f.url.toLowerCase().includes('.pdf')) && (
                 <button className="pdf-export-btn" onClick={() => downloadAsPDF(selectedMaterial)} disabled={isGenerating}>
-                   {isGenerating ? 'جاري التجهيز...' : 'تحميل كـ PDF'}
+                   {isGenerating ? 'جاري التحضير...' : 'تحميل كـ PDF'}
                 </button>
               )}
             </div>
