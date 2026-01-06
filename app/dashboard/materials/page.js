@@ -113,7 +113,7 @@ function MaterialsContent() {
               <div className="card-body">
                 <h3>{m.title}</h3>
                 <div className="meta-row">
-                  <span><FaUser /> {uploader || "مجهول"}</span>
+                  <span><FaUser /> {m.uploader || "مجهول"}</span>
                   <span><FaClock /> {timeAgo(m.date)}</span>
                 </div>
               </div>
