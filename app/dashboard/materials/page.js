@@ -19,6 +19,8 @@ function MaterialsContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const timeAgo = (date) => {
     if (!date) return "غير معروف";
@@ -69,8 +71,11 @@ function MaterialsContent() {
     } catch (err) { window.open(url, "_blank"); }
   };
 
-  // دالة تحويل PDF المتطورة للملفات الكبيرة
+  // دالة PDF النهائية والمضمونة لعدد صفحات غير محدود
   const downloadAsPDF = async (material) => {
+    setIsGenerating(true);
+    setProgress(0);
+    
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
       <html>
@@ -78,20 +83,20 @@ function MaterialsContent() {
           <title>${material.title}</title>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@700&display=swap');
-            body { margin: 0; padding: 0; background: #f0f0f0; font-family: 'Cairo', sans-serif; }
-            .page-wrap { background: #fff; width: 100%; margin: 0; padding: 20px 0; page-break-after: always; display: flex; justify-content: center; }
-            img { max-width: 95%; height: auto; display: block; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-            .status-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-            .progress-bar { width: 300px; height: 10px; background: #eee; border-radius: 5px; margin-top: 20px; overflow: hidden; }
-            .progress-fill { height: 100%; background: #0a84ff; width: 0%; transition: 0.2s; }
-            @media print { .status-overlay { display: none; } body { background: #fff; } }
+            body { margin: 0; padding: 0; background: #fff; font-family: 'Cairo', sans-serif; }
+            .p-wrap { width: 100%; page-break-after: always; display: flex; justify-content: center; align-items: center; padding: 0; margin: 0; }
+            img { max-width: 100%; height: auto; display: block; }
+            .overlay { position: fixed; inset: 0; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; }
+            .prog-bg { width: 250px; height: 8px; background: #f0f0f0; border-radius: 4px; margin-top: 15px; overflow: hidden; }
+            .prog-fill { height: 100%; background: #0a84ff; width: 0%; transition: 0.1s; }
+            @media print { .overlay { display: none; } }
           </style>
         </head>
         <body>
-          <div id="loader" class="status-overlay">
-            <h2 dir="rtl">جاري معالجة ${material.files.length} صفحة...</h2>
-            <div class="progress-bar"><div id="fill" class="progress-fill"></div></div>
-            <p id="stat" dir="rtl" style="margin-top:10px;">تم تحميل 0 من ${material.files.length}</p>
+          <div id="loader" class="overlay">
+            <h3 dir="rtl">جاري معالجة ${material.files.length} صفحة...</h3>
+            <p id="stat" dir="rtl">بدء التحميل...</p>
+            <div class="prog-bg"><div id="fill" class="prog-fill"></div></div>
           </div>
           <div id="content"></div>
           <script>
@@ -101,7 +106,7 @@ function MaterialsContent() {
             const stat = document.getElementById('stat');
             let loaded = 0;
 
-            async function render() {
+            async function start() {
               for (let url of images) {
                 await new Promise((resolve) => {
                   const img = new Image();
@@ -109,26 +114,28 @@ function MaterialsContent() {
                   img.src = url;
                   img.onload = () => {
                     const wrap = document.createElement('div');
-                    wrap.className = 'page-wrap';
+                    wrap.className = 'p-wrap';
                     wrap.appendChild(img);
                     content.appendChild(wrap);
                     loaded++;
-                    fill.style.width = (loaded / images.length * 100) + '%';
-                    stat.innerText = 'تم تحميل ' + loaded + ' من ' + images.length;
+                    const p = Math.round((loaded / images.length) * 100);
+                    fill.style.width = p + '%';
+                    stat.innerText = 'تمت معالجة ' + loaded + ' من ' + images.length;
                     resolve();
                   };
                   img.onerror = () => { loaded++; resolve(); };
                 });
               }
               document.getElementById('loader').style.display = 'none';
-              setTimeout(() => { window.print(); }, 1000);
+              setTimeout(() => { window.print(); }, 1200);
             }
-            render();
+            start();
           </script>
         </body>
       </html>
     `);
     printWindow.document.close();
+    setIsGenerating(false);
   };
 
   if (loading) return <div className="loader">جاري التحميل...</div>;
@@ -146,7 +153,7 @@ function MaterialsContent() {
       <div className="materials-grid-container">
         <div className="materials-grid">
           {filteredMaterials.map((m) => (
-            <div key={m.id} className="old-style-card" onClick={() => { setSelectedMaterial(m); updateDoc(doc(db, "materials", m.id), { viewCount: increment(1) }); }}>
+            <div key={m.id} className="old-style-card" onClick={() => handleOpenMaterial(m)}>
               <div className={`card-banner ${m.type === 'assignment' ? 'red-bg' : 'blue-bg'}`}>
                  {m.type === 'assignment' ? <FaFilePdf /> : <FaImage />}
               </div>
@@ -177,8 +184,8 @@ function MaterialsContent() {
                  <FaShareAlt /> مشاركة
               </button>
               {!selectedMaterial.files?.some(f => f.url.toLowerCase().includes('.pdf')) && (
-                <button className="pdf-export-btn" onClick={() => downloadAsPDF(selectedMaterial)}>
-                   <FaFileExport /> تحميل كـ PDF
+                <button className="pdf-export-btn" onClick={() => downloadAsPDF(selectedMaterial)} disabled={isGenerating}>
+                   {isGenerating ? 'جاري التجهيز...' : 'تحميل كـ PDF'}
                 </button>
               )}
             </div>
