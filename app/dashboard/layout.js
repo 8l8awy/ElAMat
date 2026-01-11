@@ -19,7 +19,7 @@ export default function DashboardLayout({ children }) {
   if (loading) {
     return (
       <div style={{height: '100vh', background: '#000', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#00f260'}}>
-        <h2>جاري التحقق...</h2>
+        <h2>...</h2>
       </div>
     );
   }
