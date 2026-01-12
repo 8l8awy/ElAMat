@@ -17,8 +17,8 @@ export default function RootLayout({ children }) {
         const permission = await Notification.requestPermission();
         if (permission === "granted" && messaging) { // أضفنا فحص وجود messaging
           const currentToken = await getToken(messaging, {
-            vapidKey: "42UVXpsFe-FugZJKD7o-iFU3Ejxw0mZpg_NBCYwuzzM" 
-          });
+  vapidKey: "42UVXpsFe-FugZJKD7o-iFU3Ejxw0mZpg_NBCYwuzzM" // تأكد من حذف أي مسافات أو علامات إضافية
+});
 
           if (currentToken) {
             const q = query(collection(db, "fcmTokens"), where("token", "==", currentToken));
