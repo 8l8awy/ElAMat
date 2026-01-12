@@ -12,6 +12,10 @@ export const metadata = {
   openGraph: {
     title: "El Agamy Materials | منصة العجمي التعليمية",
     description: "كل ما يحتاجه طالب العجمي في مكان واحد: ملخصات، مراجعات، ومجتمع طلابي متكامل.",
+    icons: {
+    icon: "/Screenshot 2025-12-27 142403.png", // المسار لصورتك في مجلد public
+    apple: "/Screenshot 2025-12-27 142403.png",
+  },
     siteName: "El Agamy Materials",
     url: 'https://eamat.vercel.app',
     locale: 'ar_EG',
