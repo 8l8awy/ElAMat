@@ -10,14 +10,14 @@ import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 
 // 1. دالة تحويل مفتاح VAPID لإصلاح خطأ InvalidAccessError
 function urlBase64ToUint8Array(base64String) {
-  // تنظيف المفتاح من أي مسافات أو علامات تنصيص زائدة
+  // تنظيف المفتاح من أي مسافات أو علامات تنصيص
   const cleanString = base64String.replace(/["']/g, "").trim();
-  const padding = "=".repeat((4 - (cleanString.length % 4)) % 4);
-  const base64 = (cleanString + padding)
-    .replace(/-/g, "+")
-    .replace(/_/g, "/");
-    
-  const rawData = window.atob(base64);
+  
+  // تبديل الحروف غير المتوافقة مع atob (خاص بـ URL Safe Base64)
+  const base64 = cleanString.replace(/-/g, "+").replace(/_/g, "/");
+  
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+  const rawData = window.atob(base64 + padding);
   const outputArray = new Uint8Array(rawData.length);
   
   for (let i = 0; i < rawData.length; ++i) {
