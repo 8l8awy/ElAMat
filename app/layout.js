@@ -1,16 +1,13 @@
-"use client"; // ضروري لأننا نستخدم التفاعل والتنبيهات
+"use client"; 
 import "./globals.css";
 import Script from "next/script";
 import { AuthProvider } from "@/context/AuthContext"; 
 import { useEffect } from "react";
-// استيراد أدوات Firebase (تأكد من إعداد ملف firebase.js في مجلد lib)
+// استيراد أدوات Firebase
 import { messaging, db } from "@/lib/firebase"; 
 import { getToken } from "firebase/messaging";
 import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 
-// 1. إعدادات الـ SEO (Metadata)
-// ملاحظة: في Next.js 13+، الـ Metadata يجب أن تكون في ملف "layout.js" سيرفر أو ملف منفصل.
-// إذا واجهت خطأ بسبب "use client"، انقل الـ metadata لملف اسمه page.js أو استمر هكذا إذا كان المشروع يقبلها.
 export const metadata = {
   title: "El Agamy Materials | منصة العجمي التعليمية",
   description: "أفضل منصة لتحميل الملخصات، المراجعات النهائية لطلاب جامعة العجمي.",
@@ -18,7 +15,7 @@ export const metadata = {
     google: "S5pMWU_XezcEhJnIRbN_jJI7KqHnvF050Ed5268sCa8",
   },
   icons: {
-    icon: "/icon.png",
+    icon: "/icon.png", // استخدام شعارك الجديد
     apple: "/icon.png",
   },
   openGraph: {
@@ -35,20 +32,17 @@ export default function RootLayout({ children }) {
   const isClosed = false; 
   const GA_MEASUREMENT_ID = ''; 
 
-  // --- كود التنبيهات الجديد (لا يؤثر على التصميم) ---
+  // تفعيل نظام التنبيهات وتخزين الـ Token
   useEffect(() => {
     const setupNotifications = async () => {
       try {
-        // طلب الإذن من المتصفح
         const permission = await Notification.requestPermission();
         if (permission === "granted") {
-          // الحصول على الـ Token
           const currentToken = await getToken(messaging, {
-            vapidKey: "ضع_هنا_مفتاح_VAPID_الخاص_بمشروعك" // استخرجه من إعدادات Firebase
+            vapidKey: "42UVXpsFe-FugZJKD7o-iFU3Ejxw0mZpg_NBCYwuzzM" // مفتاحك الفعلي
           });
 
           if (currentToken) {
-            // التأكد من عدم تكرار التخزين
             const q = query(collection(db, "fcmTokens"), where("token", "==", currentToken));
             const querySnapshot = await getDocs(q);
 
@@ -58,7 +52,7 @@ export default function RootLayout({ children }) {
                 createdAt: new Date(),
                 device: navigator.userAgent
               });
-              console.log("تم تفعيل التنبيهات وحفظ الجهاز!");
+              console.log("تم تفعيل التنبيهات بنجاح لمنصة العجمي!");
             }
           }
         }
@@ -67,9 +61,8 @@ export default function RootLayout({ children }) {
       }
     };
 
-    if (!isClosed) setupNotifications(); // لا نطلب إذن إذا كان الموقع مغلقاً
+    if (!isClosed) setupNotifications();
   }, [isClosed]);
-  // ----------------------------------------------
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -88,26 +81,10 @@ export default function RootLayout({ children }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
 
-        {GA_MEASUREMENT_ID && (
-          <>
-            <Script
-              strategy="afterInteractive"
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-            />
-            <Script id="google-analytics" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${GA_MEASUREMENT_ID}');
-              `}
-            </Script>
-          </>
-        )}
-
         <div dir="rtl">
           <AuthProvider>
             {isClosed ? (
+              // شاشة الصيانة
               <div style={{
                 height: '100vh', width: '100vw', position: 'fixed',
                 top: 0, left: 0, zIndex: 9999, display: 'flex',
@@ -127,7 +104,7 @@ export default function RootLayout({ children }) {
           </AuthProvider>
         </div>
 
-        {/* كود AdSense الخاص بك - يبقى في مكانه الأخير لضمان الأداء */}
+        {/* كود AdSense الربحي */}
         <script 
           async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8855103518508999"
