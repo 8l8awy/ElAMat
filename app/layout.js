@@ -24,7 +24,7 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  const isClosed = true; 
+  const isClosed = false; 
   const GA_MEASUREMENT_ID = ''; 
 
   // 2. بيانات جوجل المنظمة (Schema Markup) للوجو
