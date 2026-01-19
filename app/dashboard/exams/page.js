@@ -153,7 +153,7 @@ export default function ExamsPage() {
                   منصة الامتحانات
               </h1>
               <p className="text-gray-400">
-                  أهلاً  <span className="text-blue-400 font-bold">{user?.name}</span>، اختر امتحانك وابدأ! 
+                  أهلاً  <span className="text-blue-400 font-bold">{user?.name}</span>،  
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
@@ -180,7 +180,7 @@ export default function ExamsPage() {
                         </div>
                         {/* تحديث حالة متاح/مغلق ديناميكياً */}
                         <span className={`text-xs font-bold px-3 py-1 rounded-full ${isAvailable ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
-                          {isAvailable ? "متاح" : "مغلق حالياً"}
+                          {isAvailable ? "متاح" : "مغلق "}
                         </span>
                       </div>
                       <h3 className="text-xl font-bold text-white mb-2 line-clamp-1 group-hover:text-blue-200 transition-colors">{exam.subject}</h3>
