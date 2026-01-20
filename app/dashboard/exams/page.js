@@ -54,7 +54,6 @@ export default function ExamsPage() {
   };
 
   const startExam = (exam) => {
-    // التأكد من أن الامتحان متاح قبل البدء
     if (exam.active === false) {
       alert("عذراً، هذا الامتحان مغلق حالياً.");
       return;
@@ -92,6 +91,7 @@ export default function ExamsPage() {
     const percentage = (calculatedScore / selectedExam.questions.length) * 100;
 
     if (user) {
+      try {
         await addDoc(collection(db, "results"), {
           studentName: user.name || "طالب مجهول",
           studentEmail: user.email,
@@ -102,6 +102,7 @@ export default function ExamsPage() {
           timeTaken: timeElapsed,
           createdAt: serverTimestamp(),
         });
+      } catch (e) { console.error(e); }
     }
 
     if (percentage >= 75) {
@@ -122,9 +123,9 @@ export default function ExamsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-white bg-[#0a0a0a]">
+      <div className="min-h-screen flex flex-col items-center justify-center text-white bg-black">
         <FaGraduationCap className="text-6xl text-blue-400 animate-bounce mb-4"/>
-        <p className="animate-pulse">جاري تجهيز المنصة...</p>
+        <p className="animate-pulse">جاري التحميل...</p>
       </div>
     );
   }
@@ -134,18 +135,24 @@ export default function ExamsPage() {
   const percentageValue = selectedExam ? (score / totalQuestions) * 100 : 0;
 
   return (
-    <div className="min-h-screen w-full text-white p-4 font-sans relative overflow-hidden bg-[#0a0a0a]" dir="rtl">
+    <div className="min-h-screen w-full text-white p-4 font-sans bg-black" dir="rtl">
       
-      {/* الخلفية */}
-      <div className="fixed inset-0 pointer-events-none">
-         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[100px]"></div>
-         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[100px]"></div>
-      </div>
+      {/* 1. تم حذف كود الخلفية التفاعلية (الدوائر الملونة) نهائياً بناءً على طلبك */}
 
+      {/* 2. تصحيح كود الـ Confetti لتجنب خطأ الـ Build */}
       {showConfetti && (
         <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
           {[...Array(50)].map((_, i) => (
-            <div key={i} className="absolute w-3 h-3 rounded-full animate-confetti" style={{ left: `${Math.random() * 100}%`,[Math.floor(Math.random() * 4)], animationDelay: `${Math.random() * 3}s`, animationDuration: `${3 + Math.random() * 2}s` }}></div>
+            <div 
+              key={i} 
+              className="absolute w-3 h-3 rounded-full animate-confetti" 
+              style={{ 
+                left: `${Math.random() * 100}%`, 
+                backgroundColor: ['#3b82f6', '#06b6d4', '#a855f7', '#eab308'][Math.floor(Math.random() * 4)], 
+                animationDelay: `${Math.random() * 3}s`, 
+                animationDuration: `${3 + Math.random() * 2}s` 
+              }}
+            ></div>
           ))}
         </div>
       )}
@@ -163,8 +170,8 @@ export default function ExamsPage() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {exams.map((exam, idx) => {
-                const isAvailable = exam.active !== false; // التحقق من حالة القفل
+              {exams.map((exam) => {
+                const isAvailable = exam.active !== false; 
                 return (
                   <div 
                     key={exam.id} 
@@ -191,8 +198,7 @@ export default function ExamsPage() {
           </div>
         ) : (
           <div className="max-w-4xl mx-auto w-full animate-fadeIn">
-            {/* Header */}
-            <div className="sticky top-0 z-40 bg-black/40 backdrop-blur-xl p-4 mb-8 flex items-center justify-between rounded-2xl">
+            <div className="sticky top-0 z-40 bg-black/50 backdrop-blur-xl p-4 mb-8 flex items-center justify-between rounded-2xl">
                <button onClick={resetAll} className="bg-white/10 p-3 rounded-xl"><FaArrowLeft /></button>
                <div className="text-center">
                   <h2 className="text-lg font-bold line-clamp-1">{selectedExam.subject}</h2>
@@ -203,7 +209,6 @@ export default function ExamsPage() {
                </div>
             </div>
 
-            {/* نظام عرض النتيجة وتصحيح الإجابات */}
             {showResult && (
               <div className="mb-12 text-center animate-scaleIn bg-white/5 p-8 rounded-3xl">
                     <div className={`w-24 h-24 mx-auto bg-gradient-to-br ${percentageValue >= 75 ? 'from-yellow-400 to-orange-500' : 'from-gray-600 to-gray-700'} rounded-full flex items-center justify-center mb-6`}>
@@ -218,7 +223,6 @@ export default function ExamsPage() {
               </div>
             )}
 
-            {/* قائمة الأسئلة */}
             <div className="space-y-6 pb-20">
               {selectedExam.questions.map((q, qIndex) => (
                 <div key={qIndex} className="bg-white/5 backdrop-blur-md rounded-3xl p-6 md:p-8">
@@ -228,7 +232,6 @@ export default function ExamsPage() {
                         let btnClass = "bg-black/20 hover:bg-white/10";
                         let icon = null;
 
-                        // منطق الألوان بعد التسليم
                         if (showResult) {
                           if (optIndex === q.correct) {
                             btnClass = "bg-green-500/20 text-green-300 border border-green-500/30";
@@ -260,7 +263,7 @@ export default function ExamsPage() {
             </div>
 
             {!showResult && (
-              <button onClick={submitExam} className="fixed bottom-8 left-4 right-4 md:relative md:bottom-0 w-full py-5 rounded-2xl font-bold text-xl bg-blue-600 shadow-2xl">
+              <button onClick={submitExam} className="w-full py-5 rounded-2xl font-bold text-xl bg-blue-600 shadow-2xl mb-10">
                 تسليم الإجابات ({answeredCount}/{totalQuestions})
               </button>
             )}
