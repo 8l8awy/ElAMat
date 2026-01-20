@@ -88,7 +88,7 @@ export default function ExamsPage() {
           <span className={`text-xs font-bold px-3 py-1 rounded-full ${
             isAvailable ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
           }`}>
-            {isAvailable ? "متاح" : "مغلق حالياً"}
+            {isAvailable ? "متاح" : "مغلق"}
           </span>
         </div>
 
