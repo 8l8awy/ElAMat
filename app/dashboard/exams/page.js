@@ -145,7 +145,7 @@ export default function ExamsPage() {
       {showConfetti && (
         <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
           {[...Array(50)].map((_, i) => (
-            <div key={i} className="absolute w-3 h-3 rounded-full animate-confetti" style={{ left: `${Math.random() * 100}%`, backgroundColor: ['#3b82f6', '#06b6d4', '#a855f7', '#eab308'][Math.floor(Math.random() * 4)], animationDelay: `${Math.random() * 3}s`, animationDuration: `${3 + Math.random() * 2}s` }}></div>
+            <div key={i} className="absolute w-3 h-3 rounded-full animate-confetti" style={{ left: `${Math.random() * 100}%`,[Math.floor(Math.random() * 4)], animationDelay: `${Math.random() * 3}s`, animationDuration: `${3 + Math.random() * 2}s` }}></div>
           ))}
         </div>
       )}
