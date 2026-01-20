@@ -84,7 +84,6 @@ export default function ExamsPage() {
     setIsExamStarted(false);
     
     const percentage = (calculatedScore / selectedExam.questions.length) * 100;
-
     if (user) {
       try {
         await addDoc(collection(db, "results"), {
@@ -99,7 +98,6 @@ export default function ExamsPage() {
         });
       } catch (e) { console.error(e); }
     }
-
     if (percentage >= 75) {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 8000);
@@ -118,9 +116,9 @@ export default function ExamsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-white bg-[#0a0a0a]">
+      <div className="min-h-screen flex flex-col items-center justify-center text-white bg-transparent">
         <FaGraduationCap className="text-6xl text-blue-400 animate-bounce mb-4"/>
-        <p className="animate-pulse font-bold">جاري تحميل منصة الامتحانات...</p>
+        <p className="animate-pulse font-bold">جاري تحميل المنصة...</p>
       </div>
     );
   }
@@ -130,12 +128,13 @@ export default function ExamsPage() {
   const finalPercentage = selectedExam ? (score / totalQuestions) * 100 : 0;
 
   return (
-    <div className="min-h-screen w-full text-white p-2 md:p-4 font-sans relative overflow-hidden bg-[#0a0a0a]" dir="rtl">
+    // تم إزالة bg-black هنا لتمتزج الصفحة مع الدوائر الملونة
+    <div className="min-h-screen w-full text-white p-2 md:p-4 font-sans relative overflow-hidden" dir="rtl">
       
-      {/* الخلفية القديمة */}
+      {/* الدوائر الملونة (الأنيميشن) تظهر الآن بوضوح أكبر بدون السواد */}
       <div className="fixed inset-0 pointer-events-none">
-         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[120px]"></div>
-         <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-[120px]"></div>
+         <div className="absolute top-0 right-0 w-[700px] h-[700px] bg-blue-500/10 rounded-full blur-[130px]"></div>
+         <div className="absolute bottom-0 left-0 w-[700px] h-[700px] bg-purple-500/10 rounded-full blur-[130px]"></div>
       </div>
 
       {showConfetti && (
@@ -162,7 +161,7 @@ export default function ExamsPage() {
               <h1 className="text-3xl md:text-6xl font-black bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
                   منصة الامتحانات
               </h1>
-              <p className="text-gray-400 text-sm md:text-lg">
+              <p className="text-gray-400">
                   أهلاً بك يا <span className="text-blue-400 font-bold">{user?.name}</span>
               </p>
             </div>
@@ -174,8 +173,8 @@ export default function ExamsPage() {
                   <div 
                     key={exam.id} 
                     onClick={() => isAvailable && startExam(exam)} 
-                    // تم إزالة الحدود (border) هنا
-                    className={`group relative h-full bg-white/5 backdrop-blur-xl rounded-2xl md:rounded-[2.5rem] p-6 md:p-8 transition-all duration-500 ${
+                    // جعلنا الخلفية هنا شفافة جداً (white/5) وبدون حواف واضحة
+                    className={`group relative h-full bg-white/5 backdrop-blur-xl rounded-2xl p-6 transition-all duration-500 ${
                       isAvailable ? "hover:bg-white/10 hover:-translate-y-2 cursor-pointer" : "opacity-60 cursor-not-allowed grayscale"
                     }`}
                   >
@@ -198,9 +197,9 @@ export default function ExamsPage() {
           </div>
         ) : (
           <div className="max-w-4xl mx-auto w-full animate-fadeIn">
-            {/* Header Sticky - إزالة الحدود الخارجية */}
-            <div className="sticky top-2 z-40 bg-white/5 backdrop-blur-2xl p-4 mb-6 flex items-center justify-between rounded-xl md:rounded-[2rem]">
-               <button onClick={resetAll} className="bg-white/10 p-2 md:p-4 rounded-lg md:rounded-2xl transition-all text-white"><FaArrowLeft /></button>
+            {/* Header Sticky - جعلناه شبه شفاف ليمتزج مع الدوائر */}
+            <div className="sticky top-2 z-40 bg-white/5 backdrop-blur-3xl p-4 mb-6 flex items-center justify-between rounded-xl">
+               <button onClick={resetAll} className="bg-white/10 p-2 md:p-4 rounded-lg transition-all text-white"><FaArrowLeft /></button>
                <div className="text-center">
                   <h2 className="text-sm md:text-xl font-bold text-white">{selectedExam.subject}</h2>
                   {!showResult && <div className="text-blue-400 font-mono text-xs md:text-lg font-black">{formatTime(timeElapsed)}</div>}
@@ -211,52 +210,47 @@ export default function ExamsPage() {
             </div>
 
             {showResult && (
-              <div className="mb-8 text-center animate-scaleIn bg-white/5 p-6 md:p-10 rounded-2xl md:rounded-[3rem]">
+              <div className="mb-8 text-center animate-scaleIn bg-white/10 backdrop-blur-xl p-6 md:p-10 rounded-2xl">
                     <h2 className="text-4xl md:text-6xl font-black text-white mb-4">{finalPercentage.toFixed(0)}%</h2>
                     <div className="flex justify-center gap-4">
-                        <div className="bg-green-500/10 px-4 md:px-8 py-2 md:py-4 rounded-xl text-green-400 font-black text-sm md:text-xl">صح: {score}</div>
-                        <div className="bg-red-500/10 px-4 md:px-8 py-2 md:py-4 rounded-xl text-red-400 font-black text-sm md:text-xl">خطأ: {totalQuestions - score}</div>
+                        <div className="bg-green-500/20 px-4 md:px-8 py-2 md:py-4 rounded-xl text-green-400 font-black">صح: {score}</div>
+                        <div className="bg-red-500/20 px-4 md:px-8 py-2 md:py-4 rounded-xl text-red-400 font-black">خطأ: {totalQuestions - score}</div>
                     </div>
                     <button onClick={() => startExam(selectedExam)} className="mt-6 bg-blue-600 px-6 py-2 rounded-xl font-black flex items-center gap-2 mx-auto"><FaRedo /> إعادة</button>
               </div>
             )}
 
-            {/* قائمة الأسئلة - تعديل هنا لإزالة الحواف */}
-            <div className="space-y-4 md:space-y-8 pb-32 px-1 md:px-0">
+            {/* بطاقات الأسئلة - تم إزالة الخلفية السوداء واستبدالها بـ glass effect خفيف جداً */}
+            <div className="space-y-4 pb-32 px-1 md:px-0">
               {selectedExam.questions.map((q, qIndex) => (
-                <div key={qIndex} className="bg-white/5 backdrop-blur-xl rounded-2xl md:rounded-[2.5rem] p-5 md:p-10">
+                <div key={qIndex} className="bg-white/5 backdrop-blur-lg rounded-2xl p-5 md:p-10 border border-white/5">
                   <div className="flex gap-3 md:gap-6 mb-6">
-                       <span className="flex-shrink-0 w-8 h-8 md:w-14 md:h-14 bg-blue-500/20 rounded-lg md:rounded-2xl flex items-center justify-center font-black text-blue-400 text-sm md:text-xl">{qIndex + 1}</span>
+                       <span className="flex-shrink-0 w-8 h-8 md:w-14 md:h-14 bg-blue-500/20 rounded-lg flex items-center justify-center font-black text-blue-400 text-sm md:text-xl">{qIndex + 1}</span>
                        <h3 className="text-base md:text-3xl font-bold text-white leading-tight">{q.question}</h3>
                   </div>
                   <div className="space-y-3 md:mr-20">
                      {q.options.map((option, optIndex) => {
-                        let btnClass = "bg-white/5"; // إزالة border-white/5 الافتراضي
-                        let icon = null;
+                        let btnClass = "bg-white/5 hover:bg-white/10";
 
                         if (showResult) {
                           if (optIndex === q.correct) {
-                            btnClass = "bg-green-500/20 text-green-200 shadow-lg shadow-green-500/10";
-                            icon = <FaCheckCircle className="text-green-400 text-lg md:text-2xl" />;
+                            btnClass = "bg-green-500/20 text-green-200";
                           } else if (userAnswers[qIndex] === optIndex) {
                             btnClass = "bg-red-500/20 text-red-200";
-                            icon = <FaTimesCircle className="text-red-400 text-lg md:text-2xl" />;
                           } else {
                             btnClass = "opacity-30 grayscale pointer-events-none";
                           }
                         } else if (userAnswers[qIndex] === optIndex) {
-                          btnClass = "bg-blue-600/30 text-blue-100 shadow-xl shadow-blue-500/10";
+                          btnClass = "bg-blue-600/30 text-blue-100";
                         }
 
                         return (
                           <div 
                             key={optIndex} 
                             onClick={() => handleSelect(qIndex, optIndex)}
-                            // تم إزالة border-2 هنا والاكتفاء بالخلفية
-                            className={`flex items-center justify-between p-4 md:p-6 rounded-xl md:rounded-[1.5rem] cursor-pointer transition-all duration-300 font-bold text-sm md:text-lg ${btnClass}`}
+                            className={`flex items-center justify-between p-4 md:p-6 rounded-xl cursor-pointer transition-all duration-300 font-bold text-sm md:text-lg border border-white/5 ${btnClass}`}
                           >
                             <span className="flex-1">{option}</span>
-                            {icon}
                           </div>
                         );
                      })}
@@ -270,7 +264,7 @@ export default function ExamsPage() {
                 <button 
                   onClick={submitExam} 
                   disabled={answeredCount === 0}
-                  className="w-full py-4 md:py-6 rounded-xl md:rounded-[2rem] font-black text-lg md:text-2xl bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-2xl transition-all active:scale-95"
+                  className="w-full py-4 md:py-6 rounded-xl font-black text-lg md:text-2xl bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-2xl transition-all active:scale-95"
                 >
                   تسليم ({answeredCount}/{totalQuestions})
                 </button>
