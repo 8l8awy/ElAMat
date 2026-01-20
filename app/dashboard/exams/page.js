@@ -5,7 +5,7 @@ import { collection, getDocs, query, orderBy, addDoc, serverTimestamp } from "fi
 import { useAuth } from "@/context/AuthContext"; 
 import { 
   FaCheckCircle, FaTimesCircle, FaClipboardList, FaArrowLeft, FaRedo, 
-  FaClock, FaTrophy, FaMedal, FaGraduationCap
+  FaClock, FaTrophy, FaMedal, FaGraduationCap, FaLock
 } from "react-icons/fa";
 
 export default function ExamsPage() {
@@ -54,6 +54,11 @@ export default function ExamsPage() {
   };
 
   const startExam = (exam) => {
+    // التأكد من أن الامتحان متاح قبل البدء
+    if (exam.active === false) {
+      alert("عذراً، هذا الامتحان مغلق حالياً.");
+      return;
+    }
     setSelectedExam(exam);
     setUserAnswers({});
     setShowResult(false);
@@ -63,70 +68,10 @@ export default function ExamsPage() {
     setShowConfetti(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-{exams.map((exam, idx) => {
-  // 1. التحقق من حالة الامتحان من قاعدة البيانات
-  const isAvailable = exam.active !== false;
 
-  return (
-    <div 
-      key={exam.id} 
-      // 2. منع النقر إذا كان الامتحان مغلقاً
-      onClick={() => isAvailable && startExam(exam)} 
-      className={`group relative h-full bg-white/5 backdrop-blur-lg rounded-3xl p-6 transition-all duration-300 ${
-        isAvailable 
-        ? "hover:bg-white/10 hover:-translate-y-1 cursor-pointer" 
-        : "opacity-60 cursor-not-allowed grayscale" // تغيير الشكل ليظهر أنه معطل
-      }`}
-    >
-      <div className="relative z-10 flex flex-col h-full">
-        <div className="flex items-start justify-between mb-4">
-          <div className="w-16 h-16 bg-black/20 rounded-2xl flex items-center justify-center">
-            {isAvailable ? <FaClipboardList className="text-3xl text-blue-400"/> : <FaLock className="text-3xl text-red-400"/>}
-          </div>
-          
-          {/* 3. تغيير النص واللون بناءً على الحالة */}
-          <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-            isAvailable ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
-          }`}>
-            {isAvailable ? "متاح" : "مغلق"}
-          </span>
-        </div>
-
-        <h3 className="text-xl font-bold text-white mb-2">{exam.subject}</h3>
-        <p className="text-gray-400 text-sm mb-6">{exam.title}</p>
-        
-        {/* رسالة تنبيه إضافية للمغلق */}
-        {!isAvailable && (
-          <p className="text-red-400 text-[10px] font-bold animate-pulse">
-            نعتذر، انتهى وقت التقديم لهذا الامتحان.
-          </p>
-        )}
-      </div>
-    </div>
-  );
-})}
   const handleSelect = (qIndex, optionIndex) => {
     if (showResult) return;
     setUserAnswers(prev => ({ ...prev, [qIndex]: optionIndex }));
-  };
-
-  const saveResultToDb = async (finalScore, percentage) => {
-    if (!user) return;
-    try {
-      await addDoc(collection(db, "results"), {
-        studentName: user.name || "طالب مجهول",
-        studentEmail: user.email,
-        examTitle: selectedExam.title,
-        subject: selectedExam.subject,
-        score: finalScore,
-        totalQuestions: selectedExam.questions.length,
-        percentage: percentage,
-        timeTaken: timeElapsed,
-        createdAt: serverTimestamp(),
-      });
-    } catch (error) {
-      console.error("Error saving result:", error);
-    }
   };
 
   const submitExam = async () => {
@@ -145,13 +90,24 @@ export default function ExamsPage() {
     setIsExamStarted(false);
     
     const percentage = (calculatedScore / selectedExam.questions.length) * 100;
-    await saveResultToDb(calculatedScore, percentage);
+
+    if (user) {
+        await addDoc(collection(db, "results"), {
+          studentName: user.name || "طالب مجهول",
+          studentEmail: user.email,
+          examTitle: selectedExam.title,
+          score: calculatedScore,
+          totalQuestions: selectedExam.questions.length,
+          percentage: percentage,
+          timeTaken: timeElapsed,
+          createdAt: serverTimestamp(),
+        });
+    }
 
     if (percentage >= 75) {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 8000);
     }
-    
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -164,23 +120,23 @@ export default function ExamsPage() {
     setShowConfetti(false);
   };
 
-  const percentage = selectedExam ? (score / selectedExam.questions.length) * 100 : 0;
-  const answeredCount = Object.keys(userAnswers).length;
-  const totalQuestions = selectedExam?.questions.length || 0;
-
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-white">
+      <div className="min-h-screen flex flex-col items-center justify-center text-white bg-[#0a0a0a]">
         <FaGraduationCap className="text-6xl text-blue-400 animate-bounce mb-4"/>
-        <p className="animate-pulse">جاري تجهيز الامتحانات...</p>
+        <p className="animate-pulse">جاري تجهيز المنصة...</p>
       </div>
     );
   }
 
+  const answeredCount = Object.keys(userAnswers).length;
+  const totalQuestions = selectedExam?.questions.length || 0;
+  const percentageValue = selectedExam ? (score / totalQuestions) * 100 : 0;
+
   return (
-    <div className="min-h-screen w-full text-white p-4 font-sans relative overflow-hidden" dir="rtl">
+    <div className="min-h-screen w-full text-white p-4 font-sans relative overflow-hidden bg-[#0a0a0a]" dir="rtl">
       
-      {/* خلفية تفاعلية خفيفة */}
+      {/* الخلفية */}
       <div className="fixed inset-0 pointer-events-none">
          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[100px]"></div>
          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[100px]"></div>
@@ -194,229 +150,129 @@ export default function ExamsPage() {
         </div>
       )}
 
-      <div className="relative z-10">
+      <div className="relative z-10 max-w-6xl mx-auto">
         {!selectedExam ? (
-          // ... (كود قائمة الامتحانات الرئيسية يبقى كما هو أو يمكنك تطبيق نفس المبدأ عليه) ...
           <div className="w-full animate-fadeIn">
             <div className="text-center mb-8 pt-4">
               <h1 className="text-3xl md:text-5xl font-black bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
                   منصة الامتحانات
               </h1>
               <p className="text-gray-400">
-                  أهلاً يا <span className="text-blue-400 font-bold">{user?.name}</span>، اختر امتحانك وابدأ !
+                  أهلاً يا <span className="text-blue-400 font-bold">{user?.name}</span>، اختر امتحانك وابدأ!
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-              {exams.map((exam, idx) => (
-                <div 
-                  key={exam.id} 
-                  onClick={() => startExam(exam)} 
-                  // هنا أيضاً قمت بتخفيف الحدود
-                  className="group relative h-full bg-white/5 hover:bg-white/10 backdrop-blur-lg rounded-3xl p-6 transition-all duration-300 hover:-translate-y-1 cursor-pointer overflow-hidden"
-                  style={{ animationDelay: `${idx * 100}ms` }}
-                >
-                  {/* ... محتوى كارت الامتحان ... */}
-                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <div className="relative z-10 flex flex-col h-full">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-16 h-16 bg-black/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <FaClipboardList className="text-3xl text-blue-400"/>
-                      </div>
-                      <span className="bg-green-500/20 text-green-400 text-xs font-bold px-3 py-1 rounded-full">متاح</span>
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2 line-clamp-1 group-hover:text-blue-200 transition-colors">{exam.subject}</h3>
-                    <p className="text-gray-400 text-sm mb-6 line-clamp-2">{exam.title}</p>
-                    <div className="mt-auto flex items-center gap-3 w-full">
-                        <div className="flex-1 bg-black/20 px-3 py-2 rounded-xl text-xs text-gray-300 flex items-center justify-center gap-2">
-                            <FaClipboardList /> <span>{exam.questions?.length || 0} سؤال</span>
-                        </div>
-                        <div className="flex-1 bg-black/20 px-3 py-2 rounded-xl text-xs text-gray-300 flex items-center justify-center gap-2">
-                            <FaClock /> <span>{exam.questions?.length * 2} دقيقة</span>
-                        </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="max-w-4xl mx-auto w-full animate-fadeIn">
             
-            {/* 1️⃣ شريط الامتحان العلوي (Sticky Header) - تم إزالة الحواف والظلال */}
-            <div className="sticky top-0 z-40 bg-black/30 backdrop-blur-xl p-4 mb-8 flex flex-col md:flex-row items-center justify-between gap-4 transition-all">
-               <div className="flex items-center gap-4 w-full md:w-auto">
-                 <button onClick={resetAll} className="bg-white/10 hover:bg-white/20 p-3 rounded-xl transition-all">
-                    <FaArrowLeft />
-                 </button>
-                 <div>
-                    <h2 className="text-lg font-bold text-white line-clamp-1">{selectedExam.subject}</h2>
-                    {!showResult && (
-                        <div className="flex items-center gap-2 text-blue-400 font-mono text-sm font-bold">
-                            <FaClock className="animate-spin-slow"/>
-                            <span>{formatTime(timeElapsed)}</span>
-                        </div>
-                    )}
-                 </div>
-               </div>
-
-               {!showResult && (
-                   <div className="w-full md:w-64">
-                       <div className="flex justify-between text-xs text-gray-400 mb-1">
-                           <span>التقدم</span>
-                           <span>{answeredCount} / {totalQuestions}</span>
-                       </div>
-                       <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                           <div 
-                             className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500"
-                             style={{ width: `${(answeredCount / totalQuestions) * 100}%` }}
-                           ></div>
-                       </div>
-                   </div>
-               )}
-            </div>
-
-            {/* 2️⃣ قسم النتيجة (Result Section) - تم إزالة بطاقة الحاوية والحدود */}
-            {showResult && (
-              <div className="mb-12 text-center animate-scaleIn pt-4">
-                    {/* الكأس / الميدالية */}
-                    <div className={`w-32 h-32 mx-auto bg-gradient-to-br ${percentage >= 75 ? 'from-yellow-400 to-orange-500' : 'from-gray-600 to-gray-700'} rounded-full flex items-center justify-center shadow-lg mb-6 animate-bounce`}>
-                       {percentage >= 75 ? <FaTrophy className="text-6xl text-white"/> : <FaMedal className="text-6xl text-gray-300"/>}
-                    </div>
-
-                    {/* النص الرئيسي */}
-                    <h2 className="text-5xl font-black text-white mb-4">
-                        {percentage >= 90 ? "! جامد" : percentage >= 75 ? "عاش! " : percentage >= 50 ? "رايق! " : "حاول تاني "}
-                    </h2>
-                    
-                    {/* مربعات الإحصائيات - بدون حدود خارجية */}
-                    <div className="flex justify-center gap-4 mt-8 flex-wrap">
-                        <div className="bg-black/20 p-5 rounded-2xl min-w-[110px]">
-                            <span className="block text-4xl font-bold text-white mb-1">{score}</span>
-                            <span className="text-sm text-green-400 font-bold">صحيح</span>
-                        </div>
-                        <div className="bg-black/20 p-5 rounded-2xl min-w-[110px]">
-                            <span className="block text-4xl font-bold text-white mb-1">{totalQuestions - score}</span>
-                            <span className="text-sm text-red-400 font-bold">خطأ</span>
-                        </div>
-                        <div className="bg-black/20 p-5 rounded-2xl min-w-[110px]">
-                            <span className={`block text-4xl font-bold ${percentage >= 50 ? 'text-blue-400' : 'text-red-400'} mb-1`}>{percentage.toFixed(0)}%</span>
-                            <span className="text-sm text-gray-400 font-bold">النسبة</span>
-                        </div>
-                    </div>
-
-                    {/* زر إعادة المحاولة */}
-                    <div className="flex gap-4 justify-center mt-10">
-                        <button onClick={() => startExam(selectedExam)} className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-2xl font-bold transition-all shadow-lg hover:shadow-blue-600/30 flex items-center gap-3 text-lg">
-                            <FaRedo /> إعادة المحاولة
-                        </button>
-                    </div>
-              </div>
-            )}
-
-            {/* 3️⃣ قائمة الأسئلة (Questions List) - إزالة الحدود وجعل الخلفية مندمجة */}
-            <div className="space-y-6 pb-10">
-              {selectedExam.questions.map((q, qIndex) => {
-                const isCorrect = userAnswers[qIndex] === q.correct;
-                const isAnswered = userAnswers.hasOwnProperty(qIndex);
-                
-                // تحديد لون الخلفية فقط بدون حدود
-                let bgColor = "bg-black/20";
-                
-                if (showResult) {
-                    if (isCorrect) {
-                        bgColor = "bg-green-500/10";
-                    } else if (isAnswered) {
-                        bgColor = "bg-red-500/10";
-                    }
-                } else if (isAnswered) {
-                    bgColor = "bg-blue-500/10";
-                }
-
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {exams.map((exam, idx) => {
+                const isAvailable = exam.active !== false; // التحقق من حالة القفل
                 return (
-                  // تم إزالة border class هنا
-                  <div key={qIndex} className={`${bgColor} backdrop-blur-md rounded-3xl p-6 md:p-8 transition-all duration-300`}>
-                    
-                    <div className="flex gap-5 mb-6">
-                       <span className="flex-shrink-0 w-12 h-12 bg-black/20 rounded-xl flex items-center justify-center font-bold text-blue-400 text-lg">
-                         {qIndex + 1}
-                       </span>
-                       <h3 className="text-xl md:text-2xl font-bold text-white leading-relaxed pt-1">
-                         {q.question}
-                       </h3>
+                  <div 
+                    key={exam.id} 
+                    onClick={() => isAvailable && startExam(exam)} 
+                    className={`group relative bg-white/5 backdrop-blur-lg rounded-3xl p-6 transition-all duration-300 ${
+                      isAvailable ? "hover:bg-white/10 hover:-translate-y-1 cursor-pointer" : "opacity-60 cursor-not-allowed grayscale"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-16 h-16 bg-black/20 rounded-2xl flex items-center justify-center">
+                        {isAvailable ? <FaClipboardList className="text-3xl text-blue-400"/> : <FaLock className="text-3xl text-red-400"/>}
+                      </div>
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${isAvailable ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
+                        {isAvailable ? "متاح" : "مغلق"}
+                      </span>
                     </div>
-
-                    <div className="space-y-4 mr-0 md:mr-16">
-                       {q.options.map((option, optIndex) => {
-                          // إزالة الحدود من الخيارات أيضاً
-                          let btnClass = "bg-black/20 hover:bg-white/10";
-                          let icon = <span className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-base font-bold text-gray-400">{String.fromCharCode(65 + optIndex)}</span>;
-
-                          if (showResult) {
-                             if (optIndex === q.correct) {
-                                btnClass = "bg-green-500/20 text-green-200";
-                                icon = <FaCheckCircle className="text-green-400 text-2xl"/>;
-                             } else if (userAnswers[qIndex] === optIndex) {
-                                btnClass = "bg-red-500/20 text-red-200";
-                                icon = <FaTimesCircle className="text-red-400 text-2xl"/>;
-                             } else {
-                                btnClass = "opacity-30 grayscale";
-                             }
-                          } else if (userAnswers[qIndex] === optIndex) {
-                             btnClass = "bg-blue-500/20 text-blue-200";
-                             icon = <div className="w-5 h-5 bg-blue-400 rounded-full shadow-[0_0_10px_rgba(96,165,250,0.8)]"></div>;
-                          }
-
-                          return (
-                            <div 
-                              key={optIndex}
-                              onClick={() => handleSelect(qIndex, optIndex)}
-                              className={`relative flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all active:scale-[0.99] ${btnClass}`}
-                            >
-                               <span className="font-medium text-lg pl-4">{option}</span>
-                               <div className="flex-shrink-0 ml-2">
-                                  {icon}
-                               </div>
-                            </div>
-                          );
-                       })}
-                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">{exam.subject}</h3>
+                    <p className="text-gray-400 text-sm mb-6">{exam.title}</p>
+                    {!isAvailable && <p className="text-red-400 text-[10px] font-bold animate-pulse">انتهى وقت التقديم.</p>}
                   </div>
                 );
               })}
             </div>
+          </div>
+        ) : (
+          <div className="max-w-4xl mx-auto w-full animate-fadeIn">
+            {/* Header */}
+            <div className="sticky top-0 z-40 bg-black/40 backdrop-blur-xl p-4 mb-8 flex items-center justify-between rounded-2xl">
+               <button onClick={resetAll} className="bg-white/10 p-3 rounded-xl"><FaArrowLeft /></button>
+               <div className="text-center">
+                  <h2 className="text-lg font-bold line-clamp-1">{selectedExam.subject}</h2>
+                  {!showResult && <div className="text-blue-400 font-mono text-sm font-bold">{formatTime(timeElapsed)}</div>}
+               </div>
+               <div className="w-20 md:w-32 h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 transition-all" style={{ width: `${(answeredCount / totalQuestions) * 100}%` }}></div>
+               </div>
+            </div>
 
-            {/* زر التسليم */}
-            {!showResult && (
-              <div className="mt-8 pb-12">
-                <button 
-                  onClick={submitExam}
-                  disabled={answeredCount === 0}
-                  className={`w-full py-5 rounded-2xl font-bold text-2xl shadow-xl transition-all transform hover:scale-[1.01] flex items-center justify-center gap-3 ${
-                    answeredCount === totalQuestions 
-                    ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white" 
-                    : answeredCount > 0
-                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-                    : "bg-black/30 text-gray-500 cursor-not-allowed"
-                  }`}
-                >
-                  {answeredCount === totalQuestions ? <FaCheckCircle className="animate-bounce"/> : <FaClipboardList/>}
-                  <span>
-                     {answeredCount === totalQuestions ? "تأكيد وتسليم الامتحان" : `تسليم الإجابات (${answeredCount}/${totalQuestions})`}
-                  </span>
-                </button>
+            {/* نظام عرض النتيجة وتصحيح الإجابات */}
+            {showResult && (
+              <div className="mb-12 text-center animate-scaleIn bg-white/5 p-8 rounded-3xl">
+                    <div className={`w-24 h-24 mx-auto bg-gradient-to-br ${percentageValue >= 75 ? 'from-yellow-400 to-orange-500' : 'from-gray-600 to-gray-700'} rounded-full flex items-center justify-center mb-6`}>
+                       {percentageValue >= 75 ? <FaTrophy className="text-4xl text-white"/> : <FaMedal className="text-4xl text-gray-300"/>}
+                    </div>
+                    <h2 className="text-4xl font-black mb-4">{percentageValue.toFixed(0)}%</h2>
+                    <div className="flex justify-center gap-4">
+                        <div className="bg-green-500/20 px-6 py-3 rounded-xl text-green-400 font-bold">صح: {score}</div>
+                        <div className="bg-red-500/20 px-6 py-3 rounded-xl text-red-400 font-bold">خطأ: {totalQuestions - score}</div>
+                    </div>
+                    <button onClick={() => startExam(selectedExam)} className="mt-8 bg-blue-600 px-8 py-3 rounded-xl font-bold flex items-center gap-2 mx-auto"><FaRedo /> إعادة</button>
               </div>
+            )}
+
+            {/* قائمة الأسئلة */}
+            <div className="space-y-6 pb-20">
+              {selectedExam.questions.map((q, qIndex) => (
+                <div key={qIndex} className="bg-white/5 backdrop-blur-md rounded-3xl p-6 md:p-8">
+                  <h3 className="text-xl font-bold mb-6">{qIndex + 1}. {q.question}</h3>
+                  <div className="space-y-4">
+                     {q.options.map((option, optIndex) => {
+                        let btnClass = "bg-black/20 hover:bg-white/10";
+                        let icon = null;
+
+                        // منطق الألوان بعد التسليم
+                        if (showResult) {
+                          if (optIndex === q.correct) {
+                            btnClass = "bg-green-500/20 text-green-300 border border-green-500/30";
+                            icon = <FaCheckCircle className="text-green-400" />;
+                          } else if (userAnswers[qIndex] === optIndex) {
+                            btnClass = "bg-red-500/20 text-red-300 border border-red-500/30";
+                            icon = <FaTimesCircle className="text-red-400" />;
+                          } else {
+                            btnClass = "opacity-30";
+                          }
+                        } else if (userAnswers[qIndex] === optIndex) {
+                          btnClass = "bg-blue-500/20 border border-blue-500/40";
+                        }
+
+                        return (
+                          <div 
+                            key={optIndex} 
+                            onClick={() => handleSelect(qIndex, optIndex)}
+                            className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all ${btnClass}`}
+                          >
+                            <span>{option}</span>
+                            {icon}
+                          </div>
+                        );
+                     })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {!showResult && (
+              <button onClick={submitExam} className="fixed bottom-8 left-4 right-4 md:relative md:bottom-0 w-full py-5 rounded-2xl font-bold text-xl bg-blue-600 shadow-2xl">
+                تسليم الإجابات ({answeredCount}/{totalQuestions})
+              </button>
             )}
           </div>
         )}
       </div>
 
       <style jsx>{`
-        @keyframes confetti { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+        @keyframes confetti { 0% { transform: translateY(-10vh) rotate(0deg); } 100% { transform: translateY(100vh) rotate(720deg); } }
         .animate-confetti { animation: confetti 4s linear infinite; }
-        .animate-fadeIn { animation: fadeIn 0.5s ease-out forwards; }
-        .animate-scaleIn { animation: scaleIn 0.4s ease-out forwards; }
+        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
       `}</style>
     </div>
   );
