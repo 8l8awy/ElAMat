@@ -7,53 +7,37 @@ import { collection, getDocs, query, where, addDoc } from "firebase/firestore";
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
-  
-  // Login State
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  
-  // Register State
   const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
-
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   
   const { login, user } = useAuth();
   const router = useRouter();
 
-  // إذا كان المستخدم مسجلاً بالفعل، حوله للوحة التحكم
   useEffect(() => {
     if (user) router.push("/dashboard");
   }, [user, router]);
 
-  // --- دالة تسجيل الدخول ---
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-
     try {
-      // 1. التحقق أولاً من الأكواد المسموحة (allowedCodes)
-      // في كودك القديم، كان الكود يُستخدم كـ "email" في الفورم
       const codesRef = collection(db, "allowedCodes");
       const qCode = query(codesRef, where("code", "==", loginEmail));
       const codeSnap = await getDocs(qCode);
 
       if (!codeSnap.empty) {
         const data = codeSnap.docs[0].data();
-        // تسجيل الدخول بنجاح كطالب أو أدمن
-        login({ 
-            name: data.name || "User", 
-            email: loginEmail, 
-            isAdmin: data.admin || false // هنا يتم تحديد الأدمن
-        });
+        login({ name: data.name || "User", email: loginEmail, isAdmin: data.admin || false });
         router.push("/dashboard");
         return;
       }
 
-      // 2. إذا لم يكن كود، تحقق من المستخدمين المسجلين (users)
       const usersRef = collection(db, "users");
       const qUser = query(usersRef, where("email", "==", loginEmail));
       const userSnap = await getDocs(qUser);
@@ -61,122 +45,107 @@ export default function LoginPage() {
       if (!userSnap.empty) {
         const data = userSnap.docs[0].data();
         if (data.password === loginPassword) {
-          login({ 
-              ...data, 
-              isAdmin: data.isAdmin || false 
-          });
+          login({ ...data, isAdmin: data.isAdmin || false });
           router.push("/dashboard");
-        } else {
-          setError("كلمة المرور غير صحيحة");
-        }
-      } else {
-        setError("الكود أو البريد الإلكتروني غير موجود");
-      }
-
-    } catch (err) {
-      console.error(err);
-      setError("حدث خطأ في الاتصال: " + err.message);
-    } finally {
-      setLoading(false);
-    }
+        } else { setError("كلمة المرور غير صحيحة"); }
+      } else { setError("الكود أو البريد الإلكتروني غير موجود"); }
+    } catch (err) { setError("حدث خطأ في الاتصال"); }
+    finally { setLoading(false); }
   };
 
-  // --- دالة إنشاء حساب جديد ---
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-
     if (!regName || !regEmail || !regPassword) {
-        setError("الرجاء ملء جميع الحقول");
+      setError("الرجاء ملء جميع الحقول");
+      setLoading(false);
+      return;
+    }
+    try {
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", regEmail));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        setError("البريد الإلكتروني مستخدم بالفعل");
         setLoading(false);
         return;
-    }
-
-    try {
-        const usersRef = collection(db, "users");
-        const q = query(usersRef, where("email", "==", regEmail));
-        const snap = await getDocs(q);
-
-        if (!snap.empty) {
-            setError("البريد الإلكتروني مستخدم بالفعل");
-            setLoading(false);
-            return;
-        }
-
-        const newUser = {
-            name: regName,
-            email: regEmail,
-            password: regPassword,
-            isAdmin: false,
-            createdAt: new Date().toISOString()
-        };
-
-        await addDoc(usersRef, newUser);
-        
-        // تسجيل الدخول مباشرة بعد الإنشاء
-        login(newUser);
-        router.push("/dashboard");
-
-    } catch (err) {
-        console.error(err);
-        setError("فشل إنشاء الحساب");
-    } finally {
-        setLoading(false);
-    }
+      }
+      const newUser = { name: regName, email: regEmail, password: regPassword, isAdmin: false, createdAt: new Date().toISOString() };
+      await addDoc(usersRef, newUser);
+      login(newUser);
+      router.push("/dashboard");
+    } catch (err) { setError("فشل إنشاء الحساب"); }
+    finally { setLoading(false); }
   };
 
   return (
-    <div className="login-container">
-      <div className="login-box">
-        <h2>El Agamy Materials</h2>
-        <p>منصة المواد الدراسية</p>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-black relative overflow-hidden" dir="rtl">
+      
+      {/* التوهج البنفسجي في الخلفية (Glow Background) */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[500px] md:w-[800px] h-[500px] md:h-[800px] bg-purple-900/10 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-purple-600/5 rounded-full blur-[100px]"></div>
+      </div>
 
-        <div className="tab-buttons">
-          <button className={`tab-btn ${isLogin ? "active" : ""}`} onClick={() => {setIsLogin(true); setError("");}}>تسجيل الدخول</button>
-          <button className={`tab-btn ${!isLogin ? "active" : ""}`} onClick={() => {setIsLogin(false); setError("");}}>إنشاء حساب</button>
+      <div className="w-full max-w-md bg-[#0a0a0a] border border-white/5 rounded-[2rem] p-8 shadow-2xl relative z-10">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-black text-white mb-2">El Agamy Materials</h2>
+          <p className="text-gray-500 text-sm font-bold">منصة المواد الدراسية</p>
         </div>
 
-        {isLogin ? (
-          <form onSubmit={handleLogin}>
-            <input 
-                type="text" 
-                value={loginEmail} 
-                onChange={(e) => setLoginEmail(e.target.value)} 
-                placeholder=" البريد الإلكتروني" 
-                required
-            />
-            <input 
-                type="password" 
-                value={loginPassword} 
-                onChange={(e) => setLoginPassword(e.target.value)} 
-                placeholder="كلمة المرور " 
-            />
-            <button type="submit" disabled={loading} className="btn">
-                {loading ? "جاري التحقق..." : "دخول"}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleRegister}>
-            <input type="text" value={regName} onChange={(e) => setRegName(e.target.value)} placeholder="الاسم" required />
-            <input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} placeholder="البريد الإلكتروني" required />
-            <input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} placeholder="كلمة المرور" required />
-            <button type="submit" disabled={loading} className="btn">
-                {loading ? "جاري الإنشاء..." : "إنشاء حساب"}
-            </button>
-          </form>
-        )}
-           <div className="fixed inset-0 pointer-events-none z-0">
-          {/* توهج بنفسجي علوي */}
-          <div className="absolute top-[-10%] left-[-10%] w-[500px] md:w-[800px] h-[500px] md:h-[800px] bg-purple-600/10 rounded-full blur-[100px] md:blur-[150px]"></div>
-          {/* توهج أزرق/بنفسجي سفلي */}
-          <div className="absolute bottom-[-10%] right-[-10%] w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-blue-600/5 rounded-full blur-[100px]"></div>
+        {/* أزرار التبديل - التصميم القديم المُحسن */}
+        <div className="flex bg-black rounded-xl p-1 mb-6 border border-white/5">
+          <button 
+            className={`flex-1 py-2 rounded-lg font-bold text-sm transition-all ${isLogin ? "bg-purple-600 text-white" : "text-gray-500"}`}
+            onClick={() => {setIsLogin(true); setError("");}}
+          >
+            تسجيل الدخول
+          </button>
+          <button 
+            className={`flex-1 py-2 rounded-lg font-bold text-sm transition-all ${!isLogin ? "bg-purple-600 text-white" : "text-gray-500"}`}
+            onClick={() => {setIsLogin(false); setError("");}}
+          >
+            إنشاء حساب
+          </button>
         </div>
 
-        {error && <p className="error-msg">{error}</p>}
-        
-        <div className="dev-footer">
-            <p className="dev-text">تحت إشراف <strong>محمد علي</strong></p>
+        <form onSubmit={isLogin ? handleLogin : handleRegister} className="space-y-4">
+          {!isLogin && (
+            <input 
+              type="text" value={regName} onChange={(e) => setRegName(e.target.value)}
+              placeholder="الاسم" className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-white focus:border-purple-600 outline-none transition-all"
+              required 
+            />
+          )}
+          <input 
+            type="text" value={isLogin ? loginEmail : regEmail} 
+            onChange={(e) => isLogin ? setLoginEmail(e.target.value) : setRegEmail(e.target.value)}
+            placeholder={isLogin ? "البريد الإلكتروني أو الكود" : "البريد الإلكتروني"}
+            className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-white focus:border-purple-600 outline-none transition-all"
+            required 
+          />
+          <input 
+            type="password" value={isLogin ? loginPassword : regPassword}
+            onChange={(e) => isLogin ? setLoginPassword(e.target.value) : setRegPassword(e.target.value)}
+            placeholder="كلمة المرور" className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-white focus:border-purple-600 outline-none transition-all"
+            required 
+          />
+
+          {error && <p className="text-red-500 text-xs font-bold text-center">{error}</p>}
+
+          <button type="submit" disabled={loading} className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-purple-600/20">
+            {loading ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span>جاري المعالجة...</span>
+              </div>
+            ) : isLogin ? "دخول" : "إنشاء حساب"}
+          </button>
+        </form>
+
+        <div className="mt-8 pt-6 border-t border-white/5 text-center">
+            <p className="text-gray-600 text-[10px] uppercase tracking-widest">إشراف: محمد علي</p>
         </div>
       </div>
     </div>
