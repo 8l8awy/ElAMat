@@ -1,8 +1,7 @@
 import "./globals.css";
 import Script from "next/script";
-import { AuthProvider } from "@/context/AuthContext"; 
+import { AuthProvider } from "@/context/AuthContext";
 
-// 1. إعدادات الـ SEO (Metadata) - تعمل الآن لأننا حذفنا "use client"
 export const metadata = {
   title: "El Agamy Materials | منصة العجمي التعليمية",
   description: "أفضل منصة لتحميل الملخصات، المراجعات النهائية، وبنوك الأسئلة لطلاب جامعة العجمي. سجل الآن مجاناً وابدأ رحلة التفوق الدراسي.",
@@ -10,7 +9,7 @@ export const metadata = {
     google: "S5pMWU_XezcEhJnIRbN_jJI7KqHnvF050Ed5268sCa8",
   },
   icons: {
-    icon: "/icon.png", // التأكد من أن الملف موجود في مجلد public
+    icon: "/icon.png",
     apple: "/icon.png",
   },
   openGraph: {
@@ -27,21 +26,27 @@ export default function RootLayout({ children }) {
   const isClosed = false; 
   const GA_MEASUREMENT_ID = ''; 
 
-  // 2. بيانات جوجل المنظمة (Schema Markup) للوجو
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'El Agamy Materials',
     url: 'https://eamat.vercel.app',
     logo: 'https://eamat.vercel.app/icon.png',
-    sameAs: [] 
-  }
+  };
 
   return (
-    <html lang="ar">
-      <body style={{ margin: 0, padding: 0 }}>
+    <html lang="ar" dir="rtl">
+      <head>
+        {/* Google AdSense */}
+        <script 
+          async 
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8855103518508999"
+          crossOrigin="anonymous">
+        </script>
+      </head>
+      <body className="bg-[#050505] min-h-screen relative overflow-x-hidden text-white font-sans">
         
-        {/* حقن بيانات اللوجو لمحركات البحث */}
+        {/* بيانات Schema Markup */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -65,25 +70,26 @@ export default function RootLayout({ children }) {
           </>
         )}
 
-        <div dir="rtl">
+        {/* الخلفية البنفسجية الموحدة لكل الموقع */}
+        <div className="fixed inset-0 pointer-events-none z-0">
+          {/* توهج بنفسجي علوي */}
+          <div className="absolute top-[-10%] left-[-10%] w-[500px] md:w-[800px] h-[500px] md:h-[800px] bg-purple-600/10 rounded-full blur-[100px] md:blur-[150px]"></div>
+          {/* توهج أزرق/بنفسجي سفلي */}
+          <div className="absolute bottom-[-10%] right-[-10%] w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-blue-600/5 rounded-full blur-[100px]"></div>
+        </div>
+
+        <div className="relative z-10">
           <AuthProvider>
             {isClosed ? (
-              /* شاشة الصيانة */
-              <div style={{
-                height: '100vh', width: '100vw', position: 'fixed',
-                top: 0, left: 0, zIndex: 9999, display: 'flex',
-                flexDirection: 'column', justifyContent: 'center',
-                alignItems: 'flex-start', backgroundColor: '#0078d7',
-                color: 'white', padding: '50px', boxSizing: 'border-box',
-                fontFamily: '"Segoe UI", Tahoma, sans-serif', direction: 'ltr'
-              }}>
-                <h1 style={{ fontSize: '6rem', margin: 0 }}>:(</h1>
-                <h2 style={{ fontSize: '2rem', marginTop: '20px' }}>Your PC ran into a problem... just kidding!</h2>
-                <p style={{ fontSize: '1.5rem', marginTop: '20px' }}>
-                  We are just updating "El Agamy Materials" database.
-                </p>
-                <div style={{ marginTop: '40px' }}>
-                  <p>0% complete __________ 100%</p>
+              /* شاشة الصيانة المحدثة لتناسب الثيم الجديد */
+              <div className="h-screen w-full fixed inset-0 z-[9999] flex flex-col justify-center items-center bg-[#050505] p-10 text-center">
+                <div className="w-24 h-24 bg-purple-600/20 rounded-full flex items-center justify-center animate-pulse mb-6">
+                   <span className="text-5xl text-purple-400">:(</span>
+                </div>
+                <h2 className="text-3xl font-bold mb-4">نحن نحدث المنصة الآن...</h2>
+                <p className="text-gray-400 text-xl">نعمل على إضافة مواد الترم الجديد برواقان.</p>
+                <div className="mt-10 w-64 h-2 bg-white/5 rounded-full overflow-hidden">
+                   <div className="h-full bg-purple-600 animate-progress"></div>
                 </div>
               </div>
             ) : (
@@ -91,13 +97,6 @@ export default function RootLayout({ children }) {
             )}
           </AuthProvider>
         </div>
-
-        {/* كود Google AdSense */}
-        <script 
-          async 
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8855103518508999"
-          crossOrigin="anonymous">
-        </script>
       </body>
     </html>
   );
