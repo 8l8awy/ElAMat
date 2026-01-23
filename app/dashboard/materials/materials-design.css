@@ -1,13 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
 
 :root {
-    --card-bg: #1c1c1e;
-    --border: #2c2c2e;
-    --blue: #0a84ff;
-    --red: #ff453a;
-    --green: #32d74b;
-    --grad: linear-gradient(90deg, #bd1c52 0%, #7c3aed 100%);
+    --dark-bg: #0a0a0f;
+    --card-bg: #18181f;
+    --border: #2d2d38;
+    --purple-primary: #9333ea;
+    --purple-light: #c084fc;
+    --purple-dark: #6b21a8;
+    --accent: #a855f7;
+    --grad: linear-gradient(135deg, #7c3aed 0%, #c026d3 50%, #9333ea 100%);
+    --grad-hover: linear-gradient(135deg, #8b5cf6 0%, #d946ef 50%, #a855f7 100%);
     --white: #ffffff;
+    --text-gray: #a1a1aa;
 }
 
 .materials-wrapper {
