@@ -91,7 +91,27 @@ export default function RootLayout({ children }) {
             )}
           </AuthProvider>
         </div>
+// داخل ملف app/layout.js
+export default function RootLayout({ children }) {
+  return (
+    <html lang="ar" dir="rtl">
+      <body className="bg-[#0a0a0a] min-h-screen relative overflow-x-hidden">
+        {/* الخلفية الموحدة لكل الموقع */}
+        <div className="fixed inset-0 pointer-events-none z-0">
+           {/* الدائرة البنفسجية المتوهجة */}
+           <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-[120px] animate-pulse"></div>
+           {/* دائرة زرقاء هادئة للتوازن */}
+           <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px]"></div>
+        </div>
 
+        {/* محتوى الصفحات */}
+        <main className="relative z-10">
+          {children}
+        </main>
+      </body>
+    </html>
+  );
+}
         {/* كود Google AdSense */}
         <script 
           async 
