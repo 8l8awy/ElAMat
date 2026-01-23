@@ -211,7 +211,8 @@ function MaterialsContent() {
     </div>
   );
 }
-
+// ستايل البطاقة الموحد (Glass Card)
+className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all"
 export default function MaterialsPage() {
   return (
     <Suspense fallback={<div className="loader">جاري التحميل...</div>}>
