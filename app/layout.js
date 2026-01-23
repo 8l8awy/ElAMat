@@ -86,8 +86,7 @@ export default function RootLayout({ children }) {
                 <div className="w-24 h-24 bg-purple-600/20 rounded-full flex items-center justify-center animate-pulse mb-6">
                    <span className="text-5xl text-purple-400">:(</span>
                 </div>
-                <h2 className="text-3xl font-bold mb-4">نحن نحدث المنصة الآن...</h2>
-                <p className="text-gray-400 text-xl">نعمل على إضافة مواد الترم الجديد برواقان.</p>
+                <h2 className="text-3xl font-bold mb-4">...</h2>
                 <div className="mt-10 w-64 h-2 bg-white/5 rounded-full overflow-hidden">
                    <div className="h-full bg-purple-600 animate-progress"></div>
                 </div>
