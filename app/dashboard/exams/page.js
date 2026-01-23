@@ -273,7 +273,8 @@ export default function ExamsPage() {
           </div>
         )}
       </div>
-
+// ستايل البطاقة الموحد (Glass Card)
+className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all"
       <style jsx>{`
         @keyframes confetti { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
         .animate-confetti { animation: confetti 4s linear infinite; }
