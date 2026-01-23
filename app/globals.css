@@ -1,18 +1,47 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-:root {
-    --dark-bg: #0a0a0f;
-    --card-bg: #18181f;
-    --border: #2d2d38;
-    --purple-primary: #9333ea;
-    --purple-light: #c084fc;
-    --purple-dark: #6b21a8;
-    --accent: #a855f7;
-    --grad: linear-gradient(135deg, #7c3aed 0%, #c026d3 50%, #9333ea 100%);
-    --grad-hover: linear-gradient(135deg, #8b5cf6 0%, #d946ef 50%, #a855f7 100%);
-    --white: #ffffff;
-    --text-gray: #a1a1aa;
+ :root {
+  /* ========================
+     الألوان الأساسية (تم التحديث بناءً على الصورة)
+     ======================== */
+  
+  /* اللون المستخرج من الصورة */
+  --primary-dark: #1c1c1c; 
+  
+  /* الخلفيات */
+  --bg-body: #050505;       
+  --bg-card: var(--primary-dark); /* استخدام اللون الجديد للكروت */
+  --bg-card-hover: #252525;       /* لون أفتح قليلاً عند التحويم */
+  --bg-input: #121212;
+  --bg-glass: rgba(28, 28, 28, 0.9); /* تحديث الناف بار */
+
+  /* النصوص */
+  --text-primary: #e0e0e0;
+  --text-secondary: #888888;
+  --text-dark: #000000;
+
+  /* الحدود */
+  --border-color: #333333;
+  --accent-white: #ffffff;
+
+  /* التدرجات (كما هي للشريط العلوي) */
+  --gradient-top-strip: linear-gradient(90deg, #8b5cf6, #3b82f6, #ec4899, #8b5cf6);
+
+  /* ========================
+     تدرجات الألوان المميزة (Gradients)
+     ======================== */
+  /* التدرج الأول (أخضر/أزرق) */
+  --gradient-1: linear-gradient(90deg, #00f260, #0575e6);
+  
+  /* التدرج الثاني (برتقالي/أحمر) */
+  --gradient-2: linear-gradient(90deg, #ff9966, #ff5e62);
+  
+  /* التدرج الثالث (بنفسجي/أحمر غامق) */
+  --gradient-3: linear-gradient(90deg, #c31432, #8e44ad);
+  
+  /* تدرج النصوص (فضي/ذهبي) */
+  --gradient-text: linear-gradient(135deg, #fff 0%, #a0a0a0 100%);
 }
 
 * {
