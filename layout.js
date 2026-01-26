@@ -11,26 +11,30 @@ export default function RootLayout({ children }) {
     <html lang="ar" dir="rtl">
       <body className="bg-black text-white min-h-screen relative overflow-x-hidden">
         
-        {/* الخلفية البنفسجية الخافتة */}
+        {/* الخلفية البنفسجية */}
         <div className="fixed inset-0 pointer-events-none z-0">
           <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-900/15 rounded-full blur-[120px]"></div>
           <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-800/10 rounded-full blur-[100px]"></div>
         </div>
 
-        {/* الهيدر مع اللوجو المدمج في الكلمة */}
+        {/* الهيدر مع اللوجو المدمج */}
         <header className="fixed top-0 left-0 right-0 z-50 bg-black/60 backdrop-blur-xl border-b border-white/5 py-4 px-6">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-black tracking-tighter flex items-center">
+              <h1 className="text-2xl md:text-3xl font-black tracking-tighter flex items-center leading-none">
                 El 
                 <span className="flex items-center mx-1">
-                  {/* استبدال حرف الـ a باللوجو */}
+                  {/* اللوجو مكان حرف الـ a */}
                   <img 
                     src="/a.png" 
                     alt="a" 
-                    className="h-[0.9em] w-auto inline-block mx-[1px] transform translate-y-[1px] drop-shadow-[0_0_5px_rgba(168,85,247,0.5)]" 
-                    onError={(e) => e.target.src = "/a.jpg"}
+                    className="h-[1.1em] w-auto inline-block transform translate-y-[2px] drop-shadow-[0_0_10px_rgba(168,85,247,0.7)]" 
+                    onError={(e) => {
+                      if (!e.target.src.includes(".jpg")) {
+                        e.target.src = "/a.jpg";
+                      }
+                    }}
                   />
                   gamy
                 </span>
