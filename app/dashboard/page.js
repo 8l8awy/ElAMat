@@ -36,7 +36,6 @@ export default function Dashboard() {
         const materialsQuery = query(
             collection(db, "materials"), 
             where("status", "==", "approved"),
-            where("semester", "==", 2) 
         );
         const materialsSnap = await getDocs(materialsQuery);
         
@@ -86,7 +85,7 @@ export default function Dashboard() {
                 لوحة <span className="text-purple-500 text-purple-glow">المعلومات</span>
             </h2>
             <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px] bg-white/5 w-fit px-3 py-1 rounded-full border border-white/5">
-                مرحباً بك، {user?.name || "محمد علي"}
+                مرحباً بك، {user?.name || ""}
             </p>
         </div>
         
