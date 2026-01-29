@@ -2,10 +2,7 @@
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase"; 
 import { collection, query, getDocs, where, orderBy } from "firebase/firestore";
-import { 
-  FaBook, FaBalanceScale, FaCalculator, FaGavel, 
-  FaChartBar, FaExchangeAlt, FaChevronLeft 
-} from "react-icons/fa";
+import { FaBook, FaBalanceScale, FaCalculator, FaGavel, FaChartBar, FaExchangeAlt } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 
 export default function SubjectsPage() {
@@ -15,12 +12,13 @@ export default function SubjectsPage() {
   const router = useRouter();
 
   const renderIcon = (iconType) => {
+    const s = 35;
     switch (iconType) {
-      case "balance": return <FaBalanceScale size={32} />;
-      case "calculator": return <FaCalculator size={32} />;
-      case "gavel": return <FaGavel size={32} />;
-      case "chart": return <FaChartBar size={32} />;
-      default: return <FaBook size={32} />;
+      case "balance": return <FaBalanceScale size={s} />;
+      case "calculator": return <FaCalculator size={s} />;
+      case "gavel": return <FaGavel size={s} />;
+      case "chart": return <FaChartBar size={s} />;
+      default: return <FaBook size={s} />;
     }
   };
 
@@ -28,100 +26,67 @@ export default function SubjectsPage() {
     const fetchSubjects = async () => {
       setLoading(true);
       try {
-        const q = query(
-          collection(db, "subjects"), 
-          where("semester", "==", currentSemester),
-          orderBy("createdAt", "desc")
-        );
-        const querySnapshot = await getDocs(q);
-        const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setSubjects(data);
+        const q = query(collection(db, "subjects"), where("semester", "==", currentSemester), orderBy("createdAt", "desc"));
+        const snap = await getDocs(q);
+        setSubjects(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       } catch (err) { console.error(err); }
-      finally { setLoading(false); }
+      setLoading(false);
     };
     fetchSubjects();
   }, [currentSemester]);
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white relative overflow-hidden font-sans">
+    // min-h-screen و w-full تضمن أن الصفحة مالية الشاشة تماماً
+    <div className="min-h-screen w-full bg-transparent text-white relative font-sans">
       
-      {/* 🌌 خلفية سينمائية - Glow Effects */}
-      <div className="fixed inset-0 z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-purple-900/20 rounded-full blur-[140px] animate-pulse"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-900/10 rounded-full blur-[120px]"></div>
+      {/* 🌌 الإضاءة الخلفية (Glow) ممتدة لنهاية الشاشة */}
+      <div className="fixed inset-0 -z-10 bg-[#020202]">
+        <div className="absolute top-0 left-[-5%] w-[70%] h-[70%] bg-purple-900/10 rounded-full blur-[150px]"></div>
+        <div className="absolute bottom-0 right-[-5%] w-[60%] h-[60%] bg-blue-900/5 rounded-full blur-[150px]"></div>
       </div>
 
-      <div className="relative z-10 w-full px-6 md:px-12 pt-24 pb-20">
+      {/* محتوى الصفحة بدون container ضيق */}
+      <div className="w-full px-4 md:px-10 pt-32 pb-10">
         
-        {/* Header Section - تصميم واسع */}
-        <div className="flex flex-col md:flex-row items-end justify-between gap-8 mb-20 max-w-[1600px] mx-auto">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-               <span className="h-[2px] w-12 bg-purple-500 rounded-full"></span>
-               <span className="text-purple-500 font-black tracking-[0.3em] text-sm uppercase">منصة العجمي</span>
-            </div>
-            <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-none">
-              المواد <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-500">الدراسية</span>
-            </h1>
-          </div>
-
+        {/* Header واسع جداً */}
+        <div className="w-full flex flex-col md:flex-row items-center justify-between mb-24">
+          <h1 className="text-6xl md:text-8xl font-black tracking-tighter italic">
+            <span className="text-purple-500">مـ</span>واد الترم {currentSemester === 2 ? "2" : "1"}
+          </h1>
+          
           <button 
             onClick={() => setCurrentSemester(currentSemester === 1 ? 2 : 1)}
-            className="group relative flex items-center gap-4 bg-white/5 backdrop-blur-md border border-white/10 px-8 py-5 rounded-2xl font-black overflow-hidden transition-all hover:border-purple-500/50"
+            className="mt-6 md:mt-0 bg-white/5 backdrop-blur-xl border border-white/10 px-10 py-5 rounded-full font-black hover:bg-purple-600 transition-all text-xl shadow-2xl"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <FaExchangeAlt className="text-purple-400 group-hover:rotate-180 transition-transform duration-500" />
-            <span className="text-lg">الترم {currentSemester === 1 ? "الثاني" : "الأول"}</span>
+            تبديل الأترام
           </button>
         </div>
 
-        {/* Grid - توزيع مفتوح مريح للشاشة */}
-        {loading ? (
-          <div className="flex justify-center py-40">
-             <div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8 max-w-[1800px] mx-auto">
-            {subjects.map((sub) => (
-              <div 
-                key={sub.id} 
-                className="group relative bg-white/[0.02] backdrop-blur-sm border border-white/5 p-10 rounded-[2.5rem] hover:bg-white/[0.04] hover:border-purple-500/20 transition-all duration-500 flex flex-col justify-between min-h-[380px]"
-              >
-                {/* دبل جلو عند الهوفر */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                
-                <div className="relative z-10">
-                  <div className="text-purple-500 mb-8 transform group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500 inline-block">
-                    {renderIcon(sub.iconType)}
-                  </div>
-                  <h3 className="text-3xl font-black leading-tight mb-4 text-gray-100 group-hover:text-white">
-                    {sub.name}
-                  </h3>
-                  <div className="flex items-center gap-2 text-gray-500 text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                    متاحة الآن
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => router.push(`/dashboard/subjects/${sub.id}`)}
-                  className="relative z-10 mt-12 w-full flex items-center justify-between bg-white text-black py-5 px-8 rounded-2xl font-black hover:bg-purple-600 hover:text-white transition-all duration-300 group/btn"
-                >
-                  <span>استعراض المحتوى</span>
-                  <FaChevronLeft className="group-hover/btn:-translate-x-2 transition-transform" />
-                </button>
+        {/* Grid ممتد بعرض الشاشة بالكامل */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 w-full">
+          {subjects.map((sub) => (
+            <div 
+              key={sub.id} 
+              onClick={() => router.push(`/dashboard/subjects/${sub.id}`)}
+              className="group relative h-[450px] bg-white/[0.03] hover:bg-white/[0.07] border border-white/5 hover:border-purple-500/30 transition-all duration-700 rounded-none cursor-pointer flex flex-col items-center justify-center text-center overflow-hidden"
+            >
+              {/* تأثير خط إضاءة عند الهوفر */}
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              
+              <div className="text-purple-500 mb-8 transform group-hover:scale-125 transition-transform duration-500">
+                {renderIcon(sub.iconType)}
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!loading && subjects.length === 0 && (
-          <div className="text-center py-40 opacity-30">
-            <FaBook size={80} className="mx-auto mb-6" />
-            <h2 className="text-3xl font-black">لا توجد كروت حالياً</h2>
-          </div>
-        )}
+              
+              <h3 className="text-3xl font-black px-6 group-hover:tracking-widest transition-all duration-500">
+                {sub.name}
+              </h3>
+              
+              <div className="mt-10 opacity-0 group-hover:opacity-100 transition-opacity text-purple-400 font-black text-sm tracking-[0.5em] uppercase">
+                Open Material
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
