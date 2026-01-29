@@ -17,22 +17,23 @@ export default function RootLayout({ children }) {
           <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-purple-800/5 rounded-full blur-[100px]"></div>
         </div>
 
-        {/* الهيدر المطور بكلمة Elagamy المدمجة */}
-        <header className="fixed top-0 left-0 right-0 z-[100] bg-black/40 backdrop-blur-2xl border-b border-white/5 py-5 px-6 md:px-12">
+        {/* الهيدر المطور والمضبوط بالمللي */}
+        <header className="fixed top-0 left-0 right-0 z-[100] bg-black/40 backdrop-blur-2xl border-b border-white/5 py-4 px-6">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             
-            {/* اللوجو: Elagamy Materials */}
             <div className="flex items-center select-none">
-              <h1 className="text-2xl md:text-3xl font-black tracking-tighter flex items-baseline leading-none">
-                {/* حرف El */}
+              {/* Container اللوجو مع إلغاء أي فراغات وهمية */}
+              <h1 className="flex items-center gap-0 text-2xl md:text-3xl font-black tracking-tighter leading-none">
+                
+                {/* كلمة El */}
                 <span className="text-white">El</span>
                 
-                {/* حاوية اللوجو: ملغية المسافات تماماً ومضبوطة رأسياً */}
-                <span className="inline-flex items-center mx-0 px-0 self-center">
+                {/* اللوجو - محشور في النص تماماً */}
+                <span className="flex items-center justify-center -mx-[2px] self-center"> 
                   <img 
                     src="/a.png" 
                     alt="a" 
-                    className="h-[0.82em] w-auto inline-block transform translate-y-[0.08em] transition-transform duration-500 hover:scale-110 drop-shadow-[0_0_15px_rgba(168,85,247,0.6)]" 
+                    className="h-[0.80em] w-auto block transform translate-y-[0.1em] drop-shadow-[0_0_12px_rgba(168,85,247,0.5)]" 
                     onError={(e) => {
                       if (!e.target.src.includes(".jpg")) {
                         e.target.src = "/a.jpg";
@@ -41,31 +42,29 @@ export default function RootLayout({ children }) {
                   />
                 </span>
 
-                {/* حرف gamy - ملزوق في اللوجو */}
-                <span className="text-white -mr-[0.05em]">gamy</span>
+                {/* كلمة gamy */}
+                <span className="text-white">gamy</span>
                 
-                {/* كلمة Materials بمسافة بسيطة شيك */}
-                <span className="text-purple-600 mr-2 opacity-90 italic">Materials</span>
+                {/* كلمة Materials */}
+                <span className="text-purple-600 mr-2 italic font-black opacity-90">Materials</span>
               </h1>
             </div>
 
-            {/* نسخة الموقع */}
-            <div className="hidden sm:block">
-              <div className="text-[10px] text-gray-500 font-black bg-white/5 px-4 py-1.5 rounded-full border border-white/5 uppercase tracking-[0.3em] shadow-inner">
-                V2.0
-              </div>
+            {/* نسخة الموقع بتصميم شيك */}
+            <div className="hidden sm:block text-[10px] text-gray-500 font-black bg-white/5 px-3 py-1 rounded-full border border-white/5 tracking-[0.2em] shadow-inner uppercase">
+              V2.0
             </div>
           </div>
         </header>
 
-        {/* محتوى الصفحات مع حماية الـ Auth */}
+        {/* محتوى الصفحات */}
         <div className="relative z-10 pt-28">
           <AuthProvider>
             {children}
           </AuthProvider>
         </div>
 
-        {/* فوتر بسيط للتأكيد على الحقوق */}
+        {/* الفوتر */}
         <footer className="relative z-10 py-10 text-center opacity-20 text-[10px] font-bold tracking-widest pointer-events-none uppercase">
           © 2026 Elagamy Materials Dashboard
         </footer>
