@@ -1,101 +1,141 @@
 "use client";
-import { useState } from "react";
-import { 
-  FaBook, FaBalanceScale, FaCalculator, FaGavel, 
-  FaChartBar, FaExchangeAlt, FaArrowLeft, FaLanguage, FaSuitcase
-} from "react-icons/fa";
+import { useState, useEffect } from "react";
+import { db } from "@/lib/firebase"; // تأكد من المسار الصحيح
+import { collection, getDocs, query, where } from "firebase/firestore";
+import Link from "next/link";
+import { FaChartLine, FaLanguage, FaCalculator, FaScaleBalanced, FaBriefcase, FaBookOpen } from "react-icons/fa6";
 
 export default function SubjectsPage() {
-  const [currentSemester, setCurrentSemester] = useState(2);
+  const [stats, setStats] = useState({});
+  const [loading, setLoading] = useState(true);
 
-  // مواد الترم الأول (حط لينكاتك مكان الـ #)
-  const semester1Subjects = [
-    { id: "s1_1", name: "مبادئ المحاسبة المالية", icon: <FaCalculator size={45} />, color: "#22c55e", link: "https://google.com" }, 
-    { id: "s1_2", name: "لغة أجنبية (1)", icon: <FaLanguage size={45} />, color: "#a855f7", link: "#" }, 
-    { id: "s1_3", name: "مبادئ الاقتصاد", icon: <FaChartBar size={45} />, color: "#3b82f6", link: "#" }, 
-    { id: "s1_4", name: "مبادئ ادارة الاعمال", icon: <FaSuitcase size={45} />, color: "#f97316", link: "#" }, 
-    { id: "s1_5", name: "مبادئ القانون", icon: <FaBalanceScale size={45} />, color: "#ef4444", link: "#" }, 
+  // قائمة المواد
+  const subjects = [
+    "مبادئ الاقتصاد",
+    "لغة اجنبية (1)",
+    "مبادئ المحاسبة المالية",
+    "مبادئ القانون",
+    "مبادئ ادارة الاعمال"
   ];
 
-  // مواد الترم الثاني (حط لينكاتك مكان الـ #)
-  const semester2Subjects = [
-    { id: "s2_1", name: "محاسبة الشركات", icon: <FaCalculator size={45} />, color: "#22c55e", link: "https://your-pdf-link.com" },
-    { id: "s2_2", name: "قانون تجاري", icon: <FaGavel size={45} />, color: "#ef4444", link: "#" },
-    { id: "s2_3", name: "اقتصاد كلي", icon: <FaChartBar size={45} />, color: "#3b82f6", link: "#" },
-    { id: "s2_4", name: "اللغة الإنجليزية", icon: <FaBook size={45} />, color: "#a855f7", link: "#" },
-  ];
+  // ألوان المواد لإعطاء جمالية للتصميم الجديد
+  const subjectColors = {
+    "مبادئ الاقتصاد": "from-blue-500 to-cyan-500",
+    "لغة اجنبية (1)": "from-purple-500 to-pink-500",
+    "مبادئ المحاسبة المالية": "from-green-500 to-emerald-500",
+    "مبادئ القانون": "from-red-500 to-rose-500",
+    "مبادئ ادارة الاعمال": "from-orange-500 to-yellow-500"
+  };
 
-  const subjects = currentSemester === 1 ? semester1Subjects : semester2Subjects;
+  // دالة الأيقونات
+  const getSubjectIcon = (subject) => {
+    const icons = {
+        "مبادئ الاقتصاد": <FaChartLine className="text-5xl text-blue-400" />,         
+        "لغة اجنبية (1)": <FaLanguage className="text-5xl text-purple-400" />,            
+        "مبادئ المحاسبة المالية": <FaCalculator className="text-5xl text-green-400" />,    
+        "مبادئ القانون": <FaScaleBalanced className="text-5xl text-red-400" />,       
+        "مبادئ ادارة الاعمال": <FaBriefcase className="text-5xl text-orange-400" />     
+    };
+    return icons[subject] || <FaBookOpen className="text-5xl text-gray-400" />;
+  };
+
+  const normalizeType = (type) => {
+    if (!type) return "";
+    type = type.toString().trim();
+    if (["summary", "ملخص", "ملخصات", "تلخيص"].includes(type)) return "summary";
+    if (["assignment", "تكليف", "تكاليف", "واجب"].includes(type)) return "assignment";
+    return type;
+  };
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const q = query(collection(db, "materials"), where("status", "==", "approved"));
+        const snapshot = await getDocs(q);
+        
+        const newStats = {};
+        subjects.forEach(sub => newStats[sub] = { summary: 0, assignment: 0 });
+
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const sub = data.subject;
+          const type = normalizeType(data.type);
+          
+          if (newStats[sub]) {
+            if (type === "summary") newStats[sub].summary++;
+            if (type === "assignment") newStats[sub].assignment++;
+          }
+        });
+
+        setStats(newStats);
+      } catch (err) {
+        console.error("Error fetching stats:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchStats();
+  }, []);
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center text-white">
+      <div className="animate-pulse text-xl">جاري تحميل المواد...</div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen w-full bg-black text-white relative font-sans overflow-x-hidden" dir="rtl">
+    // تم استخدام w-full و p-4 فقط لملء الشاشة وإزالة الخلفية الصلبة
+    <div className="min-h-screen w-full text-white p-4 font-sans" dir="rtl">
       
-      {/* خلفية بتوهج كامل بدون حواف */}
-      <div className="fixed inset-0 z-0">
-        <div className="absolute top-[-20%] left-[-10%] w-[100%] h-[100%] bg-purple-900/10 rounded-full blur-[150px] pointer-events-none"></div>
-        <div className="absolute bottom-[-20%] right-[-10%] w-[100%] h-[100%] bg-blue-900/5 rounded-full blur-[150px] pointer-events-none"></div>
+      {/* العنوان */}
+      <div className="mb-8 text-center pt-4">
+        <h1 className="text-3xl md:text-5xl font-black bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mb-2">
+           المواد الدراسية
+        </h1>
+        <p className="text-gray-400">اختر المادة لعرض المحتوى</p>
       </div>
-
-      <div className="relative z-10 w-full pt-28 pb-10">
-        
-        {/* هيدر ممتد */}
-        <div className="w-full px-8 md:px-16 flex flex-col md:flex-row items-center justify-between mb-20 gap-8">
-          <div className="space-y-2">
-            <h1 className="text-6xl md:text-8xl font-black tracking-tighter italic uppercase">
-              المواد <span className="text-purple-600">الدراسية</span>
-            </h1>
-            <p className="text-gray-500 font-bold text-xl tracking-[0.2em] uppercase opacity-70">الترم {currentSemester === 2 ? "الثاني" : "الأول"} - ٢٠٢٦</p>
-          </div>
-          
-          <button 
-            onClick={() => setCurrentSemester(currentSemester === 1 ? 2 : 1)}
-            className="group relative bg-white/5 backdrop-blur-2xl border border-white/10 px-10 py-5 rounded-full font-black hover:bg-purple-600 transition-all text-xl shadow-2xl flex items-center gap-4 active:scale-95"
+      
+      {/* الشبكة تملأ العرض */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+        {subjects.map((subject) => (
+          <Link 
+            href={`/dashboard/materials?subject=${encodeURIComponent(subject)}`} 
+            key={subject} 
+            className="w-full"
           >
-            <FaExchangeAlt className="group-hover:rotate-180 transition-transform duration-500 text-purple-500 group-hover:text-white" />
-            <span>تبديل الأترام</span>
-          </button>
-        </div>
+            <div className={`group relative h-full bg-white/5 hover:bg-white/10 backdrop-blur-lg border border-white/10 hover:border-white/20 rounded-3xl p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl overflow-hidden cursor-pointer`}>
+              
+              {/* تأثير الإضاءة الملونة في الخلفية عند التحويم */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${subjectColors[subject] || "from-gray-500 to-gray-700"} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}></div>
 
-        {/* شبكة الكروت: ملء الشاشة بالكامل (Edge-to-Edge) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 w-full gap-px bg-white/5 border-y border-white/5">
-          {subjects.map((sub) => (
-            <div 
-              key={sub.id} 
-              // 👇 السطر ده هو اللي بيفتح اللينك
-              onClick={() => { if(sub.link !== "#") window.open(sub.link, "_blank") }}
-              className="group relative h-[500px] bg-[#050505] hover:bg-white/[0.03] transition-all duration-700 cursor-pointer flex flex-col items-center justify-center text-center overflow-hidden p-10"
-            >
-              <div 
-                className="absolute top-0 left-0 w-full h-[4px] transition-transform duration-500 scale-x-0 group-hover:scale-x-100"
-                style={{ backgroundColor: sub.color }}
-              ></div>
-              
-              <div 
-                className="mb-12 transform group-hover:scale-125 group-hover:-rotate-12 transition-all duration-700"
-                style={{ color: sub.color }}
-              >
-                {sub.icon}
-              </div>
-              
-              <h3 className="text-4xl font-black leading-tight group-hover:tracking-tighter transition-all duration-500 mb-8 px-4">
-                {sub.name}
-              </h3>
-              
-              <div 
-                className="flex items-center gap-3 font-black text-xs tracking-[0.4em] uppercase opacity-0 group-hover:opacity-100 translate-y-6 group-hover:translate-y-0 transition-all duration-700"
-                style={{ color: sub.color }}
-              >
-                <span>استعراض المحتوى</span>
-                <FaArrowLeft size={12} />
-              </div>
+              <div className="relative z-10 flex flex-col items-center justify-center text-center space-y-6">
+                
+                {/* الأيقونة في دائرة */}
+                <div className="w-24 h-24 rounded-full bg-black/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-white/5 shadow-lg">
+                   {getSubjectIcon(subject)}
+                </div>
+                
+                <h3 className="text-2xl font-bold text-white group-hover:text-blue-200 transition-colors">
+                  {subject}
+                </h3>
+                
+                {/* الإحصائيات */}
+                <div className="flex items-center justify-center gap-3 w-full">
+                  <div className="bg-black/20 px-4 py-2 rounded-xl text-sm text-gray-300 flex items-center gap-2 border border-white/5">
+                    <span className="text-blue-400">📚</span>
+                    <span>{stats[subject]?.summary || 0} ملخص</span>
+                  </div>
+                  <div className="bg-black/20 px-4 py-2 rounded-xl text-sm text-gray-300 flex items-center gap-2 border border-white/5">
+                    <span className="text-yellow-400">📝</span>
+                    <span>{stats[subject]?.assignment || 0} تكليف</span>
+                  </div>
+                </div>
 
-              <div 
-                className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-700 pointer-events-none"
-                style={{ background: `radial-gradient(circle at center, ${sub.color}, transparent 70%)` }}
-              ></div>
+              </div>
             </div>
-          ))}
-        </div>
+          </Link>
+        ))}
       </div>
     </div>
   );
