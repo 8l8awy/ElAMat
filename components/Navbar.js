@@ -44,7 +44,7 @@ export default function Navbar() {
         <img 
           src="/logo.png" 
           alt="EAM Logo" 
-          className="h-10 md:h-12 w-auto object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-transform duration-500 hover:scale-105"
+          className="h-14 md:h-12 w-auto object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-transform duration-500 hover:scale-105"
           onError={(e) => { e.target.src = "/a.png" }} // Backup
         />
       </div>
