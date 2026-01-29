@@ -9,8 +9,8 @@ export const metadata = {
     google: "S5pMWU_XezcEhJnIRbN_jJI7KqHnvF050Ed5268sCa8",
   },
   icons: {
-    icon: "/icon.jpeg",
-    apple: "/icon.jpeg",
+    icon: "/icon.png",
+    apple: "/icon.png",
   },
   openGraph: {
     title: "El Agamy Materials | منصة العجمي التعليمية",
