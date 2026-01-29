@@ -46,7 +46,7 @@ export default function Navbar() {
         <img 
           src="/logo.png" 
           alt="EAM Logo" 
-          className="h-14 md:h-14 w-auto object-contain drop-shadow-[0_0_20px_rgba(168,85,247,0.6)] transition-all duration-500 group-hover:scale-110 group-hover:drop-shadow-[0_0_35px_rgba(168,85,247,0.9)]"
+          className="h-10 md:h-10 w-auto object-contain drop-shadow-[0_0_20px_rgba(168,85,247,0.6)] transition-all duration-500 group-hover:scale-110 group-hover:drop-shadow-[0_0_35px_rgba(168,85,247,0.9)]"
           onError={(e) => { e.target.src = "/a.png" }} 
         />
       </div>
