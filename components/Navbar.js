@@ -5,17 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import AdminLink from './AdminLink'; 
 import { 
-  FaHome, 
-  FaBook, 
-  FaBell, 
-  FaSignOutAlt, 
-  FaCloudUploadAlt, 
-  FaUserClock, 
-  FaBars, 
-  FaTimes,
-  FaClipboardList,
-  FaCogs,
-  FaPlusCircle // 👈 تمت إضافة الاستيراد هنا
+  FaHome, FaBook, FaBell, FaSignOutAlt, 
+  FaCloudUploadAlt, FaUserClock, FaBars, 
+  FaTimes, FaClipboardList, FaCogs
 } from 'react-icons/fa';
 
 export default function Navbar() {
@@ -47,23 +39,15 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
-      <h1>
-        {/* اللوجو الجديد المدمج مع الكلمة */}
-        <div className="flex items-center gap-2">
-          <span className="text-xl font-black text-white flex items-center">
-            El 
-            <span className="flex items-center mx-1">
-              <img 
-                src="/a.png" 
-                alt="a" 
-                className="h-[1em] w-auto inline-block transform translate-y-[1px]" 
-                onError={(e) => e.target.src = "/logo-no-background-1.png"}
-              />
-              gamy
-            </span>
-          </span>
-        </div>
-      </h1>
+      {/* 1. تم تحديث الهيدر هنا ليعرض اللوجو الجديد فقط */}
+      <div className="flex items-center justify-center py-2 select-none cursor-pointer" onClick={() => router.push('/dashboard')}>
+        <img 
+          src="/logo.png" 
+          alt="EAM Logo" 
+          className="h-10 md:h-12 w-auto object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-transform duration-500 hover:scale-105"
+          onError={(e) => { e.target.src = "/a.png" }} // Backup
+        />
+      </div>
       
       <button className="burger-btn" onClick={toggleMenu}>
         {isMenuOpen ? <FaTimes /> : <FaBars />}
@@ -71,7 +55,7 @@ export default function Navbar() {
 
       <div className={`nav-buttons ${isMenuOpen ? 'active' : ''}`}>
         
-        <span id="userName" style={{color:'white', fontWeight:'bold', display:'block', textAlign:'center', marginBottom:'15px'}}>
+        <span id="userName" style={{color:'white', fontWeight:'bold', display:'block', textAlign:'center', marginBottom:'15px', fontSize: '0.9rem'}}>
             {user?.name}
         </span>
         
@@ -94,8 +78,6 @@ export default function Navbar() {
         <Link href="/dashboard/share" className={`${btnClass} hover:bg-green-600`} title="رفع ملخص / تكليف" onClick={closeMenu}>
              <FaCloudUploadAlt size={20} />
         </Link>
-
-        {/* زر إضافة مادة سريع للأدمن */}
 
         {isAdmin && (
           <Link href="/dashboard/admin" className={`${btnClass} hover:bg-orange-600`} title="لوحة التحكم الرئيسية" onClick={closeMenu}>
