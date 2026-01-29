@@ -43,16 +43,15 @@ export default function Navbar() {
 {/* 1. تم تكبير اللوجو وضبط المسافات */}
    {/* اللوجو الجديد بحجم أكبر وبدون أخطاء برمجية */}
      {/* هيدر الناف بار - الحجم الصغير والملموم */}
+     {/* هيدر الناف بار - الحجم الصغير والملموم */}
       <div className="flex items-center justify-center py-1 mb-0 select-none cursor-pointer group" onClick={() => router.push('/dashboard')}>
         <img 
           src="/logo.png" 
           alt="EAM Logo" 
-          {/* حجم صغير جداً للموبايل ومتوسط للكمبيوتر */}
           className="h-8 md:h-12 w-auto object-contain drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] transition-all duration-300 group-hover:scale-110"
           onError={(e) => { e.target.src = "/a.png" }} 
         />
       </div>
-      
       <button className="burger-btn" onClick={toggleMenu}>
         {isMenuOpen ? <FaTimes /> : <FaBars />}
       </button>
