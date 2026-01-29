@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
-import { db } from "../../../lib/firebase"; // تأكد من عدد النقاط حسب مكان الملف
+// لاحظ زيادة عدد النقاط لـ 4 مستويات (../../../../)
+import { db } from "../../../../lib/firebase"; 
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "../../../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import { FaPlus, FaBook, FaUserTie, FaGraduationCap, FaArrowRight } from "react-icons/fa";
 
