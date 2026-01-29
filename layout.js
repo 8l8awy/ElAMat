@@ -27,7 +27,6 @@ export default function RootLayout({ children }) {
                   src="/logo.png" 
                   alt="EAM Logo" 
                   className="h-10 md:h-14 w-auto object-contain drop-shadow-[0_0_20px_rgba(168,85,247,0.5)] transition-all duration-500 hover:scale-110 hover:drop-shadow-[0_0_30px_rgba(168,85,247,0.8)]"
-                  onError={(e) => { e.target.src = "/a.png" }} 
                />
             </div>
 
