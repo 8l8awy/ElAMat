@@ -11,62 +11,50 @@ export default function RootLayout({ children }) {
     <html lang="ar" dir="rtl">
       <body className="bg-[#020202] text-white min-h-screen relative overflow-x-hidden font-sans">
         
-        {/* تأثيرات الخلفية العميقة */}
+        {/* الخلفية */}
         <div className="fixed inset-0 pointer-events-none z-0">
           <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-purple-900/10 rounded-full blur-[120px]"></div>
           <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-purple-800/5 rounded-full blur-[100px]"></div>
         </div>
 
-        {/* الهيدر المطور والمضبوط بالمللي */}
-        <header className="fixed top-0 left-0 right-0 z-[100] bg-black/40 backdrop-blur-2xl border-b border-white/5 py-4 px-6">
+        {/* الهيدر المطور باللوجو الجديد */}
+        <header className="fixed top-0 left-0 right-0 z-[100] bg-black/40 backdrop-blur-2xl border-b border-white/5 py-3 px-6 md:px-12">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             
-            <div className="flex items-center select-none">
-              {/* Container اللوجو مع إلغاء أي فراغات وهمية */}
-              <h1 className="flex items-center gap-0 text-2xl md:text-3xl font-black tracking-tighter leading-none">
+            <div className="flex items-center gap-4">
+              {/* حاوية اللوجو الجديد */}
+              <div className="relative group flex items-center gap-3">
+                <img 
+                  src="/logo.png"  // تأكد من تسمية ملف اللوجو الجديد logo.png ووضعه في folder الـ public
+                  alt="EAM Logo" 
+                  className="h-10 md:h-12 w-auto object-contain drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] transition-transform duration-500 group-hover:scale-105"
+                  onError={(e) => { e.target.src = "/a.png" }} // كـ Backup لو الصورة مظهرتش
+                />
                 
-                {/* كلمة El */}
-                <span className="text-white">El</span>
-                
-                {/* اللوجو - محشور في النص تماماً */}
-                <span className="flex items-center justify-center -mx-[2px] self-center"> 
-                  <img 
-                    src="/a.png" 
-                    alt="a" 
-                    className="h-[0.80em] w-auto block transform translate-y-[0.1em] drop-shadow-[0_0_12px_rgba(168,85,247,0.5)]" 
-                    onError={(e) => {
-                      if (!e.target.src.includes(".jpg")) {
-                        e.target.src = "/a.jpg";
-                      }
-                    }}
-                  />
-                </span>
-
-                {/* كلمة gamy */}
-                <span className="text-white">gamy</span>
-                
-                {/* كلمة Materials */}
-                <span className="text-purple-600 mr-2 italic font-black opacity-90">Materials</span>
-              </h1>
+                {/* كلمة Materials بجانب اللوجو بشكل شيك */}
+                <div className="flex flex-col leading-none">
+                  <span className="text-white font-black text-lg md:text-xl tracking-tighter uppercase">ELAGAMY</span>
+                  <span className="text-purple-500 font-bold text-[10px] md:text-xs tracking-[0.3em] uppercase italic opacity-80">Materials</span>
+                </div>
+              </div>
             </div>
 
-            {/* نسخة الموقع بتصميم شيك */}
-            <div className="hidden sm:block text-[10px] text-gray-500 font-black bg-white/5 px-3 py-1 rounded-full border border-white/5 tracking-[0.2em] shadow-inner uppercase">
+            {/* نسخة الموقع بتصميم زجاجي */}
+            <div className="hidden sm:block text-[10px] text-gray-400 font-black bg-white/5 px-4 py-1.5 rounded-full border border-white/10 tracking-[0.2em] shadow-lg">
               V2.0
             </div>
           </div>
         </header>
 
-        {/* محتوى الصفحات */}
+        {/* المحتوى */}
         <div className="relative z-10 pt-28">
           <AuthProvider>
             {children}
           </AuthProvider>
         </div>
 
-        {/* الفوتر */}
-        <footer className="relative z-10 py-10 text-center opacity-20 text-[10px] font-bold tracking-widest pointer-events-none uppercase">
-          © 2026 Elagamy Materials Dashboard
+        <footer className="relative z-10 py-10 text-center opacity-20 text-[10px] font-bold tracking-widest uppercase">
+          © 2026 Elagamy Materials
         </footer>
 
       </body>
