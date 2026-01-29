@@ -80,7 +80,7 @@ export default function SubjectsPage() {
   }, [year, semester]);
 
   return (
-    <div className="min-h-screen w-full bg-[#0a0a0a] text-white p-6 font-sans overflow-x-hidden" dir="rtl">
+    <div className="min-h-screen w-full  text-white p-6 font-sans overflow-x-hidden" dir="rtl">
       
       {/* هيدر التحكم العلوي */}
       <div className="max-w-7xl mx-auto mb-12 space-y-6">
@@ -113,7 +113,7 @@ export default function SubjectsPage() {
               
               <div className="flex flex-col items-center text-center space-y-6">
                 {/* الأيقونة في دائرة كما في الصورة */}
-                <div className={`w-20 h-20 rounded-full flex items-center justify-center text-4xl shadow-inner border border-white/5 ${subjectColors[sub]}`}>
+                <div className={`w-20 h-20 rounded-full bg-black/40 flex items-center justify-center text-4xl shadow-inner border border-white/5 ${subjectColors[sub]}`}>
                   {getSubjectIcon(sub)}
                 </div>
 
