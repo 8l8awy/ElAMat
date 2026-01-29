@@ -40,12 +40,14 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       {/* 1. تم تحديث الهيدر هنا ليعرض اللوجو الجديد فقط */}
-      <div className="flex items-center justify-center py-2 select-none cursor-pointer" onClick={() => router.push('/dashboard')}>
+{/* 1. تم تكبير اللوجو وضبط المسافات */}
+      <div className="flex items-center justify-center py-4 mb-2 select-none cursor-pointer group" onClick={() => router.push('/dashboard')}>
         <img 
           src="/logo.png" 
           alt="EAM Logo" 
-          className="h-14 md:h-12 w-auto object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-transform duration-500 hover:scale-105"
-          onError={(e) => { e.target.src = "/a.png" }} // Backup
+          {/* تم تكبير الارتفاع من h-10 لـ h-14 ومن h-12 لـ h-20 */}
+          className="h-14 md:h-20 w-auto object-contain drop-shadow-[0_0_20px_rgba(168,85,247,0.6)] transition-all duration-500 group-hover:scale-110 group-hover:drop-shadow-[0_0_35px_rgba(168,85,247,0.9)]"
+          onError={(e) => { e.target.src = "/a.png" }} 
         />
       </div>
       
