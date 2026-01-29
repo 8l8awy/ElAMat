@@ -85,10 +85,20 @@ export default function Dashboard() {
                 لوحة <span className="text-purple-500 text-purple-glow">المعلومات</span>
             </h2>
             <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px] bg-white/5 w-fit px-3 py-1 rounded-full border border-white/5">
-                مرحباً بك، {user?.name || ""}
+                مرحباً ، {user?.name || ""}
             </p>
         </div>
-        
+        <button 
+          onClick={() => router.push('/dashboard/admin/add-material')}
+          className="flex items-center gap-3 bg-purple-600 hover:bg-purple-500 text-white px-6 py-4 rounded-2xl font-black transition-all shadow-lg shadow-purple-600/20 active:scale-95 group"
+        >
+          <div className="bg-white/20 p-2 rounded-lg group-hover:rotate-90 transition-transform">
+            <FaPlus className="text-sm" />
+          </div>
+          <span>إضافة مواد الترم الثاني</span>
+        </button>
+      )}
+    </div>
         {/* شبكة الإحصائيات الفخمة */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {[
