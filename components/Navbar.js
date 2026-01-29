@@ -42,11 +42,13 @@ export default function Navbar() {
       {/* 1. تم تحديث الهيدر هنا ليعرض اللوجو الجديد فقط */}
 {/* 1. تم تكبير اللوجو وضبط المسافات */}
    {/* اللوجو الجديد بحجم أكبر وبدون أخطاء برمجية */}
-      <div className="flex items-center justify-center py-4 mb-2 select-none cursor-pointer group" onClick={() => router.push('/dashboard')}>
+     {/* هيدر الناف بار - الحجم الصغير والملموم */}
+      <div className="flex items-center justify-center py-1 mb-0 select-none cursor-pointer group" onClick={() => router.push('/dashboard')}>
         <img 
           src="/logo.png" 
           alt="EAM Logo" 
-          className="h-10 md:h-10 w-auto object-contain drop-shadow-[0_0_20px_rgba(168,85,247,0.6)] transition-all duration-500 group-hover:scale-110 group-hover:drop-shadow-[0_0_35px_rgba(168,85,247,0.9)]"
+          {/* حجم صغير جداً للموبايل ومتوسط للكمبيوتر */}
+          className="h-8 md:h-12 w-auto object-contain drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] transition-all duration-300 group-hover:scale-110"
           onError={(e) => { e.target.src = "/a.png" }} 
         />
       </div>
