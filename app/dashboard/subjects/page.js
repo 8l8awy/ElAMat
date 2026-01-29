@@ -113,7 +113,7 @@ export default function SubjectsPage() {
               
               <div className="flex flex-col items-center text-center space-y-6">
                 {/* الأيقونة في دائرة كما في الصورة */}
-                <div className={`w-20 h-20 rounded-full bg-black/40 flex items-center justify-center text-4xl shadow-inner border border-white/5 ${subjectColors[sub]}`}>
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center text-4xl shadow-inner border border-white/5 ${subjectColors[sub]}`}>
                   {getSubjectIcon(sub)}
                 </div>
 
