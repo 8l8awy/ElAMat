@@ -104,7 +104,15 @@ export default function Navbar() {
         <Link href="/dashboard/myUploads" className={`${btnClass} hover:bg-cyan-600`} title="ملخصاتي" onClick={closeMenu}>
              <FaUserClock size={20} />
         </Link>
-        
+        {user?.isAdmin && (
+        <button 
+          onClick={() => router.push('/dashboard/admin/add-material')}
+          className="flex items-center gap-2 bg-purple-600/20 text-purple-400 border border-purple-500/30 px-4 py-2 rounded-xl font-black hover:bg-purple-600 hover:text-white transition-all shadow-lg shadow-purple-600/10 group"
+        >
+          <FaPlusCircle className="group-hover:rotate-90 transition-transform text-sm" />
+          <span className="text-xs md:text-sm">إضافة مادة</span>
+        </button>
+      )}
         {/* 9. خروج */}
         <button onClick={handleLogout} className={`${btnClass} logout bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white`} title="تسجيل خروج" style={{marginTop:'10px'}}>
             <FaSignOutAlt size={20} />
