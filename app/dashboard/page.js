@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+// نستخدم نقطتين فقط للعودة لمجلد الـ app الرئيسي
 import { useAuth } from "../context/AuthContext";
 import { db } from "../lib/firebase";
 import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore";
