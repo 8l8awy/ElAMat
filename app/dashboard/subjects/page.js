@@ -19,7 +19,10 @@ export default function SubjectsPage() {
       sem1: ["مبادئ الاقتصاد", "لغة اجنبية (1)", "مبادئ المحاسبة المالية", "مبادئ القانون", "مبادئ ادارة الاعمال"],
       sem2: ["محاسبة الشركات", "القانون التجاري", "اقتصاد كلي", "لغة إنجليزية تخصصية", "إدارة التنظيم"]
     },
-    year2: { sem1: ["مادة تجريبية"], sem2: [] },
+    year2: { 
+      sem1: ["مادة تجريبية سنة تانية"],
+      sem2: [] 
+    },
     year3: { sem1: [], sem2: [] },
     year4: { sem1: [], sem2: [] }
   };
@@ -27,16 +30,12 @@ export default function SubjectsPage() {
   const subjects = allSubjects[`year${year}`][`sem${semester}`] || [];
 
   const subjectColors = {
-    "مبادئ الاقتصاد": "text-blue-400",
-    "لغة اجنبية (1)": "text-purple-400",
-    "مبادئ المحاسبة المالية": "text-green-400",
-    "مبادئ القانون": "text-red-400",
-    "مبادئ ادارة الاعمال": "text-orange-400",
-    "محاسبة الشركات": "text-green-400",
-    "القانون التجاري": "text-red-400",
-    "اقتصاد كلي": "text-blue-400",
-    "لغة إنجليزية تخصصية": "text-purple-400",
-    "إدارة التنظيم": "text-orange-400"
+    "مبادئ الاقتصاد": "text-blue-400", "لغة اجنبية (1)": "text-purple-400",
+    "مبادئ المحاسبة المالية": "text-green-400", "مبادئ القانون": "text-red-400",
+    "مبادئ ادارة الاعمال": "text-orange-400", "محاسبة الشركات": "text-green-400",
+    "القانون التجاري": "text-red-400", "اقتصاد كلي": "text-blue-400",
+    "لغة إنجليزية تخصصية": "text-purple-400", "إدارة التنظيم": "text-orange-400",
+    "مادة تجريبية سنة تانية": "text-purple-400"
   };
 
   const getSubjectIcon = (subject) => {
@@ -50,7 +49,6 @@ export default function SubjectsPage() {
     return icons[subject] || <FaBookOpen />;
   };
 
-  // 🛡️ التعديل الجوهري: دالة جلب البيانات الشاملة
   useEffect(() => {
     async function fetchStats() {
       setLoading(true);
@@ -61,90 +59,85 @@ export default function SubjectsPage() {
 
         snapshot.forEach(doc => {
           const data = doc.data();
-          
-          // تحويل البيانات لأرقام لضمان المطابقة (Year & Semester)
           const itemYear = Number(data.year);
           const itemSem = Number(data.semester);
+          const currentYear = Number(year);
+          const currentSem = Number(semester);
 
-          if (itemYear === year && itemSem === semester) {
-            const sub = data.subject;
-            const type = String(data.type).toLowerCase(); // تحويل النوع لسمول
+          if (itemYear === currentYear && itemSem === currentSem) {
+            const sub = String(data.subject).trim();
+            const type = String(data.type).toLowerCase().trim(); 
 
             if (!newStats[sub]) newStats[sub] = { summary: 0, assignment: 0 };
             
-            // التحقق من النوع (يدعم عربي وإنجليزي)
             if (type.includes("summary") || type.includes("ملخص")) newStats[sub].summary++;
             if (type.includes("assignment") || type.includes("تكليف")) newStats[sub].assignment++;
           }
         });
 
         setStats(newStats);
-      } catch (err) { console.error("Firebase Error:", err); }
+      } catch (err) { console.error("Firebase Sync Error:", err); }
       setLoading(false);
     }
     fetchStats();
   }, [year, semester]);
 
   return (
-    <div className="min-h-screen w-full  text-white p-6 font-sans overflow-x-hidden" dir="rtl">
+    // 👇 شلنا الـ p-6 وخليناها متغيرة (px-2 للموبايل و px-10 للكمبيوتر)
+    <div className="min-h-screen w-full  text-white px-2 md:px-10 py-6 font-sans overflow-x-hidden" dir="rtl">
       
       {/* هيدر التحكم */}
-      <div className="max-w-7xl mx-auto mb-12 space-y-6">
+      <div className="w-full max-w-7xl mx-auto mb-10 space-y-6">
         <div className="flex flex-wrap justify-between items-center gap-4 border-b border-white/5 pb-6">
-           <div className="flex gap-2 bg-white/5 p-1 rounded-2xl w-fit">
+           {/* أزرار الفرق ملمومة أكتر */}
+           <div className="flex gap-1.5 bg-white/5 p-1 rounded-2xl w-fit">
               {[1, 2, 3, 4].map(y => (
-                <button key={y} onClick={() => setYear(y)} 
-                  className={`px-6 py-2 rounded-xl font-black transition-all ${year === y ? 'bg-purple-600 shadow-lg scale-105' : 'text-gray-500 hover:text-white'}`}>
-                  فرقة {y}
+                <button key={y} onClick={() => setYear(Number(y))} 
+                  className={`px-4 md:px-6 py-2 rounded-xl font-black text-sm md:text-base transition-all ${year === y ? 'bg-purple-600 shadow-lg scale-105' : 'text-gray-500'}`}>
+                  {y}
                 </button>
               ))}
            </div>
            
            <button onClick={() => setSemester(semester === 1 ? 2 : 1)} 
-             className="w-fit group bg-white/5 border border-white/10 px-8 py-2.5 rounded-xl font-black flex items-center gap-3 hover:bg-white/10 transition-all active:scale-95 shadow-xl">
-             <FaArrowsRotate className={`text-purple-500 transition-transform duration-700 group-hover:rotate-[360deg]`} /> 
+             className="w-fit group bg-white/5 border border-white/10 px-6 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 active:scale-95 transition-all">
+             <FaArrowsRotate className="text-purple-500 group-hover:rotate-[180deg] transition-transform duration-500" /> 
              <span>ترم {semester === 1 ? "أول" : "ثاني"}</span>
            </button>
         </div>
 
-        <div className="text-center">
-          <h1 className="text-4xl md:text-5xl font-black mb-2 italic">المواد الدراسية</h1>
-          <p className="text-gray-500 font-bold tracking-widest uppercase text-xs">اختر المادة لعرض المحتوى</p>
+        <div className="text-center pt-2">
+          <h1 className="text-3xl md:text-5xl font-black italic">المواد الدراسية</h1>
         </div>
       </div>
 
-      {/* الكروت */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+      {/* شبكة الكروت: gap-3 للموبايل يخلي المسافات ملمومة */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8 w-full max-w-7xl mx-auto pb-20">
         {subjects.map((sub) => (
           <Link href={`/dashboard/materials?subject=${encodeURIComponent(sub)}`} key={sub}>
-            <div className="group relative bg-[#121212] border border-white/5 rounded-[2.5rem] p-10 hover:bg-[#181818] transition-all duration-300 hover:-translate-y-2 cursor-pointer shadow-2xl overflow-hidden">
-              <div className="flex flex-col items-center text-center space-y-6 relative z-10">
-                <div className={`w-20 h-20 rounded-full bg-black/40 flex items-center justify-center text-4xl shadow-inner border border-white/5 ${subjectColors[sub]}`}>
+            <div className="group relative bg-[#121212] border border-white/5 rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-12 hover:bg-[#181818] transition-all duration-500 hover:-translate-y-2 cursor-pointer shadow-2xl overflow-hidden">
+              <div className="flex flex-col items-center text-center space-y-4 md:space-y-8 relative z-10">
+                <div className={`w-16 h-16 md:w-24 md:h-24 rounded-full bg-black/50 flex items-center justify-center text-3xl md:text-5xl shadow-2xl border border-white/5 ${subjectColors[sub] || 'text-white'}`}>
                   {getSubjectIcon(sub)}
                 </div>
-                <h3 className="text-2xl font-black group-hover:text-purple-400 transition-colors">{sub}</h3>
-                
-                <div className="flex items-center gap-3">
-                   <div className="bg-black/30 px-4 py-2 rounded-xl text-xs font-bold text-gray-400 border border-white/5">
-                      <span>📚 {stats[sub]?.summary || 0} ملخص</span>
+
+                <h3 className="text-xl md:text-3xl font-black tracking-tight group-hover:text-purple-400 transition-colors">
+                  {sub}
+                </h3>
+
+                <div className="flex items-center gap-2 md:gap-4">
+                   <div className="bg-black/40 px-3 md:px-5 py-2 rounded-xl md:rounded-2xl text-[11px] md:text-[13px] font-black text-gray-400 border border-white/5">
+                      📚 {stats[sub]?.summary || 0}
                    </div>
-                   <div className="bg-black/30 px-4 py-2 rounded-xl text-xs font-bold text-gray-400 border border-white/5">
-                      <span>📝 {stats[sub]?.assignment || 0} تكليف</span>
+                   <div className="bg-black/40 px-3 md:px-5 py-2 rounded-xl md:rounded-2xl text-[11px] md:text-[13px] font-black text-gray-400 border border-white/5">
+                      📝 {stats[sub]?.assignment || 0}
                    </div>
                 </div>
               </div>
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-700 pointer-events-none" style={{ background: `radial-gradient(circle at center, purple, transparent 70%)` }}></div>
             </div>
           </Link>
         ))}
       </div>
-
-      {subjects.length === 0 && !loading && (
-        <div className="text-center py-40 opacity-20">
-          <FaBookOpen size={80} className="mx-auto mb-4" />
-          <h2 className="text-2xl font-black italic uppercase text-gray-400">قريباً.. جاري تحضير مواد الفرقة {year}</h2>
-        </div>
-      )}
     </div>
   );
 }
