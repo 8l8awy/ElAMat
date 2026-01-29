@@ -1,12 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
-// نستخدم نقطتين فقط للعودة لمجلد الـ app الرئيسي
-import { useAuth } from "../context/AuthContext";
-import { db } from "../lib/firebase";
+// نخرج مستويين للوصول للمجلدات الرئيسية خارج app
+import { useAuth } from "../../context/AuthContext";
+import { db } from "../../lib/firebase";
 import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore";
 import { FaUsers, FaFileAlt, FaClipboardList, FaLayerGroup, FaBullhorn, FaPlus } from "react-icons/fa"; 
 import { useRouter } from "next/navigation";
-
 export default function Dashboard() {
   const { user } = useAuth();
   const router = useRouter();
