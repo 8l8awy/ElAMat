@@ -11,99 +11,95 @@ export default function GlobalSubjectsPage() {
   const [semester, setSemester] = useState(2);
   const router = useRouter();
 
-  // بنك المواد المنظم (تأكد من كتابة الأسماء كما هي في الداتا بيز)
   const allSubjects = {
     year1: {
       sem1: [
-        { name: "مبادئ المحاسبة المالية", color: "#22c55e", icon: <FaCalculator size={45}/> },
-        { name: "مبادئ القانون", color: "#ef4444", icon: <FaBalanceScale size={45}/> },
-        { name: "مبادئ الاقتصاد", color: "#3b82f6", icon: <FaChartBar size={45}/> },
-        { name: "مبادئ ادارة الاعمال", color: "#f97316", icon: <FaSuitcase size={45}/> },
-        { name: "لغة اجنبية (1)", color: "#a855f7", icon: <FaLanguage size={45}/> },
+        { name: "مبادئ المحاسبة المالية", color: "#22c55e", icon: <FaCalculator size={50}/> },
+        { name: "لغة اجنبية (1)", color: "#a855f7", icon: <FaLanguage size={50}/> },
+        { name: "مبادئ الاقتصاد", color: "#3b82f6", icon: <FaChartBar size={50}/> },
+        { name: "مبادئ ادارة الاعمال", color: "#f97316", icon: <FaSuitcase size={50}/> },
+        { name: "مبادئ القانون", color: "#ef4444", icon: <FaBalanceScale size={50}/> },
       ],
       sem2: [
-        { name: "محاسبة الشركات", color: "#22c55e", icon: <FaCalculator size={45}/> },
-        { name: "القانون التجاري", color: "#ef4444", icon: <FaGavel size={45}/> },
-        { name: "اقتصاد كلي", color: "#3b82f6", icon: <FaChartBar size={45}/> },
-        { name: "لغة إنجليزية تخصصية", color: "#a855f7", icon: <FaBook size={45}/> },
-        { name: "إدارة التنظيم", color: "#f97316", icon: <FaSuitcase size={45}/> },
+        { name: "محاسبة الشركات", color: "#22c55e", icon: <FaCalculator size={50}/> },
+        { name: "القانون التجاري", color: "#ef4444", icon: <FaGavel size={50}/> },
+        { name: "اقتصاد كلي", color: "#3b82f6", icon: <FaChartBar size={50}/> },
+        { name: "لغة إنجليزية تخصصية", color: "#a855f7", icon: <FaBook size={50}/> },
+        { name: "إدارة التنظيم", color: "#f97316", icon: <FaSuitcase size={50}/> },
       ]
     },
-    year2: { sem1: [], sem2: [] },
-    year3: { sem1: [], sem2: [] },
-    year4: { sem1: [], sem2: [] }
+    year2: { sem1: [], sem2: [] }, year3: { sem1: [], sem2: [] }, year4: { sem1: [], sem2: [] }
   };
 
   const currentList = allSubjects[`year${year}`][`sem${semester}`] || [];
 
   return (
-    <div className="min-h-screen w-full bg-[#020202] text-white relative font-sans overflow-x-hidden" dir="rtl">
+    <div className="min-h-screen w-full bg-black text-white relative font-sans overflow-x-hidden" dir="rtl">
       
-      {/* 🌌 تأثير إضاءة خلفي عملاق */}
-      <div className="fixed inset-0 -z-10 bg-black">
-        <div className="absolute top-0 right-0 w-[80%] h-[80%] bg-purple-900/10 blur-[150px] rounded-full"></div>
+      {/* 1. ضبط اللوجو (الجهة اليمنى العلوية) */}
+      <div className="absolute top-8 right-10 z-[60]">
+        <div className="flex items-center gap-2 group cursor-pointer">
+           <span className="text-3xl font-black tracking-tighter">gamy</span>
+           <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center rotate-12 group-hover:rotate-0 transition-transform">
+              <span className="text-white font-black text-xl italic">A</span>
+           </div>
+           <span className="text-3xl font-black tracking-tighter">El</span>
+        </div>
       </div>
 
-      {/* هيدر التحكم العلوي */}
-      <div className="fixed top-0 w-full z-50 bg-black/70 backdrop-blur-2xl border-b border-white/5 px-6 py-5 flex flex-wrap justify-between items-center gap-6">
-        <div className="flex gap-3">
+      {/* 2. هيدر التحكم (الجهة اليسرى العلوية) */}
+      <div className="fixed top-8 left-10 z-50 flex flex-col items-end gap-4">
+        <div className="flex bg-white/5 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 shadow-2xl">
           {[1, 2, 3, 4].map(y => (
             <button key={y} onClick={() => setYear(y)} 
-              className={`px-6 py-3 rounded-2xl font-black text-lg transition-all duration-300 ${year === y ? 'bg-purple-600 shadow-[0_0_30px_rgba(147,51,234,0.3)]' : 'bg-white/5 text-gray-500 hover:text-white'}`}>
+              className={`px-6 py-2.5 rounded-xl font-black transition-all ${year === y ? 'bg-purple-600 shadow-lg scale-105' : 'text-gray-500 hover:text-white'}`}>
               فرقة {y}
             </button>
           ))}
         </div>
-        
         <button onClick={() => setSemester(semester === 1 ? 2 : 1)} 
-          className="bg-white/10 px-8 py-3 rounded-2xl font-black flex items-center gap-3 hover:bg-purple-600 transition-all border border-white/10 shadow-xl">
-          <FaExchangeAlt /> <span>ترم {semester === 1 ? "أول" : "ثاني"}</span>
+          className="bg-white/5 backdrop-blur-md px-6 py-3 rounded-xl font-black flex items-center gap-3 border border-white/10 hover:bg-purple-600 transition-all group shadow-xl">
+          <FaExchangeAlt className="group-hover:rotate-180 transition-transform" /> 
+          <span>الترم {semester === 1 ? "الأول" : "الثاني"}</span>
         </button>
       </div>
 
-      <div className="pt-40 w-full">
-        <div className="px-10 mb-16 text-center md:text-right">
-           <h1 className="text-6xl md:text-9xl font-black italic tracking-tighter leading-none mb-4">
+      {/* 3. عنوان الصفحة الكبير */}
+      <div className="pt-48 px-10 text-center md:text-right mb-10">
+          <h1 className="text-7xl md:text-[10rem] font-black italic tracking-tighter leading-[0.8] mb-6 drop-shadow-2xl">
             مواد <span className="text-purple-600">الفرقة {year}</span>
           </h1>
-          <p className="text-gray-500 font-bold text-xl uppercase tracking-widest">تصفح محتوى المواد والملخصات المتاحة</p>
-        </div>
+          <p className="text-gray-500 font-bold text-2xl uppercase tracking-widest opacity-60">تصفح محتوى المواد والملخصات المتاحة</p>
+      </div>
 
-        {/* شبكة الكروت: ملء الشاشة بالكامل (Edge-to-Edge) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 w-full gap-px bg-white/5 border-y border-white/5">
-          {currentList.map((sub, i) => (
-            <div 
-              key={i} 
-              // 👇 الربط بصفحة المواد الحقيقية لفتح الملخصات
-              onClick={() => router.push(`/dashboard/materials?subject=${encodeURIComponent(sub.name)}`)}
-              className="group relative h-[550px] bg-[#050505] hover:bg-white/[0.03] transition-all duration-700 cursor-pointer flex flex-col items-center justify-center p-12 text-center overflow-hidden"
-            >
-              {/* خط الإضاءة العلوي */}
-              <div className="absolute top-0 left-0 w-full h-[4px] scale-x-0 group-hover:scale-x-100 transition-transform duration-500" style={{ backgroundColor: sub.color }}></div>
-              
-              <div className="mb-14 transform group-hover:scale-125 group-hover:-rotate-12 transition-all duration-700" style={{ color: sub.color }}>
-                {sub.icon}
-              </div>
-              
-              <h3 className="text-4xl font-black leading-tight mb-8 px-4 group-hover:tracking-tighter transition-all duration-500">
-                {sub.name}
-              </h3>
-              
-              <div className="flex items-center gap-3 font-black text-sm tracking-[0.4em] uppercase opacity-0 group-hover:opacity-100 translate-y-6 group-hover:translate-y-0 transition-all duration-700" style={{ color: sub.color }}>
-                <span>دخول المادة</span>
-              </div>
-
-              {/* تأثير الوهج الخلفي */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-700 pointer-events-none" style={{ background: `radial-gradient(circle at center, ${sub.color}, transparent 70%)` }}></div>
+      {/* 4. شبكة الكروت: ملء الشاشة (Edge-to-Edge) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 w-full h-[600px] gap-px bg-white/5 border-y border-white/5">
+        {currentList.map((sub, i) => (
+          <div 
+            key={i} 
+            onClick={() => router.push(`/dashboard/materials?subject=${encodeURIComponent(sub.name)}`)}
+            className="group relative h-full bg-[#050505] hover:bg-white/[0.03] transition-all duration-700 cursor-pointer flex flex-col items-center justify-center p-10 text-center overflow-hidden"
+          >
+            {/* خط الإضاءة العلوي */}
+            <div className="absolute top-0 left-0 w-full h-[5px] scale-x-0 group-hover:scale-x-100 transition-transform duration-500" style={{ backgroundColor: sub.color }}></div>
+            
+            {/* الأيقونة الكبيرة */}
+            <div className="mb-14 transform group-hover:scale-125 group-hover:-rotate-12 transition-all duration-700 drop-shadow-[0_0_20px_rgba(0,0,0,0.8)]" style={{ color: sub.color }}>
+              {sub.icon}
             </div>
-          ))}
-        </div>
+            
+            <h3 className="text-4xl font-black leading-[1.1] mb-8 group-hover:tracking-tighter transition-all duration-500">
+              {sub.name}
+            </h3>
+            
+            <div className="flex items-center gap-3 font-black text-xs tracking-[0.4em] uppercase opacity-0 group-hover:opacity-100 translate-y-6 group-hover:translate-y-0 transition-all duration-700" style={{ color: sub.color }}>
+              <span>دخول المادة</span>
+            </div>
 
-        {currentList.length === 0 && (
-          <div className="text-center py-40">
-            <p className="text-gray-700 font-black text-3xl italic">قريباً.. مواد هذه الفرقة</p>
+            {/* تأثير الوهج (Glow) */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-700 pointer-events-none" style={{ background: `radial-gradient(circle at center, ${sub.color}, transparent 80%)` }}></div>
           </div>
-        )}
+        ))}
       </div>
     </div>
   );
