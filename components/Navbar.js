@@ -96,16 +96,6 @@ export default function Navbar() {
         </Link>
 
         {/* زر إضافة مادة سريع للأدمن */}
-        {user?.isAdmin && (
-          <Link 
-            href="/dashboard/admin/add-material" 
-            className={`${btnClass} hover:bg-purple-700 bg-purple-600/20 text-purple-400`} 
-            title="إضافة مادة للترم الثاني" 
-            onClick={closeMenu}
-          >
-             <FaPlusCircle size={20} />
-          </Link>
-        )}
 
         {isAdmin && (
           <Link href="/dashboard/admin" className={`${btnClass} hover:bg-orange-600`} title="لوحة التحكم الرئيسية" onClick={closeMenu}>
