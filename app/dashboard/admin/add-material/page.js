@@ -11,14 +11,12 @@ export default function AddMaterialPage() {
     e.preventDefault();
     setLoading(true);
     
-    try {
-      console.log("محاولة إرسال المادة:", name);
-      const docRef = await addDoc(collection(db, "materials"), {
-        name: name,
-        semester: 2,
-        status: "approved",
-        createdAt: serverTimestamp(),
-      });
+ // بدلاً من materials، سنستخدم subjects
+const docRef = await addDoc(collection(db, "subjects"), {
+  name: name,
+  semester: 2,
+  createdAt: serverTimestamp(),
+});
       
       console.log("✅ تمت الإضافة بنجاح! ID:", docRef.id);
       alert("مبروك! المادة وصلت الداتا بيز بـ ID: " + docRef.id);
