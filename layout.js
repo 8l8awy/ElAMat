@@ -23,7 +23,7 @@ export default function RootLayout({ children }) {
             
             <div className="flex items-center gap-2">
               <h1 className="text-2xl md:text-3xl font-black tracking-tighter flex items-center leading-none">
-                El 
+                gamy 
                 <span className="flex items-center mx-1">
                   {/* اللوجو مكان حرف الـ a */}
                   <img 
@@ -36,7 +36,7 @@ export default function RootLayout({ children }) {
                       }
                     }}
                   />
-                  gamy
+                  El
                 </span>
                 <span className="text-purple-500 mr-1">Materials</span>
               </h1>
