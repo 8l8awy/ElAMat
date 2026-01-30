@@ -89,7 +89,7 @@ export default function StudentSharePage() {
         </div>
 
         {/* فورم الرفع */}
-        <div className="bg-[#0a0a0a] border border-white/5 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
+        <div className=" border border-white/5 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
           {isSuccess ? (
             <div className="py-20 text-center animate-bounce">
               <FaCheckCircle className="text-green-500 text-7xl mx-auto mb-6" />
