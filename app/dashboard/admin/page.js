@@ -18,9 +18,10 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showFake404, setShowFake404] = useState(true);
-  const [adminRole, setAdminRole] = useState("moderator"); // 👈 الحالة الجديدة للرتبة
+  const [adminRole, setAdminRole] = useState("moderator");
 
   const [title, setTitle] = useState("");
+  const [desc, setDesc] = useState(""); // 👈 حالة الوصف الجديد
   const [year, setYear] = useState(1);
   const [semester, setSemester] = useState(2);
   const [subject, setSubject] = useState("");
@@ -48,24 +49,18 @@ export default function AdminPage() {
     setSubject(currentSubjects[0] || "");
   }, [year, semester]);
 
-  // --- نظام الأمان والتحقق من الرتبة ---
   const verifyCode = async (codeToVerify, isAutoCheck = false) => {
     try {
       const q = query(collection(db, "allowedCodes"), where("code", "==", codeToVerify.trim()));
       const querySnapshot = await getDocs(q);
-      
       if (!querySnapshot.empty && querySnapshot.docs[0].data().admin === true) {
         const userData = querySnapshot.docs[0].data();
         setIsAuthenticated(true);
         setShowFake404(false);
-        
-        // حفظ البيانات في التخزين المحلي
         localStorage.setItem("adminCode", codeToVerify);
         localStorage.setItem("adminRole", userData.role || "admin"); 
         setAdminRole(userData.role || "admin");
-      } else {
-        handleLoginFail();
-      }
+      } else { handleLoginFail(); }
     } catch (error) { console.error(error); }
     setIsLoading(false);
   };
@@ -75,17 +70,11 @@ export default function AdminPage() {
       const savedCode = localStorage.getItem("adminCode");
       const savedRole = localStorage.getItem("adminRole");
       const isSecretMode = searchParams.get("mode") === "login";
-      
       if (savedCode) {
         setAdminRole(savedRole || "moderator");
         await verifyCode(savedCode, true);
-      } else if (isSecretMode) { 
-        setIsLoading(false); 
-        setShowFake404(false); 
-      } else { 
-        setIsLoading(false); 
-        setShowFake404(true); 
-      }
+      } else if (isSecretMode) { setIsLoading(false); setShowFake404(false); }
+      else { setIsLoading(false); setShowFake404(true); }
     };
     checkAccess();
   }, []);
@@ -97,7 +86,6 @@ export default function AdminPage() {
     setShowFake404(true);
   };
 
-  // --- جلب البيانات ---
   useEffect(() => {
     if (!isAuthenticated) return;
     const q = query(collection(db, "materials"), orderBy("createdAt", "desc"));
@@ -109,54 +97,42 @@ export default function AdminPage() {
     return () => unsubscribe();
   }, [isAuthenticated]);
 
-  const uploadToCloudinary = async (file) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", UPLOAD_PRESET);
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, { method: "POST", body: formData });
-    return (await res.json()).secure_url;
-  };
-
   const handleAction = async (id, newStatus) => {
     try {
       await updateDoc(doc(db, "materials", id), { status: newStatus });
-      setMessage(newStatus === "approved" ? "تم الموافقة على النشر ✅" : "تم رفض الطلب ❌");
+      setMessage(newStatus === "approved" ? "تم النشر ✅" : "تم الحذف ❌");
       if (newStatus === "rejected") await deleteDoc(doc(db, "materials", id));
       setTimeout(() => setMessage(""), 3000);
-    } catch (error) { alert("حدث خطأ في تحديث الحالة"); }
+    } catch (error) { alert("خطأ في العملية"); }
   };
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!files.length || !title || !subject) return alert("أكمل البيانات أولاً!");
-    setUploading(true); setMessage("جاري الرفع...");
+    if (!files.length || !title) return alert("البيانات ناقصة");
+    setUploading(true);
     try {
       const uploadedFilesData = [];
       for (let file of files) {
-        const url = await uploadToCloudinary(file);
-        uploadedFilesData.push({ name: file.name, url: url, type: file.type });
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", UPLOAD_PRESET);
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, { method: "POST", body: formData });
+        const data = await res.json();
+        uploadedFilesData.push({ name: file.name, url: data.secure_url, type: file.type });
       }
       await addDoc(collection(db, "materials"), {
-        title, subject, type, 
-        year: Number(year),
-        semester: Number(semester),
-        files: uploadedFilesData,
-        status: "approved", 
-        uploader: "Admin",
-        createdAt: serverTimestamp(),
+        title, desc, subject, type, year: Number(year), semester: Number(semester),
+        files: uploadedFilesData, status: "approved", uploader: "Admin", createdAt: serverTimestamp(),
       });
-      setUploading(false); setTitle(""); setFiles([]); 
-      setMessage(`تم النشر بنجاح ✅`);
+      setUploading(false); setTitle(""); setDesc(""); setFiles([]); setMessage("تم النشر بنجاح ✅");
       setTimeout(() => setMessage(""), 3000);
     } catch (error) { alert(error.message); setUploading(false); }
   };
 
   const handleDelete = async (id, title) => {
-    if (adminRole !== "admin") return alert("عذراً، هذه الصلاحية للمدير فقط ⛔");
-    if (confirm(`حذف "${title}"؟`)) await deleteDoc(doc(db, "materials", id));
+    if (adminRole !== "admin") return alert("للمدير فقط ⛔");
+    if (confirm(`حذف "${title}" نهائياً؟`)) await deleteDoc(doc(db, "materials", id));
   };
-  
-  const openSingleFile = (url) => { if (url) window.open(url, '_blank'); };
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-black"><FaSpinner className="animate-spin text-4xl text-purple-600" /></div>;
   if (showFake404) return <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans"><h1 className="text-4xl font-bold border-r pr-4 mr-4">404</h1><div>This page could not be found.</div></div>;
@@ -170,7 +146,7 @@ export default function AdminPage() {
           <div className="flex items-center gap-4">
             <h1 className="text-3xl font-black italic uppercase tracking-tighter">Admin Central 🚀</h1>
             <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${adminRole === 'admin' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
-               <FaShieldAlt className="inline ml-1"/> {adminRole === 'admin' ? "مدير نظام" : "مُراجع محتوى"}
+               <FaShieldAlt className="inline ml-1"/> {adminRole === 'admin' ? "مدير نظام" : "مُراجع"}
             </span>
           </div>
         </div>
@@ -180,35 +156,23 @@ export default function AdminPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-20">
           
           <div className="lg:col-span-1">
-            <div className="bg-[#111] backdrop-blur-xl rounded-[2.5rem] p-8 shadow-2xl border border-white/5 sticky top-4">
-              <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-purple-400"><FaCloudUploadAlt/> نشر محتوى جديد</h2>
+            <div className="bg-[#111] backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/5 sticky top-4 shadow-2xl">
+              <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-purple-400"><FaCloudUploadAlt/> نشر سريع</h2>
               <form onSubmit={handleUpload} className="space-y-6">
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-2">
-                    <label className="text-[10px] text-gray-500 font-black uppercase tracking-widest mr-2">الفرقة</label>
-                    <select value={year} onChange={(e)=>setYear(e.target.value)} className="w-full bg-black/40 border border-white/5 p-3 rounded-xl text-xs font-bold outline-none">
-                       {[1,2,3,4].map(y => <option key={y} value={y} className="bg-black">فرقة {y}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] text-gray-500 font-black uppercase tracking-widest mr-2">الترم</label>
-                    <select value={semester} onChange={(e)=>setSemester(e.target.value)} className="w-full bg-black/40 border border-white/5 p-3 rounded-xl text-xs font-bold outline-none">
-                       <option value={1} className="bg-black">أول</option>
-                       <option value={2} className="bg-black">ثاني</option>
-                    </select>
-                  </div>
+                  <select value={year} onChange={(e)=>setYear(e.target.value)} className="bg-black/40 border border-white/5 p-3 rounded-xl text-xs font-bold outline-none">
+                    {[1,2,3,4].map(y => <option key={y} value={y} className="bg-black">فرقة {y}</option>)}
+                  </select>
+                  <select value={semester} onChange={(e)=>setSemester(e.target.value)} className="bg-black/40 border border-white/5 p-3 rounded-xl text-xs font-bold outline-none font-sans italic">
+                    <option value={1} className="bg-black">ترم 1</option>
+                    <option value={2} className="bg-black">ترم 2</option>
+                  </select>
                 </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] text-gray-500 font-black mr-2 uppercase tracking-widest">نوع الملف</label>
-                  <div className="grid grid-cols-2 gap-2 bg-black/40 p-1 rounded-xl border border-white/5">
-                    <button type="button" onClick={() => setType("summary")} className={`py-2 rounded-lg font-black text-[10px] transition-all ${type === "summary" ? 'bg-purple-600 text-white' : 'text-gray-500'}`}>ملخص</button>
-                    <button type="button" onClick={() => setType("assignment")} className={`py-2 rounded-lg font-black text-[10px] transition-all ${type === "assignment" ? 'bg-blue-600 text-white' : 'text-gray-500'}`}>تكليف</button>
-                  </div>
-                </div>
-
+                
                 <input type="text" className="w-full bg-black/40 rounded-2xl p-4 outline-none border border-white/5 text-sm font-bold" value={title} onChange={(e)=>setTitle(e.target.value)} required placeholder="عنوان المنشور" />
                 
+                <textarea className="w-full bg-black/40 rounded-2xl p-4 outline-none border border-white/5 text-sm font-bold resize-none" rows="2" value={desc} onChange={(e)=>setDesc(e.target.value)} placeholder="وصف مختصر (اختياري)"></textarea>
+
                 <select className="w-full bg-black/40 rounded-2xl p-4 outline-none appearance-none border border-white/5 text-sm font-bold" value={subject} onChange={(e)=>setSubject(e.target.value)}>
                     {currentSubjects.map((s, i) => <option key={i} className="bg-gray-900" value={s}>{s}</option>)}
                 </select>
@@ -220,7 +184,7 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <button type="submit" disabled={uploading} className="w-full bg-purple-600 hover:bg-purple-500 py-4 rounded-[1.5rem] font-black shadow-xl disabled:opacity-50 text-xs italic uppercase tracking-wider">
+                <button type="submit" disabled={uploading} className="w-full bg-purple-600 hover:bg-purple-500 py-5 rounded-[1.5rem] font-black shadow-xl transition-all text-xs uppercase italic tracking-widest">
                   {uploading ? "جاري الرفع..." : "نشر الآن"}
                 </button>
               </form>
@@ -228,32 +192,30 @@ export default function AdminPage() {
           </div>
 
           <div className="lg:col-span-2 space-y-8">
-            {/* قسم مراجعة طلبات الطلاب */}
             {pendingList.length > 0 && (
-              <div className="bg-yellow-500/5 backdrop-blur-xl rounded-[2.5rem] p-8 border border-yellow-500/20 shadow-2xl">
-                <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-yellow-500 italic uppercase"><FaSpinner className="animate-spin"/> طلبات المراجعة ({pendingList.length})</h2>
+              <div className="bg-yellow-500/5 backdrop-blur-xl rounded-[2.5rem] p-8 border border-yellow-500/20 shadow-xl">
+                <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-yellow-500 italic uppercase"><FaSpinner className="animate-spin"/> مراجعة الطلبات ({pendingList.length})</h2>
                 <div className="space-y-6">
                   {pendingList.map((item) => (
                     <div key={item.id} className="bg-black/60 rounded-[2rem] p-6 border border-white/5">
-                      <div className="flex justify-between items-start mb-4 text-right" dir="rtl">
-                        <div>
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="min-w-0 flex-1">
                           <h4 className="font-black text-white text-md mb-1">{item.title}</h4>
-                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">بواسطة: <span className="text-purple-400">{item.studentName}</span> | {item.subject}</p>
+                          {item.desc && <p className="text-[11px] text-purple-300/70 mb-2 italic leading-relaxed">{item.desc}</p>}
+                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">بواسطة: {item.studentName} | {item.subject}</p>
                         </div>
                         <div className="flex gap-2">
                            <button onClick={() => handleAction(item.id, "approved")} className="bg-green-600/20 text-green-500 p-3 rounded-xl hover:bg-green-600 hover:text-white transition-all"><FaCheck/></button>
                            <button onClick={() => handleAction(item.id, "rejected")} className="bg-red-600/20 text-red-500 p-3 rounded-xl hover:bg-red-600 hover:text-white transition-all"><FaTimes/></button>
                         </div>
                       </div>
-
-                      {/* عرض كافة الصور المصغرة للطالب */}
                       <div className="flex flex-wrap gap-2 pt-4 border-t border-white/5">
                         {item.files?.map((file, idx) => (
-                          <div key={idx} className="relative cursor-pointer group" onClick={() => openSingleFile(file.url)}>
+                          <div key={idx} className="relative cursor-pointer group" onClick={() => window.open(file.url, '_blank')}>
                             {file.type?.includes('pdf') ? (
-                              <div className="w-20 h-20 bg-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20"><FaFilePdf className="text-red-500 text-2xl"/></div>
+                              <div className="w-16 h-16 bg-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20"><FaFilePdf className="text-red-500 text-xl"/></div>
                             ) : (
-                              <img src={file.url} className="w-20 h-20 object-cover rounded-xl border border-white/10 group-hover:border-purple-500 transition-all" alt="thumb" />
+                              <img src={file.url} className="w-16 h-16 object-cover rounded-xl border border-white/10 group-hover:border-purple-500 transition-all" alt="thumb" />
                             )}
                           </div>
                         ))}
@@ -264,37 +226,37 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* الأرشيف المعتمد */}
             <div className="bg-[#111] backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/5 shadow-2xl">
-              <h2 className="text-xl font-bold mb-8 flex items-center gap-3 border-b border-white/5 pb-6 italic uppercase tracking-tighter"><FaLayerGroup className="text-blue-500"/> أرشيف المحتوى ({materialsList.length})</h2>
-              <div className="space-y-6 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
+              <h2 className="text-xl font-bold mb-8 flex items-center gap-3 border-b border-white/5 pb-6 italic uppercase tracking-tighter"><FaLayerGroup className="text-blue-500"/> أرشيف المحتوى المعتمد ({materialsList.length})</h2>
+              <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
                 {materialsList.map((item) => (
-                  <div key={item.id} className="bg-black/30 rounded-[2rem] p-6 border border-white/5 hover:border-purple-500/30 transition-all">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center">
-                            {item.files?.[0]?.type?.includes('pdf') ? <FaFilePdf className="text-red-500"/> : <FaFileImage className="text-blue-400"/>}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
+                  <div key={item.id} className="bg-black/30 rounded-3xl p-5 flex items-center justify-between border border-white/5 hover:border-purple-500/30 transition-all group">
+                    <div className="flex items-center gap-4 flex-1">
+                       <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center">
+                          {item.files?.[0]?.type?.includes('pdf') ? <FaFilePdf className="text-red-500"/> : <FaFileImage className="text-blue-400"/>}
+                       </div>
+                       <div className="min-w-0">
+                         <div className="flex items-center gap-2 mb-1">
                             <span className={`text-[8px] font-black px-2 py-0.5 rounded-lg uppercase ${item.type === 'summary' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>{item.type === 'summary' ? 'ملخص' : 'تكليف'}</span>
-                            <h4 className="font-black text-sm text-white italic">{item.title}</h4>
-                          </div>
-                          <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{item.subject} | فرقة {item.year}</div>
-                        </div>
-                      </div>
-                      
-                      {/* الحذف للأدمن فقط */}
-                      {adminRole === "admin" && (
-                        <button onClick={() => handleDelete(item.id, item.title)} className="w-12 h-12 rounded-2xl bg-red-500/5 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all duration-500 shadow-lg"><FaTrash size={16}/></button>
-                      )}
+                            <h4 className="font-black text-sm text-white italic truncate">{item.title}</h4>
+                         </div>
+                         {item.desc && <p className="text-[10px] text-gray-400 mb-1 italic truncate max-w-xs">{item.desc}</p>}
+                         <div className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">{item.subject} | فرقة {item.year}</div>
+                       </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => item.files?.[0]?.url && window.open(item.files[0].url, '_blank')} className="p-3 rounded-xl bg-white/5 text-gray-500 hover:text-white transition-all"><FaClipboardList size={14}/></button>
+                        {adminRole === "admin" && (
+                          <button onClick={() => handleDelete(item.id, item.title)} className="bg-red-500/5 text-red-500 p-3 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg"><FaTrash size={14}/></button>
+                        )}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-
           </div>
+
         </div>
       </div>
     </div>
