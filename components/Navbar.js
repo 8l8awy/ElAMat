@@ -14,13 +14,13 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
 
-  // تعريف دوال المنيو عشان الكود ميعلقش
+  // دوال التحكم في المنيو
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
 
   useEffect(() => {
     const checkAccess = () => {
-      // قراءة الكود 98610 من الـ userEmail والـ adminCode
+      // قراءة البيانات للتأكد من المشرفين
       const adminCode = localStorage.getItem("adminCode");
       const userEmail = localStorage.getItem("userEmail"); 
       const savedRole = localStorage.getItem("adminRole");
@@ -30,10 +30,9 @@ export default function Navbar() {
         try { setUser(JSON.parse(savedUser)); } catch (e) { console.error("User data error"); }
       }
 
-      // شرط ظهور الزرار للمشرفين (98610)
+      // إظهار الزرار للمشرف (98610)
       if (
         adminCode === "98610" || userEmail === "98610" || 
-        adminCode === "98600" || userEmail === "98600" ||
         savedRole === "admin" || savedRole === "moderator"
       ) {
         setHasAccess(true);
@@ -52,13 +51,14 @@ export default function Navbar() {
     router.push("/login");
   };
 
-  const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5 bg-white/5";
+  const btnClass = "p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5 bg-white/5";
 
   return (
-    <nav className="navbar p-2 md:p-4 bg-black/50 backdrop-blur-md sticky top-0 z-50 border-b border-white/5">
-      {/* اللوجو الجديد بحجم أكبر وضبط المسافات */}
-      <div className="flex items-center justify-between max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-center py-1 mb-0 select-none cursor-pointer group" onClick={() => { router.push('/dashboard'); closeMenu(); }}>
+    <nav className="navbar p-4 bg-black/50 backdrop-blur-md sticky top-0 z-50 border-b border-white/5" dir="rtl">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        
+        {/* اللوجو على اليمين */}
+        <div className="flex items-center cursor-pointer group" onClick={() => router.push('/dashboard')}>
           <img 
             src="/logo.png" 
             alt="EAM Logo" 
@@ -67,39 +67,41 @@ export default function Navbar() {
           />
         </div>
 
-        {/* زرار البرجر للموبايل */}
+        {/* زرار المنيو للموبايل فقط */}
         <button className="md:hidden text-white text-2xl" onClick={toggleMenu}>
           {isMenuOpen ? <FaTimes /> : <FaBars />}
         </button>
 
-        {/* قائمة الأزرار */}
-        <div className={`nav-buttons flex flex-col md:flex-row items-center gap-3 absolute md:static top-[70px] left-0 w-full md:w-auto bg-black md:bg-transparent p-6 md:p-0 transition-all duration-300 ${isMenuOpen ? 'flex opacity-100' : 'hidden md:flex'}`}>
+        {/* الأزرار على الشمال */}
+        <div className={`flex flex-col md:flex-row items-center gap-3 absolute md:static top-[80px] left-0 w-full md:w-auto bg-[#0a0a0a] md:bg-transparent p-6 md:p-0 transition-all duration-300 z-50 ${isMenuOpen ? 'flex opacity-100' : 'hidden md:flex'}`}>
           
-          <span id="userName" className="text-white font-bold block text-center mb-2 md:mb-0 md:ml-4 text-[0.9rem] bg-white/5 px-4 py-2 rounded-full border border-white/10 uppercase italic">
-              {user?.name}
-          </span>
-          
-          <Link href="/dashboard" className={`${btnClass} hover:bg-blue-600`} title="الرئيسية" onClick={closeMenu}>
+          {user?.name && (
+            <span className="text-white font-bold px-4 py-2 bg-white/5 rounded-full border border-white/10 text-[10px] mb-4 md:mb-0 ml-0 md:ml-4 italic uppercase">
+              {user.name}
+            </span>
+          )}
+
+          <Link href="/dashboard" className={`${btnClass} text-blue-400 hover:bg-blue-600 hover:text-white`} title="الرئيسية" onClick={closeMenu}>
               <FaHome size={20} />
           </Link>
 
-          <Link href="/dashboard/subjects" className={`${btnClass} hover:bg-gray-600`} title="المواد" onClick={closeMenu}>
+          <Link href="/dashboard/subjects" className={`${btnClass} text-gray-400 hover:bg-gray-600 hover:text-white`} title="المواد" onClick={closeMenu}>
               <FaBook size={20} />
           </Link>
 
-          <Link href="/dashboard/exams" className={`${btnClass} hover:bg-purple-600`} title="الامتحانات" onClick={closeMenu}>
+          <Link href="/dashboard/exams" className={`${btnClass} text-purple-400 hover:bg-purple-600 hover:text-white`} title="الامتحانات" onClick={closeMenu}>
               <FaClipboardList size={20} />
           </Link>
 
-          <Link href="/dashboard/announcements" className={`${btnClass} hover:bg-yellow-600`} title="الإعلانات" onClick={closeMenu}>
+          <Link href="/dashboard/announcements" className={`${btnClass} text-yellow-400 hover:bg-yellow-600 hover:text-white`} title="الإعلانات" onClick={closeMenu}>
               <FaBell size={20} />
           </Link>
           
-          <Link href="/dashboard/share" className={`${btnClass} hover:bg-green-600`} title="رفع ملخص / تكليف" onClick={closeMenu}>
+          <Link href="/dashboard/share" className={`${btnClass} text-green-400 hover:bg-green-600 hover:text-white`} title="رفع ملف" onClick={closeMenu}>
                <FaCloudUploadAlt size={20} />
           </Link>
 
-          {/* زرار الأدمن البرتقالي - يفتح المسار الصحيح فوراً */}
+          {/* زرار الأدمن البرتقالي - مربوط بمسار dashboard/admin */}
           {hasAccess && (
             <Link 
               href="/dashboard/admin?mode=login" 
@@ -111,11 +113,11 @@ export default function Navbar() {
             </Link>
           )}
 
-          <Link href="/dashboard/myUploads" className={`${btnClass} hover:bg-cyan-600`} title="ملخصاتي" onClick={closeMenu}>
+          <Link href="/dashboard/myUploads" className={`${btnClass} text-cyan-400 hover:bg-cyan-600 hover:text-white`} title="ملخصاتي" onClick={closeMenu}>
                <FaUserClock size={20} />
           </Link>
 
-          <button onClick={handleLogout} className={`${btnClass} logout bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white`} title="تسجيل خروج">
+          <button onClick={handleLogout} className={`${btnClass} bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white ml-0 md:mr-4`} title="خروج">
               <FaSignOutAlt size={20} />
           </button>
         </div>
