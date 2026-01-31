@@ -65,13 +65,23 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    const checkAccess = async () => {
-      const savedCode = localStorage.getItem("adminCode");
-      const isSecretMode = searchParams.get("mode") === "login";
-      if (savedCode) { await verifyCode(savedCode); }
-      else if (isSecretMode) { setIsLoading(false); setShowFake404(false); }
-      else { setIsLoading(false); setShowFake404(true); }
-    };
+  const checkAccess = async () => {
+    // التحقق من الاسمين لضمان فتح الصفحة
+    const savedCode = localStorage.getItem("adminCode") || localStorage.getItem("userEmail");
+    const isSecretMode = searchParams.get("mode") === "login";
+    
+    if (savedCode) {
+      await verifyCode(savedCode);
+    } else if (isSecretMode) {
+      setIsLoading(false);
+      setShowFake404(false);
+    } else {
+      setIsLoading(false);
+      setShowFake404(true);
+    }
+  };
+  checkAccess();
+}, [searchParams]);
     checkAccess();
   }, [searchParams]);
 
