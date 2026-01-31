@@ -97,7 +97,7 @@ export default function Dashboard() {
             { label: "تكاليف", value: stats.assignments, icon: <FaClipboardList />, color: "purple" },
             { label: "الإجمالي", value: stats.total, icon: <FaLayerGroup />, color: "blue" }
           ].map((stat, index) => (
-            <div key={index} className="bg-[#0a0a0a] border border-white/5 p-6 rounded-[2rem] shadow-2xl relative overflow-hidden group hover:border-purple-500/40 transition-all cursor-default">
+            <div key={index} className=" border border-white/5 p-6 rounded-[2rem] shadow-2xl relative overflow-hidden group hover:border-purple-500/40 transition-all cursor-default">
               <div className="absolute -right-6 -top-6 w-24 h-24 bg-purple-600/5 rounded-full blur-2xl group-hover:bg-purple-600/15 transition-all"></div>
               <h3 className="text-3xl font-black text-white mb-1">{stat.value}</h3>
               <p className="text-gray-500 text-xs font-bold flex items-center gap-2">
