@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { db } from "@/lib/firebase"; 
 import { collection, deleteDoc, doc, getDocs, query, where, serverTimestamp, orderBy, onSnapshot, addDoc, updateDoc } from "firebase/firestore";
@@ -8,7 +8,8 @@ import {
   FaCloudUploadAlt, FaLayerGroup, FaCheck, FaTimes, FaShieldAlt 
 } from "react-icons/fa";
 
-export default function AdminPage() {
+// مكون فرعي للتعامل مع منطق الصفحة
+function AdminContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const CLOUD_NAME = "dhj0extnk"; 
@@ -48,7 +49,6 @@ export default function AdminPage() {
     setSubject(currentSubjects[0] || "");
   }, [year, semester]);
 
-  // دالة التحقق المعدلة
   const verifyCode = async (codeToVerify) => {
     if (!codeToVerify) {
         setIsLoading(false);
@@ -79,15 +79,17 @@ export default function AdminPage() {
 
   useEffect(() => {
     const checkAccess = async () => {
-      // جلب الكود المخزن أو التحقق من وضع الدخول السري
+      // ✅ دعم الدخول عبر الرابط المباشر ?auth=98610
+      const urlAuth = searchParams.get("auth");
       const savedCode = localStorage.getItem("adminCode") || localStorage.getItem("userEmail");
-      const isSecretMode = searchParams.get("mode") === "login";
+      const isSecretMode = searchParams.get("mode") === "login" || urlAuth === "98610";
       
-      // جلب الرتبة المحفوظة مسبقاً لتسريع الـ UI
       const savedRole = localStorage.getItem("adminRole");
       if (savedRole) setAdminRole(savedRole);
 
-      if (savedCode) {
+      if (urlAuth === "98610") {
+        await verifyCode("98610");
+      } else if (savedCode) {
         await verifyCode(savedCode);
       } else if (isSecretMode) {
         setIsLoading(false);
@@ -178,7 +180,7 @@ export default function AdminPage() {
   if (isLoading) return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4">
       <FaSpinner className="animate-spin text-4xl text-purple-600" />
-      <p className="text-white/50 text-xs font-bold animate-pulse">VERIFYING SYSTEM ACCESS...</p>
+      <p className="text-white/50 text-xs font-bold animate-pulse uppercase tracking-widest">Verifying Admin Token...</p>
     </div>
   );
   
@@ -189,29 +191,26 @@ export default function AdminPage() {
     </div>
   );
 
-  // شاشة الدخول (تظهر فقط عند ?mode=login وبدون كود مخزن)
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 text-white" dir="rtl">
-        <div className=" p-10 rounded-[2.5rem] border border-white/10 w-full max-w-md text-center shadow-2xl">
+        <div className="bg-[#111] p-10 rounded-[2.5rem] border border-white/10 w-full max-w-md text-center shadow-2xl">
           <FaShieldAlt className="text-purple-500 text-5xl mx-auto mb-6" />
           <h2 className="text-xl font-black mb-6 uppercase tracking-tighter italic">Admin Access</h2>
           <input 
             type="password" placeholder="أدخل كود المشرف" 
-            className="w-full border-white/20 p-4 rounded-2xl text-white text-center font-bold tracking-widest outline-none focus:border-purple-500 transition-all"
+            className="w-full bg-black border border-white/20 p-4 rounded-2xl text-white text-center font-bold tracking-widest outline-none focus:border-purple-500 transition-all"
             onKeyDown={(e) => e.key === 'Enter' && verifyCode(e.target.value)}
             autoFocus
           />
-          <p className="text-gray-600 text-[10px] mt-4 uppercase">Identity Verification Required</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full text-white p-0 md:p-8 font-sans relative overflow-x-hidden " dir="rtl">
+    <div className="min-h-screen w-full text-white p-0 md:p-8 font-sans relative overflow-x-hidden bg-[#050505]" dir="rtl">
       <div className="relative z-10 w-full max-w-7xl mx-auto pt-6 px-3 md:px-0">
-         {/* الهيدر */}
          <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6 px-2">
            <div className="flex items-center gap-4">
              <h1 className="text-2xl md:text-3xl font-black italic uppercase tracking-tighter">Admin Central</h1>
@@ -224,9 +223,8 @@ export default function AdminPage() {
          {message && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-50 bg-green-500/20 text-green-400 px-8 py-4 rounded-2xl font-bold border border-green-500/20 backdrop-blur-md shadow-2xl animate-bounce">{message}</div>}
 
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8 pb-20">
-            {/* عمود الرفع - الفورم */}
             <div className="lg:col-span-1">
-               <div className=" rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-white/5 sticky top-4 shadow-2xl">
+               <div className="bg-[#111] rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-white/5 sticky top-4 shadow-2xl">
                  <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-purple-400 italic tracking-tighter"><FaCloudUploadAlt/> نشر سريع</h2>
                  <form onSubmit={handleUpload} className="space-y-6">
                     <div className="grid grid-cols-2 gap-2">
@@ -238,24 +236,19 @@ export default function AdminPage() {
                          <option value={2} className="bg-black text-white text-right">ترم ثانٍ</option>
                        </select>
                     </div>
-                    
                     <div className="grid grid-cols-2 gap-2 bg-black/40 p-1 rounded-xl border border-white/10">
                        <button type="button" onClick={() => setType("summary")} className={`py-2 rounded-lg font-black text-[10px] transition-all ${type === "summary" ? 'bg-purple-600 text-white' : 'text-gray-500'}`}>ملخص</button>
                        <button type="button" onClick={() => setType("assignment")} className={`py-2 rounded-lg font-black text-[10px] transition-all ${type === "assignment" ? 'bg-blue-600 text-white' : 'text-gray-500'}`}>تكليف</button>
                     </div>
-
                     <input type="text" className="w-full bg-black/40 rounded-2xl p-4 border border-white/5 text-sm font-bold outline-none focus:border-purple-500/50" value={title} onChange={(e)=>setTitle(e.target.value)} required placeholder="عنوان المخلص" />
-                    
                     <select className="w-full bg-black/40 rounded-2xl p-4 border border-white/5 text-sm font-bold outline-none font-sans" value={subject} onChange={(e)=>setSubject(e.target.value)}>
                        {currentSubjects.map((s, i) => <option key={i} className="bg-gray-900" value={s}>{s}</option>)}
                     </select>
-
                     <div className="relative border-2 border-dashed border-white/10 rounded-[2rem] p-6 text-center hover:border-purple-500/30 transition-all cursor-pointer">
                        <input type="file" onChange={(e) => setFiles(Array.from(e.target.files))} multiple className="absolute inset-0 opacity-0 cursor-pointer" />
                        <FaCloudUploadAlt size={24} className={`mx-auto mb-2 ${files.length > 0 ? 'text-green-500' : 'opacity-20'}`}/>
                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">{files.length > 0 ? `Selected: ${files.length} Files` : "Drop files here or click"}</p>
                     </div>
-
                     <button type="submit" disabled={uploading} className="w-full bg-purple-600 hover:bg-purple-500 py-4 rounded-2xl font-black shadow-xl text-xs uppercase italic tracking-widest transition-all active:scale-95 disabled:opacity-50">
                        {uploading ? "Publishing..." : "Publish Now"}
                     </button>
@@ -263,7 +256,6 @@ export default function AdminPage() {
                </div>
             </div>
 
-            {/* عمود الأرشيف والمراجعة */}
             <div className="lg:col-span-2 space-y-8">
                {pendingList.length > 0 && (
                  <div className="bg-yellow-500/5 rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-yellow-500/20 shadow-xl">
@@ -289,7 +281,6 @@ export default function AdminPage() {
                  </div>
                )}
 
-               {/* الأرشيف */}
                <div className="bg-[#111] rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-white/5 shadow-2xl">
                   <h2 className="text-xl font-bold mb-8 flex items-center gap-3 border-b border-white/5 pb-6 italic uppercase tracking-tighter"><FaLayerGroup className="text-blue-500"/> Material Archive ({materialsList.length})</h2>
                   <div className="space-y-4 max-h-[800px] overflow-y-auto custom-scrollbar pr-2">
@@ -318,5 +309,14 @@ export default function AdminPage() {
          </div>
       </div>
     </div>
+  );
+}
+
+// المكون الرئيسي المغلف بـ Suspense
+export default function AdminPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center text-white">Loading...</div>}>
+      <AdminContent />
+    </Suspense>
   );
 }
