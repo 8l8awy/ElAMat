@@ -171,8 +171,8 @@ export default function AdminPage() {
   // شاشة إدخال الكود (تظهر فقط عند ?mode=login وبدون كود مخزن)
   if (!isLoading && !isAuthenticated && !showFake404) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6 text-white" dir="rtl">
-        <div className="bg-[#111] p-10 rounded-[2.5rem] border border-white/10 w-full max-w-md text-center shadow-2xl">
+      <div className="min-h-screen  flex items-center justify-center p-6 text-white" dir="rtl">
+        <div className=" p-10 rounded-[2.5rem] border border-white/10 w-full max-w-md text-center shadow-2xl">
           <FaShieldAlt className="text-purple-500 text-5xl mx-auto mb-6" />
           <h2 className="text-xl font-black mb-6 uppercase tracking-tighter italic">Admin Access</h2>
           <input 
