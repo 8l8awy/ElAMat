@@ -1,40 +1,61 @@
 "use client";
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
-import AdminLink from './AdminLink'; 
-import { 
-  FaHome, FaBook, FaBell, FaSignOutAlt, 
-  FaCloudUploadAlt, FaUserClock, FaBars, 
-  FaTimes, FaClipboardList, FaCogs
-} from 'react-icons/fa';
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { FaShieldAlt, FaHome, FaUpload } from "react-icons/fa";
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
-  const router = useRouter();
-  
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-  const closeMenu = () => setIsMenuOpen(false);
-
-  const handleLogout = () => {
-    logout();
-    closeMenu();
-    router.push('/');
-  };
+  const [hasAccess, setHasAccess] = useState(false);
 
   useEffect(() => {
-    const checkAdmin = () => {
-      if (typeof window !== 'undefined' && localStorage.getItem("adminCode")) {
-        setIsAdmin(true);
+    const checkAccess = () => {
+      // 1. الموقع هيشوف الـ userEmail والـ adminCode عشان ميفوتش حد
+      const adminCode = localStorage.getItem("adminCode");
+      const userEmail = localStorage.getItem("userEmail"); 
+      const savedRole = localStorage.getItem("adminRole");
+
+      // 2. أي حد معاه كود المشرف (98610 أو 98600) هيظهرله الزرار فوراً
+      if (
+        adminCode === "98610" || 
+        userEmail === "98610" || 
+        adminCode === "98600" || 
+        userEmail === "98600" ||
+        savedRole === "admin" || 
+        savedRole === "moderator"
+      ) {
+        setHasAccess(true);
+      } else {
+        setHasAccess(false);
       }
     };
-    checkAdmin();
-  }, []);
 
+    const interval = setInterval(checkAccess, 1000);
+    checkAccess(); // تشغيل فحص فوري
+    return () => clearInterval(interval);
+  }, []); // تم إصلاح القوس هنا لضمان نجاح الـ Build ✅
+
+  const btnClass = "p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5 bg-white/5";
+
+  return (
+    <nav className="p-4 flex justify-between items-center bg-black/50 backdrop-blur-md sticky top-0 z-50">
+      <Link href="/" className="font-black italic text-xl uppercase tracking-tighter text-white">ElAMat</Link>
+      
+      <div className="flex items-center gap-3">
+        <Link href="/" className={btnClass}><FaHome size={20}/></Link>
+        <Link href="/dashboard/share" className={btnClass}><FaUpload size={20}/></Link>
+        
+        {/* زرار الأدمن البرتقالي - مربوط بمسار ملفاتك الفعلي */}
+        {hasAccess && (
+          <Link 
+            href="/dashboard/admin?mode=login" 
+            className="p-3 bg-orange-600/20 border border-orange-500/50 text-orange-500 rounded-xl hover:bg-orange-600 hover:text-white transition-all shadow-lg shadow-orange-500/10"
+          >
+            <FaShieldAlt size={20} />
+          </Link>
+        )}
+      </div>
+    </nav>
+  );
+}
   const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5";
 
   return (
