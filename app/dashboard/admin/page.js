@@ -147,7 +147,7 @@ export default function AdminPage() {
       <div className="relative z-10 w-full max-w-7xl mx-auto pt-6">
         <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6">
           <div className="flex items-center gap-4">
-            <h1 className="text-3xl font-black italic uppercase tracking-tighter">Admin Central 🚀</h1>
+            <h1 className="text-3xl font-black italic uppercase tracking-tighter">Admin Central </h1>
             <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${adminRole === 'admin' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
                <FaShieldAlt className="inline ml-1"/> {adminRole === 'admin' ? "مدير نظام" : "مُراجع"}
             </span>
@@ -161,7 +161,7 @@ export default function AdminPage() {
           {/* عمود الرفع السريع */}
           <div className="lg:col-span-1">
             <div className="bg-[#111] backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/5 sticky top-4 shadow-2xl">
-              <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-purple-400 font-sans italic tracking-tighter"><FaCloudUploadAlt/> نشر سريع</h2>
+              <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-purple-400 font-sans italic tracking-tighter"><FaCloudUploadAlt/> نشر </h2>
               <form onSubmit={handleUpload} className="space-y-6">
                 <div className="grid grid-cols-2 gap-2">
                   <select value={year} onChange={(e)=>setYear(e.target.value)} className="bg-black/40 border border-white/5 p-3 rounded-xl text-xs font-bold outline-none">
@@ -180,7 +180,7 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <input type="text" className="w-full bg-black/40 rounded-2xl p-4 outline-none border border-white/5 text-sm font-bold" value={title} onChange={(e)=>setTitle(e.target.value)} required placeholder="عنوان المنشور" />
+                <input type="text" className="w-full bg-black/40 rounded-2xl p-4 outline-none border border-white/5 text-sm font-bold" value={title} onChange={(e)=>setTitle(e.target.value)} required placeholder="عنوان المخلص" />
                 
                 <textarea className="w-full bg-black/40 rounded-2xl p-4 outline-none border border-white/5 text-sm font-bold resize-none" rows="2" value={desc} onChange={(e)=>setDesc(e.target.value)} placeholder="وصف مختصر (اختياري)"></textarea>
 
