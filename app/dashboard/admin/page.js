@@ -122,7 +122,7 @@ export default function AdminPage() {
 
   const handleDelete = async (id, title) => {
     if (adminRole !== "admin") return alert("صلاحية الحذف النهائي للمدير فقط ⛔");
-    const password = prompt(`أدخل باسورد التأكيد (98612) لحذف "${title}":`);
+    const password = prompt(`أدخل باسورد التأكيد لحذف "${title}":`);
     if (password === "98612") {
       try {
         await deleteDoc(doc(db, "materials", id));
@@ -209,7 +209,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen w-full text-white p-0 md:p-8 font-sans relative overflow-x-hidden bg-[#050505]" dir="rtl">
+    <div className="min-h-screen w-full text-white p-0 md:p-8 font-sans relative overflow-x-hidden " dir="rtl">
       <div className="relative z-10 w-full max-w-7xl mx-auto pt-6 px-3 md:px-0">
          {/* الهيدر */}
          <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6 px-2">
@@ -226,7 +226,7 @@ export default function AdminPage() {
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8 pb-20">
             {/* عمود الرفع - الفورم */}
             <div className="lg:col-span-1">
-               <div className="bg-[#111] rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-white/5 sticky top-4 shadow-2xl">
+               <div className=" rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-white/5 sticky top-4 shadow-2xl">
                  <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-purple-400 italic tracking-tighter"><FaCloudUploadAlt/> نشر سريع</h2>
                  <form onSubmit={handleUpload} className="space-y-6">
                     <div className="grid grid-cols-2 gap-2">
