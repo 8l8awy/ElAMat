@@ -44,16 +44,28 @@ export default function AdminPage() {
 
   const currentSubjects = subjectsBank[`year${year}`][semester] || [];
 
-  useEffect(() => {
-    setSubject(currentSubjects[0] || "");
-  }, [year, semester]);
+useEffect(() => {
+    const checkAccess = async () => {
+      // 1. جلب الكود من الرابط (auth) أو من الذاكرة (adminCode/userEmail)
+      const urlAuth = searchParams.get("auth");
+      const savedCode = localStorage.getItem("adminCode") || localStorage.getItem("userEmail");
+      
+      // 2. إذا وجد الكود في الرابط يدوياً، نعطيه الأولوية ونخزنه
+      const codeToTest = urlAuth || savedCode;
+      const isSecretMode = searchParams.get("mode") === "login" || urlAuth === "98610";
 
-  // دالة التحقق المعدلة
-  const verifyCode = async (codeToVerify) => {
-    if (!codeToVerify) {
+      if (codeToTest) {
+        await verifyCode(codeToTest);
+      } else if (isSecretMode) {
         setIsLoading(false);
-        return;
-    }
+        setShowFake404(false);
+      } else {
+        setIsLoading(false);
+        setShowFake404(true);
+      }
+    };
+    checkAccess();
+  }, [searchParams]);
     try {
       const q = query(collection(db, "allowedCodes"), where("code", "==", String(codeToVerify).trim()));
       const querySnapshot = await getDocs(q);
