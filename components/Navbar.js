@@ -7,7 +7,7 @@ import AdminLink from './AdminLink';
 import { 
   FaHome, FaBook, FaBell, FaSignOutAlt, 
   FaCloudUploadAlt, FaUserClock, FaBars, 
-  FaTimes, FaClipboardList, FaCogs
+  FaTimes, FaClipboardList, FaCogs, FaShieldAlt
 } from 'react-icons/fa';
 
 export default function Navbar() {
@@ -26,40 +26,42 @@ export default function Navbar() {
     router.push('/');
   };
 
+  // تحديث حالة الأدمن بشكل أفضل
   useEffect(() => {
     const checkAdmin = () => {
-      if (typeof window !== 'undefined' && localStorage.getItem("adminCode")) {
+      const code = localStorage.getItem("adminCode");
+      if (code) {
         setIsAdmin(true);
       }
     };
     checkAdmin();
+    // استماع لأي تغيير في الـ storage عشان الزرار يظهر فوراً
+    window.addEventListener('storage', checkAdmin);
+    return () => window.removeEventListener('storage', checkAdmin);
   }, []);
 
   const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5";
 
   return (
-    <nav className="navbar">
-      {/* 1. تم تحديث الهيدر هنا ليعرض اللوجو الجديد فقط */}
-{/* 1. تم تكبير اللوجو وضبط المسافات */}
-   {/* اللوجو الجديد بحجم أكبر وبدون أخطاء برمجية */}
-     {/* هيدر الناف بار - الحجم الصغير والملموم */}
-     {/* هيدر الناف بار - الحجم الصغير والملموم */}
+    <nav className="navbar" style={{ padding: '10px 0' }}> {/* إزالة الحواف الجانبية هنا */}
+      
       <div className="flex items-center justify-center py-1 mb-0 select-none cursor-pointer group" onClick={() => router.push('/dashboard')}>
         <img 
           src="/logo.png" 
           alt="EAM Logo" 
-          className="h-8 md:h-12 w-auto object-contain drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] transition-all duration-300 group-hover:scale-110"
+          className="h-10 md:h-14 w-auto object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-all duration-300 group-hover:scale-110"
           onError={(e) => { e.target.src = "/a.png" }} 
         />
       </div>
-      <button className="burger-btn" onClick={toggleMenu}>
+
+      <button className="burger-btn" onClick={toggleMenu} style={{ right: '15px' }}>
         {isMenuOpen ? <FaTimes /> : <FaBars />}
       </button>
 
-      <div className={`nav-buttons ${isMenuOpen ? 'active' : ''}`}>
+      <div className={`nav-buttons ${isMenuOpen ? 'active' : ''}`} style={{ width: '100%', left: 0 }}>
         
-        <span id="userName" style={{color:'white', fontWeight:'bold', display:'block', textAlign:'center', marginBottom:'15px', fontSize: '0.9rem'}}>
-            {user?.name}
+        <span id="userName" className="block text-center mb-4 text-white font-black text-[10px] uppercase tracking-widest opacity-60">
+            {user?.name || "طالب"}
         </span>
         
         <Link href="/dashboard" className={`${btnClass} hover:bg-blue-600`} title="الرئيسية" onClick={closeMenu}>
@@ -78,19 +80,16 @@ export default function Navbar() {
             <FaBell size={20} />
         </Link>
         
-        <Link href="/dashboard/share" className={`${btnClass} hover:bg-green-600`} title="رفع ملخص / تكليف" onClick={closeMenu}>
+        <Link href="/dashboard/share" className={`${btnClass} hover:bg-green-600`} title="رفع ملخص" onClick={closeMenu}>
              <FaCloudUploadAlt size={20} />
         </Link>
 
+        {/* زر لوحة التحكم - تم تعديل المسار ليعمل بشكل صحيح 👈 */}
         {isAdmin && (
-          <Link href="/dashboard/admin" className={`${btnClass} hover:bg-orange-600`} title="لوحة التحكم الرئيسية" onClick={closeMenu}>
-               <FaCogs size={20} />
+          <Link href="/admin?mode=login" className={`${btnClass} bg-orange-600/20 border-orange-500/50 text-orange-500 hover:bg-orange-600 hover:text-white`} title="لوحة التحكم" onClick={closeMenu}>
+               <FaShieldAlt size={20} />
           </Link>
         )}
-
-        <div className="w-fit mx-auto"> 
-            <AdminLink onClick={closeMenu} />
-        </div>
 
         <Link href="/dashboard/myUploads" className={`${btnClass} hover:bg-cyan-600`} title="ملخصاتي" onClick={closeMenu}>
              <FaUserClock size={20} />
