@@ -177,7 +177,7 @@ export default function AdminPage() {
           <h2 className="text-xl font-black mb-6 uppercase tracking-tighter italic">Admin Access</h2>
           <input 
             type="password" placeholder="أدخل كود المشرف " 
-            className="w-full bg-black border border-white/20 p-4 rounded-2xl text-white text-center font-bold tracking-widest outline-none focus:border-purple-500 transition-all"
+            className="w-full  border border-white/20 p-4 rounded-2xl text-white text-center font-bold tracking-widest outline-none focus:border-purple-500 transition-all"
             onKeyDown={(e) => e.key === 'Enter' && verifyCode(e.target.value)}
           />
           <p className="text-gray-600 text-[10px] mt-4 uppercase">System Verification Required</p>
