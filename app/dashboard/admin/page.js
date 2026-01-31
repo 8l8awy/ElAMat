@@ -162,7 +162,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen w-full text-white p-0 md:p-8 font-sans relative overflow-x-hidden" dir="rtl">
-      <div className="fixed inset-0 -z-10 bg-[#050505]"><div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[100px]"></div></div>
+      <div className="fixed inset-0 -z-10 "><div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[100px]"></div></div>
       
       <div className="relative z-10 w-full max-w-7xl mx-auto pt-6 px-3 md:px-0">
         <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6 px-2">
