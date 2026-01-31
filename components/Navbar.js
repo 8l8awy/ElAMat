@@ -1,46 +1,41 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { FaShieldAlt } from "react-icons/fa";
+import { FaShieldAlt, FaHome, FaUpload } from "react-icons/fa";
 
 export default function Navbar() {
   const [hasAccess, setHasAccess] = useState(false);
-  const [isOpen, setIsOpen] = useState(false); // لو عندك منيو للموبايل
 
   useEffect(() => {
     const checkAccess = () => {
       // قراءة كل الاحتمالات لضمان ظهور الزرار لكود 98610
       const adminCode = localStorage.getItem("adminCode");
-      const userEmail = localStorage.getItem("userEmail");
+      const userEmail = localStorage.getItem("userEmail"); 
       const savedRole = localStorage.getItem("adminRole");
 
-      if (
-        adminCode === "98610" || 
-        userEmail === "98610" || 
-        savedRole === "moderator" || 
-        savedRole === "admin"
-      ) {
+      if (adminCode === "98610" || userEmail === "98610" || savedRole === "moderator" || savedRole === "admin") {
         setHasAccess(true);
       } else {
         setHasAccess(false);
       }
     };
 
-    // فحص دوري كل ثانية
     const interval = setInterval(checkAccess, 1000);
-    checkAccess(); // فحص فوري عند التحميل
-
+    checkAccess(); 
     return () => clearInterval(interval);
-  }, []); // القوس ده والقفلة دي هي اللي كانت عاملة المشكلة في الـ Build
+  }, []); // تم إصلاح القوس هنا لحل مشكلة الـ Build
 
-  const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5";
+  const btnClass = "p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5 bg-white/5";
 
   return (
     <nav className="p-4 flex justify-between items-center bg-black/50 backdrop-blur-md sticky top-0 z-50">
-      <Link href="/" className="font-black italic text-xl">ElAMat</Link>
+      <Link href="/" className="font-black italic text-xl uppercase tracking-tighter text-white">ElAMat</Link>
       
-      <div className="flex items-center gap-4">
-        {/* زرار الأدمن البرتقالي السحري */}
+      <div className="flex items-center gap-3">
+        <Link href="/" className={btnClass}><FaHome size={20}/></Link>
+        <Link href="/dashboard/share" className={btnClass}><FaUpload size={20}/></Link>
+        
+        {/* زرار الأدمن البرتقالي - يوجه للمسار الصحيح */}
         {hasAccess && (
           <Link 
             href="/dashboard/admin?mode=login" 
@@ -49,8 +44,6 @@ export default function Navbar() {
             <FaShieldAlt size={20} />
           </Link>
         )}
-        
-        {/* باقي أزرار الناف بار بتاعتك */}
       </div>
     </nav>
   );
