@@ -176,7 +176,7 @@ export default function AdminPage() {
           <FaShieldAlt className="text-purple-500 text-5xl mx-auto mb-6" />
           <h2 className="text-xl font-black mb-6 uppercase tracking-tighter italic">Admin Access</h2>
           <input 
-            type="password" placeholder="أدخل كود المشرف (98610)" 
+            type="password" placeholder="أدخل كود المشرف " 
             className="w-full bg-black border border-white/20 p-4 rounded-2xl text-white text-center font-bold tracking-widest outline-none focus:border-purple-500 transition-all"
             onKeyDown={(e) => e.key === 'Enter' && verifyCode(e.target.value)}
           />
@@ -186,7 +186,7 @@ export default function AdminPage() {
     );
   }
 
-  if (isLoading) return <div className="min-h-screen bg-black flex items-center justify-center"><FaSpinner className="animate-spin text-4xl text-purple-600" /></div>;
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center"><FaSpinner className="animate-spin text-4xl text-purple-600" /></div>;
   if (showFake404) return <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans"><h1 className="text-4xl font-bold border-r pr-4 mr-4">404</h1><div>This page could not be found.</div></div>;
 
   return (
