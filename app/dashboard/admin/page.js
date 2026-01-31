@@ -93,22 +93,28 @@ export default function AdminPage() {
     return () => unsubscribe();
   }, [isAuthenticated]);
 
-  const handleAction = async (id, newStatus, finalType) => {
-    try {
-      if (newStatus === "approved") {
-        await updateDoc(doc(db, "materials", id), { 
-            status: "approved",
-            type: finalType // تحديث النوع المختار (ملخص أو تكليف)
-        });
-        setMessage("تمت الموافقة والنشر بنجاح ✅");
-      } else {
-        await deleteDoc(doc(db, "materials", id));
-        setMessage("تم رفض وحذف الطلب ❌");
-      }
-      setTimeout(() => setMessage(""), 3000);
-    } catch (error) { alert("خطأ في العملية"); }
-  };
+ const handleDelete = async (id, title) => {
+    // 1. التأكد من الصلاحية أولاً
+    if (adminRole !== "admin") {
+      alert("صلاحية الحذف النهائي للمدير فقط ⛔");
+      return;
+    }
 
+    // 2. طلب باسورد الحذف
+    const password = prompt(`أدخل باسورد التأكيد لحذف "${title}":`);
+
+    if (password === "98612") {
+      try {
+        await deleteDoc(doc(db, "materials", id));
+        setMessage("تم الحذف بنجاح ✅");
+        setTimeout(() => setMessage(""), 3000);
+      } catch (error) {
+        alert("حدث خطأ أثناء الحذف");
+      }
+    } else if (password !== null) {
+      alert("الباسورد خطأ! لا يمكن الحذف ❌");
+    }
+  };
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!files.length || !title) return alert("البيانات ناقصة");
