@@ -12,95 +12,74 @@ import {
 export default function Navbar() {
   const { user, logout } = useAuth();
   const router = useRouter();
-  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-  const closeMenu = () => setIsMenuOpen(false);
-
-  const handleLogout = () => {
-    logout();
-    closeMenu();
-    router.push('/');
-  };
-
-  // التحقق من الصلاحية (سواء كان أدمن أو مود)
   useEffect(() => {
-    const checkAccess = () => {
-      const role = localStorage.getItem("adminRole");
+    const check = () => {
       const code = localStorage.getItem("adminCode");
-      // يظهر الزرار لو الشخص مراجع (moderator) أو مدير (admin)
-      if (role === "moderator" || role === "admin" || code === "98600") {
+      const role = localStorage.getItem("adminRole");
+      // يظهر الزرار لو الكود 98600 أو الرتبة مراجع/أدمن
+      if (code === "98600" || role === "moderator" || role === "admin") {
         setHasAccess(true);
       } else {
         setHasAccess(false);
       }
     };
-    checkAccess();
-    window.addEventListener('storage', checkAccess);
-    return () => window.removeEventListener('storage', checkAccess);
+    check();
+    const interval = setInterval(check, 1000); // تحديث دوري لضمان الظهور
+    return () => clearInterval(interval);
   }, []);
 
-  const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5";
+  const handleLogout = () => { logout(); router.push('/'); };
 
   return (
-    <nav className="navbar" style={{ padding: '10px 0' }}>
-      <div className="flex items-center justify-center py-1 mb-0 select-none cursor-pointer group" onClick={() => router.push('/dashboard')}>
-        <img 
-          src="/logo.png" 
-          alt="EAM Logo" 
-          className="h-10 md:h-14 w-auto object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-all duration-300 group-hover:scale-110"
-          onError={(e) => { e.target.src = "/a.png" }} 
-        />
-      </div>
-
-      <button className="burger-btn" onClick={toggleMenu} style={{ right: '15px' }}>
+    <>
+      {/* زر الموبايل للفتح */}
+      <button className="md:hidden fixed top-4 left-4 z-[100] bg-purple-600 p-3 rounded-xl shadow-lg" onClick={() => setIsMenuOpen(!isMenuOpen)}>
         {isMenuOpen ? <FaTimes /> : <FaBars />}
       </button>
 
-      {/* القائمة بدون حواف جانبية في الموبايل */}
-      <div className={`nav-buttons ${isMenuOpen ? 'active' : ''}`} style={{ width: '100%', left: 0, padding: '20px 0' }}>
+      {/* الناف بار الجانبي - جهة الشمال */}
+      <nav className={`fixed top-0 left-0 h-screen bg-[#0a0a0a] border-r border-white/5 z-[90] transition-all duration-300 ${isMenuOpen ? 'w-64' : 'w-0 -left-64'} md:w-20 md:left-0 flex flex-col items-center py-8 gap-6 overflow-y-auto custom-scrollbar`}>
         
-        <span className="block text-center mb-4 text-white font-black text-[10px] uppercase tracking-widest opacity-60">
-            {user?.name || "طالب"}
-        </span>
-        
-        <Link href="/dashboard" className={`${btnClass} hover:bg-blue-600`} title="الرئيسية" onClick={closeMenu}>
-            <FaHome size={20} />
-        </Link>
+        {/* اللوجو */}
+        <div className="mb-6 cursor-pointer group" onClick={() => router.push('/dashboard')}>
+          <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_10px_rgba(168,85,247,0.5)] group-hover:scale-110 transition-all" />
+        </div>
 
-        <Link href="/dashboard/subjects" className={`${btnClass} hover:bg-gray-600`} title="المواد" onClick={closeMenu}>
-            <FaBook size={20} />
-        </Link>
-        
-        <Link href="/dashboard/exams" className={`${btnClass} hover:bg-purple-600`} title="الامتحانات" onClick={closeMenu}>
-            <FaClipboardList size={20} />
-        </Link>
+        {/* الروابط */}
+        <div className="flex flex-col gap-4 w-full px-2">
+          <NavItem href="/dashboard" icon={<FaHome size={20}/>} title="الرئيسية" color="hover:bg-blue-600" />
+          <NavItem href="/dashboard/subjects" icon={<FaBook size={20}/>} title="المواد" color="hover:bg-gray-600" />
+          <NavItem href="/dashboard/exams" icon={<FaClipboardList size={20}/>} title="الامتحانات" color="hover:bg-purple-600" />
+          <NavItem href="/dashboard/share" icon={<FaCloudUploadAlt size={20}/>} title="رفع ملخص" color="hover:bg-green-600" />
+          
+          {/* زر الإدارة - الدرع البرتقالي */}
+          {hasAccess && (
+            <NavItem href="/admin?mode=login" icon={<FaShieldAlt size={20}/>} title="لوحة الإدارة" color="bg-orange-600/20 text-orange-500 hover:bg-orange-600 hover:text-white border-orange-500/30" />
+          )}
 
-        <Link href="/dashboard/announcements" className={`${btnClass} hover:bg-yellow-600`} title="الإعلانات" onClick={closeMenu}>
-            <FaBell size={20} />
-        </Link>
-        
-        <Link href="/dashboard/share" className={`${btnClass} hover:bg-green-600`} title="رفع ملخص" onClick={closeMenu}>
-             <FaCloudUploadAlt size={20} />
-        </Link>
+          <NavItem href="/dashboard/myUploads" icon={<FaUserClock size={20}/>} title="ملخصاتي" color="hover:bg-cyan-600" />
+        </div>
 
-        {/* زر لوحة التحكم يظهر للمود (98600) فوراً 👈 */}
-        {hasAccess && (
-          <Link href="/admin?mode=login" className={`${btnClass} bg-orange-600/20 border-orange-500/50 text-orange-500 hover:bg-orange-600 hover:text-white`} title="لوحة التحكم" onClick={closeMenu}>
-               <FaShieldAlt size={20} />
-          </Link>
-        )}
-
-        <Link href="/dashboard/myUploads" className={`${btnClass} hover:bg-cyan-600`} title="ملخصاتي" onClick={closeMenu}>
-             <FaUserClock size={20} />
-        </Link>
-
-        <button onClick={handleLogout} className={`${btnClass} logout bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white`} title="تسجيل خروج" style={{marginTop:'10px'}}>
-            <FaSignOutAlt size={20} />
+        {/* تسجيل الخروج */}
+        <button onClick={handleLogout} className="mt-auto p-3 rounded-xl bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white transition-all shadow-lg shadow-red-600/10">
+          <FaSignOutAlt size={20} />
         </button>
-      </div>
-    </nav>
+      </nav>
+    </>
+  );
+}
+
+function NavItem({ href, icon, title, color }) {
+  return (
+    <Link href={href} className={`w-12 h-12 mx-auto flex items-center justify-center rounded-2xl border border-white/5 transition-all shadow-md group relative ${color}`}>
+      {icon}
+      {/* Tooltip يظهر عند الوقوف على الزر */}
+      <span className="absolute left-16 bg-white text-black text-[10px] font-black px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+        {title}
+      </span>
+    </Link>
   );
 }
