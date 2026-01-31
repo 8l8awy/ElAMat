@@ -179,7 +179,7 @@ export default function AdminPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8 pb-20">
           
           <div className="lg:col-span-1">
-            <div className="bg-[#111] rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-white/5 sticky top-4 shadow-2xl">
+            <div className=" rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-white/5 sticky top-4 shadow-2xl">
               <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-purple-400 italic tracking-tighter"><FaCloudUploadAlt/> نشر </h2>
               <form onSubmit={handleUpload} className="space-y-6">
                 <div className="grid grid-cols-2 gap-2">
