@@ -48,6 +48,7 @@ export default function AdminPage() {
     setSubject(currentSubjects[0] || "");
   }, [year, semester]);
 
+  // دالة التحقق المعدلة
   const verifyCode = async (codeToVerify) => {
     if (!codeToVerify) {
         setIsLoading(false);
@@ -69,36 +70,37 @@ export default function AdminPage() {
         handleLoginFail(); 
       }
     } catch (error) { 
-      console.error(error); 
+      console.error("Auth Error:", error);
       handleLoginFail();
     } finally {
       setIsLoading(false);
     }
   };
 
-useEffect(() => {
+  useEffect(() => {
     const checkAccess = async () => {
-      // 1. جلب الكود من أي مكان مخزن فيه
+      // جلب الكود المخزن أو التحقق من وضع الدخول السري
       const savedCode = localStorage.getItem("adminCode") || localStorage.getItem("userEmail");
       const isSecretMode = searchParams.get("mode") === "login";
       
+      // جلب الرتبة المحفوظة مسبقاً لتسريع الـ UI
+      const savedRole = localStorage.getItem("adminRole");
+      if (savedRole) setAdminRole(savedRole);
+
       if (savedCode) {
-        // لو فيه كود مخزن، اختبره فوراً
         await verifyCode(savedCode);
       } else if (isSecretMode) {
-        // لو مفيش كود مخزن بس الرابط فيه وضع السر، اظهر شاشة إدخال الكود
         setIsLoading(false);
         setShowFake404(false);
         setIsAuthenticated(false);
       } else {
-        // غير ذلك، اظهر الـ 404 الفيك
         setIsLoading(false);
         setShowFake404(true);
       }
     };
     checkAccess();
   }, [searchParams]);
-  
+
   const handleLoginFail = () => {
     localStorage.removeItem("adminCode");
     localStorage.removeItem("adminRole");
@@ -173,25 +175,12 @@ useEffect(() => {
     } catch (error) { alert(error.message); setUploading(false); }
   };
 
-  // شاشة الدخول السوداء
-  if (!isLoading && !isAuthenticated && !showFake404) {
-    return (
-      <div className="min-h-screen  flex items-center justify-center p-6 text-white" dir="rtl">
-        <div className="bg-[#111] p-10 rounded-[2.5rem] border border-white/10 w-full max-w-md text-center shadow-2xl">
-          <FaShieldAlt className="text-purple-500 text-5xl mx-auto mb-6" />
-          <h2 className="text-xl font-black mb-6 uppercase tracking-tighter italic italic">Admin Access</h2>
-          <input 
-            type="password" placeholder="أدخل كود المشرف" 
-            className="w-full bg-black border border-white/20 p-4 rounded-2xl text-white text-center font-bold tracking-widest outline-none focus:border-purple-500 transition-all"
-            onKeyDown={(e) => e.key === 'Enter' && verifyCode(e.target.value)}
-          />
-          <p className="text-gray-600 text-[10px] mt-4 uppercase">System Verification Required</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading) return <div className="min-h-screen bg-black flex items-center justify-center"><FaSpinner className="animate-spin text-4xl text-purple-600" /></div>;
+  if (isLoading) return (
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4">
+      <FaSpinner className="animate-spin text-4xl text-purple-600" />
+      <p className="text-white/50 text-xs font-bold animate-pulse">VERIFYING SYSTEM ACCESS...</p>
+    </div>
+  );
   
   if (showFake404) return (
     <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans">
@@ -200,9 +189,29 @@ useEffect(() => {
     </div>
   );
 
+  // شاشة الدخول (تظهر فقط عند ?mode=login وبدون كود مخزن)
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-6 text-white" dir="rtl">
+        <div className="bg-[#111] p-10 rounded-[2.5rem] border border-white/10 w-full max-w-md text-center shadow-2xl">
+          <FaShieldAlt className="text-purple-500 text-5xl mx-auto mb-6" />
+          <h2 className="text-xl font-black mb-6 uppercase tracking-tighter italic">Admin Access</h2>
+          <input 
+            type="password" placeholder="أدخل كود المشرف" 
+            className="w-full bg-black border border-white/20 p-4 rounded-2xl text-white text-center font-bold tracking-widest outline-none focus:border-purple-500 transition-all"
+            onKeyDown={(e) => e.key === 'Enter' && verifyCode(e.target.value)}
+            autoFocus
+          />
+          <p className="text-gray-600 text-[10px] mt-4 uppercase">Identity Verification Required</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen w-full text-white p-0 md:p-8 font-sans relative overflow-x-hidden bg-[#050505]" dir="rtl">
       <div className="relative z-10 w-full max-w-7xl mx-auto pt-6 px-3 md:px-0">
+         {/* الهيدر */}
          <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6 px-2">
            <div className="flex items-center gap-4">
              <h1 className="text-2xl md:text-3xl font-black italic uppercase tracking-tighter">Admin Central</h1>
@@ -212,10 +221,10 @@ useEffect(() => {
            </div>
          </div>
 
-         {message && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-50 bg-green-500/20 text-green-400 px-8 py-4 rounded-2xl font-bold border border-green-500/20 backdrop-blur-md shadow-2xl">{message}</div>}
+         {message && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-50 bg-green-500/20 text-green-400 px-8 py-4 rounded-2xl font-bold border border-green-500/20 backdrop-blur-md shadow-2xl animate-bounce">{message}</div>}
 
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8 pb-20">
-            {/* عمود الرفع */}
+            {/* عمود الرفع - الفورم */}
             <div className="lg:col-span-1">
                <div className="bg-[#111] rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-white/5 sticky top-4 shadow-2xl">
                  <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-purple-400 italic tracking-tighter"><FaCloudUploadAlt/> نشر سريع</h2>
@@ -237,18 +246,18 @@ useEffect(() => {
 
                     <input type="text" className="w-full bg-black/40 rounded-2xl p-4 border border-white/5 text-sm font-bold outline-none focus:border-purple-500/50" value={title} onChange={(e)=>setTitle(e.target.value)} required placeholder="عنوان المخلص" />
                     
-                    <select className="w-full bg-black/40 rounded-2xl p-4 border border-white/5 text-sm font-bold outline-none" value={subject} onChange={(e)=>setSubject(e.target.value)}>
+                    <select className="w-full bg-black/40 rounded-2xl p-4 border border-white/5 text-sm font-bold outline-none font-sans" value={subject} onChange={(e)=>setSubject(e.target.value)}>
                        {currentSubjects.map((s, i) => <option key={i} className="bg-gray-900" value={s}>{s}</option>)}
                     </select>
 
-                    <div className="relative border-2 border-dashed border-white/10 rounded-[2rem] p-6 text-center hover:border-purple-500/30 transition-all">
+                    <div className="relative border-2 border-dashed border-white/10 rounded-[2rem] p-6 text-center hover:border-purple-500/30 transition-all cursor-pointer">
                        <input type="file" onChange={(e) => setFiles(Array.from(e.target.files))} multiple className="absolute inset-0 opacity-0 cursor-pointer" />
                        <FaCloudUploadAlt size={24} className={`mx-auto mb-2 ${files.length > 0 ? 'text-green-500' : 'opacity-20'}`}/>
-                       <p className="text-[10px] font-bold text-gray-500 uppercase">{files.length > 0 ? `Selected: ${files.length}` : "Click to select files"}</p>
+                       <p className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">{files.length > 0 ? `Selected: ${files.length} Files` : "Drop files here or click"}</p>
                     </div>
 
                     <button type="submit" disabled={uploading} className="w-full bg-purple-600 hover:bg-purple-500 py-4 rounded-2xl font-black shadow-xl text-xs uppercase italic tracking-widest transition-all active:scale-95 disabled:opacity-50">
-                       {uploading ? "Uploading..." : "Publish Now"}
+                       {uploading ? "Publishing..." : "Publish Now"}
                     </button>
                  </form>
                </div>
@@ -258,14 +267,14 @@ useEffect(() => {
             <div className="lg:col-span-2 space-y-8">
                {pendingList.length > 0 && (
                  <div className="bg-yellow-500/5 rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-yellow-500/20 shadow-xl">
-                    <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-yellow-500 italic"><FaSpinner className="animate-spin"/> طلبات المراجعة ({pendingList.length})</h2>
+                    <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-yellow-500 italic uppercase"><FaSpinner className="animate-spin"/> Pending Review ({pendingList.length})</h2>
                     <div className="space-y-6">
                        {pendingList.map((item) => (
                           <div key={item.id} className="bg-black/60 rounded-[2rem] p-6 border border-white/5 shadow-inner">
                              <div className="flex flex-col md:flex-row justify-between gap-4">
                                 <div className="flex-1">
                                    <h4 className="font-black text-white text-md mb-1">{item.title}</h4>
-                                   <p className="text-[10px] text-purple-400 font-bold uppercase tracking-widest">بواسطة: {item.studentName || "Unknown"} | {item.subject}</p>
+                                   <p className="text-[10px] text-purple-400 font-bold uppercase tracking-widest">بواسطة: {item.studentName || "Anonymous"} | {item.subject}</p>
                                 </div>
                                 <div className="flex gap-2 items-center">
                                    <button onClick={() => handleAction(item.id, "approved", item.selectedType)} className="bg-green-600 text-white p-3 rounded-xl hover:scale-110 transition-all shadow-lg shadow-green-600/20"><FaCheck/></button>
@@ -280,8 +289,9 @@ useEffect(() => {
                  </div>
                )}
 
+               {/* الأرشيف */}
                <div className="bg-[#111] rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-white/5 shadow-2xl">
-                  <h2 className="text-xl font-bold mb-8 flex items-center gap-3 border-b border-white/5 pb-6 italic uppercase tracking-tighter"><FaLayerGroup className="text-blue-500"/> الأرشيف العام ({materialsList.length})</h2>
+                  <h2 className="text-xl font-bold mb-8 flex items-center gap-3 border-b border-white/5 pb-6 italic uppercase tracking-tighter"><FaLayerGroup className="text-blue-500"/> Material Archive ({materialsList.length})</h2>
                   <div className="space-y-4 max-h-[800px] overflow-y-auto custom-scrollbar pr-2">
                      {materialsList.map((item) => (
                         <div key={item.id} className="bg-black/30 rounded-[1.5rem] p-4 flex items-center justify-between border border-white/5 hover:border-purple-500/30 transition-all">
@@ -291,7 +301,7 @@ useEffect(() => {
                               </div>
                               <div>
                                  <h4 className="font-black text-sm text-white italic">{item.title}</h4>
-                                 <p className="text-[10px] text-gray-600 font-bold uppercase">{item.subject} | فرقة {item.year}</p>
+                                 <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">{item.subject} | فرقة {item.year}</p>
                               </div>
                            </div>
                            <div className="flex gap-2">
