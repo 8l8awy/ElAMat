@@ -76,25 +76,29 @@ export default function AdminPage() {
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
     const checkAccess = async () => {
-      // ✅ بيقرأ من المكانين لضمان الدخول الفوري
+      // 1. جلب الكود من أي مكان مخزن فيه
       const savedCode = localStorage.getItem("adminCode") || localStorage.getItem("userEmail");
       const isSecretMode = searchParams.get("mode") === "login";
       
       if (savedCode) {
+        // لو فيه كود مخزن، اختبره فوراً
         await verifyCode(savedCode);
       } else if (isSecretMode) {
+        // لو مفيش كود مخزن بس الرابط فيه وضع السر، اظهر شاشة إدخال الكود
         setIsLoading(false);
         setShowFake404(false);
+        setIsAuthenticated(false);
       } else {
+        // غير ذلك، اظهر الـ 404 الفيك
         setIsLoading(false);
         setShowFake404(true);
       }
     };
     checkAccess();
   }, [searchParams]);
-
+  
   const handleLoginFail = () => {
     localStorage.removeItem("adminCode");
     localStorage.removeItem("adminRole");
