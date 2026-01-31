@@ -26,15 +26,21 @@ export default function Navbar() {
     router.push('/');
   };
 
-  useEffect(() => {
-    const checkAdmin = () => {
-      if (typeof window !== 'undefined' && localStorage.getItem("adminCode")) {
-        setIsAdmin(true);
-      }
-    };
-    checkAdmin();
-  }, []);
-
+// داخل ملف Navbar.js
+useEffect(() => {
+  const checkAccess = () => {
+    // تأكد أننا نبحث عن adminCode وليس userEmail
+    const code = localStorage.getItem("adminCode");
+    if (code === "98610" || code === "98600") {
+      setHasAccess(true);
+    } else {
+      setHasAccess(false);
+    }
+  };
+  
+  const interval = setInterval(checkAccess, 1000);
+  return () => clearInterval(interval);
+}, []);
   const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5";
 
   return (
