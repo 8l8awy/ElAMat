@@ -1,67 +1,106 @@
 "use client";
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
-import AdminLink from './AdminLink'; 
-import { 
-  FaHome, FaBook, FaBell, FaSignOutAlt, 
-  FaCloudUploadAlt, FaUserClock, FaBars, 
-  FaTimes, FaClipboardList, FaCogs, FaShieldAlt
-} from 'react-icons/fa';
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { db } from "@/lib/firebase"; 
+import { collection, getDocs, query, where, onSnapshot, orderBy } from "firebase/firestore";
+import { FaSpinner, FaShieldAlt } from "react-icons/fa";
 
-export default function Navbar() {
-  const { user, logout } = useAuth();
+export default function AdminPage() {
   const router = useRouter();
-  
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const searchParams = useSearchParams();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showFake404, setShowFake404] = useState(true);
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-  const closeMenu = () => setIsMenuOpen(false);
-
-  const handleLogout = () => {
-    logout();
-    closeMenu();
-    router.push('/');
+  // دالة التحقق اللي بتعرف تقرأ 98610 من أي مكان
+  const verifyCode = async (codeToVerify) => {
+    if (!codeToVerify) return;
+    try {
+      // بنشيل المسافات وبنتأكد إن الكود نصي
+      const cleanCode = String(codeToVerify).trim();
+      const q = query(collection(db, "allowedCodes"), where("code", "==", cleanCode));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty && querySnapshot.docs[0].data().admin === true) {
+        setIsAuthenticated(true);
+        setShowFake404(false);
+        // بنخزن الكود بالاسم "الصح" عشان ميتعبناش تاني
+        localStorage.setItem("adminCode", cleanCode);
+      } else {
+        setShowFake404(true);
+      }
+    } catch (error) {
+      console.error("Verification Error:", error);
+    }
+    setIsLoading(false);
   };
 
-  // تحديث حالة الأدمن بشكل أفضل
   useEffect(() => {
-    const checkAdmin = () => {
-      const code = localStorage.getItem("adminCode");
-      if (code) {
-        setIsAdmin(true);
+    const checkAccess = async () => {
+      // ✅ الحل هنا: بنبص على adminCode أو userEmail
+      const savedCode = localStorage.getItem("adminCode") || localStorage.getItem("userEmail");
+      const isSecretMode = searchParams.get("mode") === "login";
+      
+      if (savedCode) {
+        await verifyCode(savedCode);
+      } else if (isSecretMode) {
+        setIsLoading(false);
+        setShowFake404(false);
+      } else {
+        setIsLoading(false);
+        setShowFake404(true);
       }
     };
-    checkAdmin();
-    // استماع لأي تغيير في الـ storage عشان الزرار يظهر فوراً
-    window.addEventListener('storage', checkAdmin);
-    return () => window.removeEventListener('storage', checkAdmin);
-  }, []);
+    checkAccess();
+  }, [searchParams]);
 
+  // شاشة التحميل (عشان متبقاش بيضا)
+  if (isLoading) return (
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      <FaSpinner className="animate-spin text-purple-600 text-4xl" />
+    </div>
+  );
+
+  // لو مش مشرف يظهر له 404
+  if (showFake404) return (
+    <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans">
+      <h1 className="text-4xl font-bold border-r pr-4 mr-4">404</h1>
+      <div>This page could not be found.</div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen w-full bg-[#050505] text-white p-10" dir="rtl">
+       <h1 className="text-3xl font-black mb-6 border-b border-white/10 pb-4 italic">لوحة التحكم شغالة ✅</h1>
+       {/* باقي كود الأرشيف والرفع هنا */}
+    </div>
+  );
+}
   const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5";
 
   return (
-    <nav className="navbar" style={{ padding: '10px 0' }}> {/* إزالة الحواف الجانبية هنا */}
-      
+    <nav className="navbar">
+      {/* 1. تم تحديث الهيدر هنا ليعرض اللوجو الجديد فقط */}
+{/* 1. تم تكبير اللوجو وضبط المسافات */}
+   {/* اللوجو الجديد بحجم أكبر وبدون أخطاء برمجية */}
+     {/* هيدر الناف بار - الحجم الصغير والملموم */}
+     {/* هيدر الناف بار - الحجم الصغير والملموم */}
       <div className="flex items-center justify-center py-1 mb-0 select-none cursor-pointer group" onClick={() => router.push('/dashboard')}>
         <img 
           src="/logo.png" 
           alt="EAM Logo" 
-          className="h-10 md:h-14 w-auto object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-all duration-300 group-hover:scale-110"
+          className="h-8 md:h-12 w-auto object-contain drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] transition-all duration-300 group-hover:scale-110"
           onError={(e) => { e.target.src = "/a.png" }} 
         />
       </div>
-
-      <button className="burger-btn" onClick={toggleMenu} style={{ right: '15px' }}>
+      <button className="burger-btn" onClick={toggleMenu}>
         {isMenuOpen ? <FaTimes /> : <FaBars />}
       </button>
 
-      <div className={`nav-buttons ${isMenuOpen ? 'active' : ''}`} style={{ width: '100%', left: 0 }}>
+      <div className={`nav-buttons ${isMenuOpen ? 'active' : ''}`}>
         
-        <span id="userName" className="block text-center mb-4 text-white font-black text-[10px] uppercase tracking-widest opacity-60">
-            {user?.name || "طالب"}
+        <span id="userName" style={{color:'white', fontWeight:'bold', display:'block', textAlign:'center', marginBottom:'15px', fontSize: '0.9rem'}}>
+            {user?.name}
         </span>
         
         <Link href="/dashboard" className={`${btnClass} hover:bg-blue-600`} title="الرئيسية" onClick={closeMenu}>
@@ -80,16 +119,19 @@ export default function Navbar() {
             <FaBell size={20} />
         </Link>
         
-        <Link href="/dashboard/share" className={`${btnClass} hover:bg-green-600`} title="رفع ملخص" onClick={closeMenu}>
+        <Link href="/dashboard/share" className={`${btnClass} hover:bg-green-600`} title="رفع ملخص / تكليف" onClick={closeMenu}>
              <FaCloudUploadAlt size={20} />
         </Link>
 
-        {/* زر لوحة التحكم - تم تعديل المسار ليعمل بشكل صحيح 👈 */}
         {isAdmin && (
-          <Link href="/admin?mode=login" className={`${btnClass} bg-orange-600/20 border-orange-500/50 text-orange-500 hover:bg-orange-600 hover:text-white`} title="لوحة التحكم" onClick={closeMenu}>
-               <FaShieldAlt size={20} />
+          <Link href="/dashboard/admin" className={`${btnClass} hover:bg-orange-600`} title="لوحة التحكم الرئيسية" onClick={closeMenu}>
+               <FaCogs size={20} />
           </Link>
         )}
+
+        <div className="w-fit mx-auto"> 
+            <AdminLink onClick={closeMenu} />
+        </div>
 
         <Link href="/dashboard/myUploads" className={`${btnClass} hover:bg-cyan-600`} title="ملخصاتي" onClick={closeMenu}>
              <FaUserClock size={20} />
