@@ -1,81 +1,40 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { db } from "@/lib/firebase"; 
-import { collection, getDocs, query, where, onSnapshot, orderBy } from "firebase/firestore";
-import { FaSpinner, FaShieldAlt } from "react-icons/fa";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../context/AuthContext';
+import AdminLink from './AdminLink'; 
+import { 
+  FaHome, FaBook, FaBell, FaSignOutAlt, 
+  FaCloudUploadAlt, FaUserClock, FaBars, 
+  FaTimes, FaClipboardList, FaCogs
+} from 'react-icons/fa';
 
-export default function AdminPage() {
+export default function Navbar() {
+  const { user, logout } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showFake404, setShowFake404] = useState(true);
+  
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // دالة التحقق اللي بتعرف تقرأ 98610 من أي مكان
-  const verifyCode = async (codeToVerify) => {
-    if (!codeToVerify) return;
-    try {
-      // بنشيل المسافات وبنتأكد إن الكود نصي
-      const cleanCode = String(codeToVerify).trim();
-      const q = query(collection(db, "allowedCodes"), where("code", "==", cleanCode));
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty && querySnapshot.docs[0].data().admin === true) {
-        setIsAuthenticated(true);
-        setShowFake404(false);
-        // بنخزن الكود بالاسم "الصح" عشان ميتعبناش تاني
-        localStorage.setItem("adminCode", cleanCode);
-      } else {
-        setShowFake404(true);
-      }
-    } catch (error) {
-      console.error("Verification Error:", error);
-    }
-    setIsLoading(false);
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const closeMenu = () => setIsMenuOpen(false);
+
+  const handleLogout = () => {
+    logout();
+    closeMenu();
+    router.push('/');
   };
 
   useEffect(() => {
-    const checkAccess = async () => {
-      // ✅ الحل هنا: بنبص على adminCode أو userEmail
-      const savedCode = localStorage.getItem("adminCode") || localStorage.getItem("userEmail");
-      const isSecretMode = searchParams.get("mode") === "login";
-      
-      if (savedCode) {
-        await verifyCode(savedCode);
-      } else if (isSecretMode) {
-        setIsLoading(false);
-        setShowFake404(false);
-      } else {
-        setIsLoading(false);
-        setShowFake404(true);
+    const checkAdmin = () => {
+      if (typeof window !== 'undefined' && localStorage.getItem("adminCode")) {
+        setIsAdmin(true);
       }
     };
-    checkAccess();
-  }, [searchParams]);
+    checkAdmin();
+  }, []);
 
-  // شاشة التحميل (عشان متبقاش بيضا)
-  if (isLoading) return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <FaSpinner className="animate-spin text-purple-600 text-4xl" />
-    </div>
-  );
-
-  // لو مش مشرف يظهر له 404
-  if (showFake404) return (
-    <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans">
-      <h1 className="text-4xl font-bold border-r pr-4 mr-4">404</h1>
-      <div>This page could not be found.</div>
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen w-full bg-[#050505] text-white p-10" dir="rtl">
-       <h1 className="text-3xl font-black mb-6 border-b border-white/10 pb-4 italic">لوحة التحكم شغالة ✅</h1>
-       {/* باقي كود الأرشيف والرفع هنا */}
-    </div>
-  );
-}
   const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5";
 
   return (
