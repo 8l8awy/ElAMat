@@ -5,7 +5,7 @@ import { db } from "@/lib/firebase";
 import { collection, deleteDoc, doc, getDocs, query, where, serverTimestamp, orderBy, onSnapshot, addDoc, updateDoc } from "firebase/firestore";
 import { 
   FaSpinner, FaTrash, FaFilePdf, FaFileImage, 
-  FaCloudUploadAlt, FaLayerGroup, FaCheck, FaTimes, FaShieldAlt, FaInfoCircle 
+  FaCloudUploadAlt, FaLayerGroup, FaCheck, FaTimes, FaShieldAlt 
 } from "react-icons/fa";
 
 export default function AdminPage() {
@@ -93,7 +93,8 @@ export default function AdminPage() {
     return () => unsubscribe();
   }, [isAuthenticated]);
 
-const handleDelete = async (id, title) => {
+  // دالة الحذف بالباسورد (النسخة الوحيدة الصحيحة)
+  const handleDelete = async (id, title) => {
     if (adminRole !== "admin") {
       alert("صلاحية الحذف النهائي للمدير فقط ⛔");
       return;
@@ -131,6 +132,7 @@ const handleDelete = async (id, title) => {
       setTimeout(() => setMessage(""), 3000);
     } catch (error) { alert("خطأ في الصلاحيات"); }
   };
+
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!files.length || !title) return alert("البيانات ناقصة");
@@ -154,11 +156,6 @@ const handleDelete = async (id, title) => {
     } catch (error) { alert(error.message); setUploading(false); }
   };
 
-  const handleDelete = async (id, title) => {
-    if (adminRole !== "admin") return alert("للمدير فقط ⛔");
-    if (confirm(`حذف "${title}" نهائياً؟`)) await deleteDoc(doc(db, "materials", id));
-  };
-
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-black"><FaSpinner className="animate-spin text-4xl text-purple-600" /></div>;
   if (showFake404) return <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans"><h1 className="text-4xl font-bold border-r pr-4 mr-4">404</h1><div>This page could not be found.</div></div>;
 
@@ -166,7 +163,7 @@ const handleDelete = async (id, title) => {
     <div className="min-h-screen w-full text-white p-4 font-sans relative" dir="rtl">
       <div className="fixed inset-0 -z-10 bg-[#050505]"><div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[100px]"></div></div>
       
-      <div className="relative z-10 w-full max-w-7xl mx-auto pt-6">
+      <div className="relative z-10 w-full max-w-7xl mx-auto pt-6 px-4 md:px-0">
         <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6">
           <div className="flex items-center gap-4">
             <h1 className="text-3xl font-black italic uppercase tracking-tighter">Admin Central </h1>
@@ -190,8 +187,8 @@ const handleDelete = async (id, title) => {
                     {[1,2,3,4].map(y => <option key={y} value={y} className="bg-black">فرقة {y}</option>)}
                   </select>
                   <select value={semester} onChange={(e)=>setSemester(e.target.value)} className="bg-black/40 border border-white/5 p-3 rounded-xl text-xs font-bold outline-none font-sans italic text-blue-400">
-                    <option value={1} className="bg-black">الترم الأول</option>
-                    <option value={2} className="bg-black">الترم الثاني</option>
+                    <option value={1} className="bg-black text-white">الترم الأول</option>
+                    <option value={2} className="bg-black text-white">الترم الثاني</option>
                   </select>
                 </div>
                 
@@ -207,7 +204,7 @@ const handleDelete = async (id, title) => {
                 <textarea className="w-full bg-black/40 rounded-2xl p-4 outline-none border border-white/5 text-sm font-bold resize-none" rows="2" value={desc} onChange={(e)=>setDesc(e.target.value)} placeholder="وصف مختصر (اختياري)"></textarea>
 
                 <select className="w-full bg-black/40 rounded-2xl p-4 outline-none appearance-none border border-white/5 text-sm font-bold" value={subject} onChange={(e)=>setSubject(e.target.value)}>
-                    {currentSubjects.map((s, i) => <option key={i} className="bg-gray-900" value={s}>{s}</option>)}
+                    {currentSubjects.map((s, i) => <option key={i} className="bg-gray-900 font-bold" value={s}>{s}</option>)}
                 </select>
 
                 <div className="relative group">
@@ -224,10 +221,7 @@ const handleDelete = async (id, title) => {
             </div>
           </div>
 
-          {/* عمود المراجعة والأرشيف */}
           <div className="lg:col-span-2 space-y-8">
-            
-            {/* قسم مراجعة الطلبات */}
             {pendingList.length > 0 && (
               <div className="bg-yellow-500/5 backdrop-blur-xl rounded-[2.5rem] p-8 border border-yellow-500/20 shadow-xl">
                 <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-yellow-500 italic uppercase"><FaSpinner className="animate-spin"/> مراجعة طلبات الطلاب ({pendingList.length})</h2>
@@ -235,39 +229,31 @@ const handleDelete = async (id, title) => {
                   {pendingList.map((item) => (
                     <div key={item.id} className="bg-black/60 rounded-[2.5rem] p-7 border border-white/5">
                       <div className="flex justify-between items-start mb-6">
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <h4 className="font-black text-white text-md mb-1">{item.title}</h4>
-                          {item.desc && <p className="text-[11px] text-gray-400 mb-2 italic">{item.desc}</p>}
+                          {item.desc && <p className="text-[11px] text-gray-400 mb-2 italic leading-relaxed">{item.desc}</p>}
                           <p className="text-[10px] text-purple-400 font-bold uppercase tracking-widest">بواسطة: {item.studentName} | {item.subject}</p>
                         </div>
-                        
-                        {/* خيارات النوع قبل الموافقة */}
                         <div className="flex flex-col gap-2">
                            <div className="flex bg-black/40 p-1 rounded-xl border border-white/10 gap-1">
-                              <button onClick={() => {
-                                  const newList = pendingList.map(p => p.id === item.id ? {...p, selectedType: "summary"} : p);
-                                  setPendingList(newList);
-                              }} className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all ${item.selectedType === 'summary' ? 'bg-purple-600 text-white' : 'text-gray-500'}`}>ملخص</button>
-                              <button onClick={() => {
-                                  const newList = pendingList.map(p => p.id === item.id ? {...p, selectedType: "assignment"} : p);
-                                  setPendingList(newList);
-                              }} className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all ${item.selectedType === 'assignment' ? 'bg-blue-600 text-white' : 'text-gray-500'}`}>تكليف</button>
+                              <button onClick={() => setPendingList(pendingList.map(p => p.id === item.id ? {...p, selectedType: "summary"} : p))} className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all ${item.selectedType === 'summary' ? 'bg-purple-600 text-white shadow-md' : 'text-gray-500'}`}>ملخص</button>
+                              <button onClick={() => setPendingList(pendingList.map(p => p.id === item.id ? {...p, selectedType: "assignment"} : p))} className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all ${item.selectedType === 'assignment' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500'}`}>تكليف</button>
                            </div>
                            <div className="flex gap-2 justify-end mt-1">
                               <button onClick={() => handleAction(item.id, "approved", item.selectedType)} className="bg-green-600 text-white p-3 rounded-xl hover:scale-110 transition-all shadow-lg shadow-green-600/20"><FaCheck/></button>
-                              <button onClick={() => handleAction(item.id, "rejected")} className="bg-red-600 text-white p-3 rounded-xl hover:scale-110 transition-all shadow-lg shadow-red-600/20"><FaTimes/></button>
+                              {adminRole === "admin" && (
+                                <button onClick={() => handleAction(item.id, "rejected")} className="bg-red-600 text-white p-3 rounded-xl hover:scale-110 transition-all shadow-lg shadow-red-600/20"><FaTimes/></button>
+                              )}
                            </div>
                         </div>
                       </div>
-
-                      {/* عرض كافة الصور المصغرة */}
-                      <div className="flex flex-wrap gap-3 pt-6 border-t border-white/5">
+                      <div className="flex flex-wrap gap-2 pt-4 border-t border-white/5">
                         {item.files?.map((file, idx) => (
                           <div key={idx} className="relative cursor-pointer group" onClick={() => window.open(file.url, '_blank')}>
                             {file.type?.includes('pdf') ? (
-                              <div className="w-20 h-20 bg-red-500/10 rounded-2xl flex items-center justify-center border border-red-500/20 transition-all group-hover:bg-red-500/20"><FaFilePdf className="text-red-500 text-2xl"/></div>
+                              <div className="w-16 h-16 bg-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20 transition-all group-hover:bg-red-500/20"><FaFilePdf className="text-red-500 text-xl"/></div>
                             ) : (
-                              <img src={file.url} className="w-20 h-20 object-cover rounded-2xl border border-white/10 group-hover:border-purple-500 group-hover:scale-105 transition-all" alt="thumb" />
+                              <img src={file.url} className="w-16 h-16 object-cover rounded-xl border border-white/10 group-hover:border-purple-500 transition-all" alt="thumb" />
                             )}
                           </div>
                         ))}
@@ -278,7 +264,6 @@ const handleDelete = async (id, title) => {
               </div>
             )}
 
-            {/* أرشيف المحتوى */}
             <div className="bg-[#111] backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/5 shadow-2xl">
               <h2 className="text-xl font-bold mb-8 flex items-center gap-3 border-b border-white/5 pb-6 italic uppercase tracking-tighter"><FaLayerGroup className="text-blue-500"/> الأرشيف العام ({materialsList.length})</h2>
               <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
@@ -297,17 +282,16 @@ const handleDelete = async (id, title) => {
                          <div className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">{item.subject} | فرقة {item.year}</div>
                        </div>
                     </div>
-                    
-                    <div className="flex items-center gap-2 ml-4">
-                        {adminRole === "admin" && (
-                          <button onClick={() => handleDelete(item.id, item.title)} className="bg-red-500/5 text-red-500 p-3 rounded-2xl hover:bg-red-500 hover:text-white transition-all shadow-lg"><FaTrash size={14}/></button>
-                        )}
+                    <div className="flex items-center gap-2 mr-4">
+                       <button onClick={() => window.open(item.files?.[0]?.url, '_blank')} className="p-3 rounded-xl bg-white/5 text-gray-500 hover:text-white transition-all shadow-lg"><FaLayerGroup size={14}/></button>
+                       {adminRole === "admin" && (
+                         <button onClick={() => handleDelete(item.id, item.title)} className="bg-red-500/5 text-red-500 p-3 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/10"><FaTrash size={14}/></button>
+                       )}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-
           </div>
         </div>
       </div>
