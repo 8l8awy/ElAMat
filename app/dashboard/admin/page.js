@@ -6,7 +6,7 @@ import { collection, deleteDoc, doc, getDocs, query, where, serverTimestamp, ord
 import { 
   FaSpinner, FaTrash, FaFilePdf, FaFileImage, 
   FaCloudUploadAlt, FaLayerGroup, FaExchangeAlt, 
-  FaGraduationCap, FaClipboardList, FaBook, FaFileSignature, FaCheck, FaTimes 
+  FaGraduationCap, FaClipboardList, FaBook, FaFileSignature, FaCheck, FaTimes, FaShieldAlt 
 } from "react-icons/fa";
 
 export default function AdminPage() {
@@ -18,7 +18,8 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showFake404, setShowFake404] = useState(true);
-  
+  const [adminRole, setAdminRole] = useState("moderator"); // 👈 الحالة الجديدة للرتبة
+
   const [title, setTitle] = useState("");
   const [year, setYear] = useState(1);
   const [semester, setSemester] = useState(2);
@@ -47,33 +48,56 @@ export default function AdminPage() {
     setSubject(currentSubjects[0] || "");
   }, [year, semester]);
 
-  // --- الأمان والتحقق ---
-  useEffect(() => {
-    const checkAccess = async () => {
-      const savedCode = localStorage.getItem("adminCode");
-      const isSecretMode = searchParams.get("mode") === "login";
-      if (savedCode) await verifyCode(savedCode, true);
-      else if (isSecretMode) { setIsLoading(false); setShowFake404(false); }
-      else { setIsLoading(false); setShowFake404(true); }
-    };
-    checkAccess();
-  }, []);
-
+  // --- نظام الأمان والتحقق من الرتبة ---
   const verifyCode = async (codeToVerify, isAutoCheck = false) => {
     try {
       const q = query(collection(db, "allowedCodes"), where("code", "==", codeToVerify.trim()));
       const querySnapshot = await getDocs(q);
+      
       if (!querySnapshot.empty && querySnapshot.docs[0].data().admin === true) {
-        setIsAuthenticated(true); setShowFake404(false);
-        localStorage.setItem("adminCode", codeToVerify); 
-      } else { handleLoginFail(); }
+        const userData = querySnapshot.docs[0].data();
+        setIsAuthenticated(true);
+        setShowFake404(false);
+        
+        // حفظ البيانات في التخزين المحلي
+        localStorage.setItem("adminCode", codeToVerify);
+        localStorage.setItem("adminRole", userData.role || "admin"); 
+        setAdminRole(userData.role || "admin");
+      } else {
+        handleLoginFail();
+      }
     } catch (error) { console.error(error); }
     setIsLoading(false);
   };
 
-  const handleLoginFail = () => { localStorage.removeItem("adminCode"); setIsAuthenticated(false); setShowFake404(true); };
+  useEffect(() => {
+    const checkAccess = async () => {
+      const savedCode = localStorage.getItem("adminCode");
+      const savedRole = localStorage.getItem("adminRole");
+      const isSecretMode = searchParams.get("mode") === "login";
+      
+      if (savedCode) {
+        setAdminRole(savedRole || "moderator");
+        await verifyCode(savedCode, true);
+      } else if (isSecretMode) { 
+        setIsLoading(false); 
+        setShowFake404(false); 
+      } else { 
+        setIsLoading(false); 
+        setShowFake404(true); 
+      }
+    };
+    checkAccess();
+  }, []);
 
-  // --- جلب البيانات وتوزيعها ---
+  const handleLoginFail = () => {
+    localStorage.removeItem("adminCode");
+    localStorage.removeItem("adminRole");
+    setIsAuthenticated(false);
+    setShowFake404(true);
+  };
+
+  // --- جلب البيانات ---
   useEffect(() => {
     if (!isAuthenticated) return;
     const q = query(collection(db, "materials"), orderBy("createdAt", "desc"));
@@ -127,9 +151,11 @@ export default function AdminPage() {
     } catch (error) { alert(error.message); setUploading(false); }
   };
 
-  const handleDelete = async (id, title) => { if (confirm(`حذف "${title}"؟`)) await deleteDoc(doc(db, "materials", id)); };
+  const handleDelete = async (id, title) => {
+    if (adminRole !== "admin") return alert("عذراً، هذه الصلاحية للمدير فقط ⛔");
+    if (confirm(`حذف "${title}"؟`)) await deleteDoc(doc(db, "materials", id));
+  };
   
-  // دالة لفتح أي صورة في نافذة جديدة
   const openSingleFile = (url) => { if (url) window.open(url, '_blank'); };
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-black"><FaSpinner className="animate-spin text-4xl text-purple-600" /></div>;
@@ -141,15 +167,18 @@ export default function AdminPage() {
       
       <div className="relative z-10 w-full max-w-7xl mx-auto pt-6">
         <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6">
-          <h1 className="text-3xl font-black italic uppercase tracking-tighter">Admin Central 🚀</h1>
-          <span className="bg-purple-500/10 text-purple-400 px-4 py-2 rounded-xl text-[10px] font-black border border-purple-500/20 uppercase">Control Center</span>
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-black italic uppercase tracking-tighter">Admin Central 🚀</h1>
+            <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${adminRole === 'admin' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
+               <FaShieldAlt className="inline ml-1"/> {adminRole === 'admin' ? "مدير نظام" : "مُراجع محتوى"}
+            </span>
+          </div>
         </div>
 
         {message && <div className="bg-green-500/10 text-green-400 p-4 rounded-2xl text-center mb-6 font-bold border border-green-500/20">{message}</div>}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-20">
           
-          {/* لوحة التحكم والرفع */}
           <div className="lg:col-span-1">
             <div className="bg-[#111] backdrop-blur-xl rounded-[2.5rem] p-8 shadow-2xl border border-white/5 sticky top-4">
               <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-purple-400"><FaCloudUploadAlt/> نشر محتوى جديد</h2>
@@ -199,15 +228,14 @@ export default function AdminPage() {
           </div>
 
           <div className="lg:col-span-2 space-y-8">
-            
-            {/* 1. قسم المراجعة (لعرض كل الصور) 👈 */}
+            {/* قسم مراجعة طلبات الطلاب */}
             {pendingList.length > 0 && (
               <div className="bg-yellow-500/5 backdrop-blur-xl rounded-[2.5rem] p-8 border border-yellow-500/20 shadow-2xl">
                 <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-yellow-500 italic uppercase"><FaSpinner className="animate-spin"/> طلبات المراجعة ({pendingList.length})</h2>
                 <div className="space-y-6">
                   {pendingList.map((item) => (
                     <div key={item.id} className="bg-black/60 rounded-[2rem] p-6 border border-white/5">
-                      <div className="flex justify-between items-start mb-4">
+                      <div className="flex justify-between items-start mb-4 text-right" dir="rtl">
                         <div>
                           <h4 className="font-black text-white text-md mb-1">{item.title}</h4>
                           <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">بواسطة: <span className="text-purple-400">{item.studentName}</span> | {item.subject}</p>
@@ -218,10 +246,10 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {/* عرض كافة الصور المصغرة للطالب 👈 */}
+                      {/* عرض كافة الصور المصغرة للطالب */}
                       <div className="flex flex-wrap gap-2 pt-4 border-t border-white/5">
                         {item.files?.map((file, idx) => (
-                          <div key={idx} className="relative cursor-zoom-in group" onClick={() => openSingleFile(file.url)}>
+                          <div key={idx} className="relative cursor-pointer group" onClick={() => openSingleFile(file.url)}>
                             {file.type?.includes('pdf') ? (
                               <div className="w-20 h-20 bg-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20"><FaFilePdf className="text-red-500 text-2xl"/></div>
                             ) : (
@@ -236,35 +264,30 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* 2. السجل المعتمد (مع عرض الصور أيضاً) 👈 */}
+            {/* الأرشيف المعتمد */}
             <div className="bg-[#111] backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/5 shadow-2xl">
-              <h2 className="text-xl font-bold mb-8 flex items-center gap-3 border-b border-white/5 pb-6 italic uppercase tracking-tighter"><FaLayerGroup className="text-blue-500"/> الأرشيف ({materialsList.length})</h2>
+              <h2 className="text-xl font-bold mb-8 flex items-center gap-3 border-b border-white/5 pb-6 italic uppercase tracking-tighter"><FaLayerGroup className="text-blue-500"/> أرشيف المحتوى ({materialsList.length})</h2>
               <div className="space-y-6 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
                 {materialsList.map((item) => (
                   <div key={item.id} className="bg-black/30 rounded-[2rem] p-6 border border-white/5 hover:border-purple-500/30 transition-all">
                     <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className={`text-[8px] font-black px-2 py-0.5 rounded-lg uppercase ${item.type === 'summary' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>{item.type === 'summary' ? 'ملخص' : 'تكليف'}</span>
-                          <h4 className="font-black text-sm text-white italic">{item.title}</h4>
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center">
+                            {item.files?.[0]?.type?.includes('pdf') ? <FaFilePdf className="text-red-500"/> : <FaFileImage className="text-blue-400"/>}
                         </div>
-                        <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{item.subject} | فرقة {item.year}</div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`text-[8px] font-black px-2 py-0.5 rounded-lg uppercase ${item.type === 'summary' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>{item.type === 'summary' ? 'ملخص' : 'تكليف'}</span>
+                            <h4 className="font-black text-sm text-white italic">{item.title}</h4>
+                          </div>
+                          <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{item.subject} | فرقة {item.year}</div>
+                        </div>
                       </div>
-                      <button onClick={() => handleDelete(item.id, item.title)} className="bg-red-500/5 text-red-500 p-3 rounded-xl hover:bg-red-500 hover:text-white transition-all"><FaTrash size={14}/></button>
-                    </div>
-                    
-                    {/* عرض صور الأرشيف المعتمد 👈 */}
-                    <div className="flex flex-wrap gap-2">
-                       {item.files?.slice(0, 4).map((file, idx) => (
-                         <div key={idx} className="relative cursor-pointer" onClick={() => openSingleFile(file.url)}>
-                            {file.type?.includes('pdf') ? (
-                              <div className="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center"><FaFilePdf className="text-red-500"/></div>
-                            ) : (
-                              <img src={file.url} className="w-12 h-12 object-cover rounded-lg opacity-60 hover:opacity-100 transition-all" alt="thumb" />
-                            )}
-                         </div>
-                       ))}
-                       {item.files?.length > 4 && <div className="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center text-[10px] font-black">+{item.files.length - 4}</div>}
+                      
+                      {/* الحذف للأدمن فقط */}
+                      {adminRole === "admin" && (
+                        <button onClick={() => handleDelete(item.id, item.title)} className="w-12 h-12 rounded-2xl bg-red-500/5 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all duration-500 shadow-lg"><FaTrash size={16}/></button>
+                      )}
                     </div>
                   </div>
                 ))}
