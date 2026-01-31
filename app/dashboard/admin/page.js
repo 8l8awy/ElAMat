@@ -68,7 +68,7 @@ export default function AdminPage() {
   if (showFake404) return <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans text-xl">404 | Page Not Found</div>;
 
   return (
-    <div className="min-h-screen w-full bg-[#050505] text-white p-0 md:pl-20 font-sans" dir="rtl">
+    <div className="min-h-screen w-full  text-white p-0 md:pl-20 font-sans" dir="rtl">
       <div className="max-w-6xl mx-auto pt-10 px-4">
         <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6">
           <div className="flex items-center gap-3">
