@@ -48,11 +48,13 @@ export default function AdminPage() {
     setSubject(currentSubjects[0] || "");
   }, [year, semester]);
 
-  // دالة التحقق المعدلة لتقرأ الكود وتحدد الصلاحية
   const verifyCode = async (codeToVerify) => {
-    if (!codeToVerify) return handleLoginFail();
+    if (!codeToVerify) {
+        setIsLoading(false);
+        return;
+    }
     try {
-      const q = query(collection(db, "allowedCodes"), where("code", "==", codeToVerify.trim()));
+      const q = query(collection(db, "allowedCodes"), where("code", "==", String(codeToVerify).trim()));
       const querySnapshot = await getDocs(q);
       
       if (!querySnapshot.empty && querySnapshot.docs[0].data().admin === true) {
@@ -61,8 +63,7 @@ export default function AdminPage() {
         setShowFake404(false);
         const role = userData.role || "moderator";
         setAdminRole(role);
-        // حفظ الكود في المكانين لضمان عمل الناف بار
-        localStorage.setItem("adminCode", codeToVerify.trim());
+        localStorage.setItem("adminCode", String(codeToVerify).trim());
         localStorage.setItem("adminRole", role);
       } else { 
         handleLoginFail(); 
@@ -75,9 +76,9 @@ export default function AdminPage() {
     }
   };
 
-  // ✅ تم إصلاح تداخل الأقواس هنا (المشكلة اللي كانت بتوقف الـ Build)
   useEffect(() => {
     const checkAccess = async () => {
+      // ✅ بيقرأ من المكانين لضمان الدخول الفوري
       const savedCode = localStorage.getItem("adminCode") || localStorage.getItem("userEmail");
       const isSecretMode = searchParams.get("mode") === "login";
       
@@ -115,7 +116,7 @@ export default function AdminPage() {
 
   const handleDelete = async (id, title) => {
     if (adminRole !== "admin") return alert("صلاحية الحذف النهائي للمدير فقط ⛔");
-    const password = prompt(`أدخل باسورد التأكيد لحذف "${title}":`);
+    const password = prompt(`أدخل باسورد التأكيد (98612) لحذف "${title}":`);
     if (password === "98612") {
       try {
         await deleteDoc(doc(db, "materials", id));
@@ -130,7 +131,7 @@ export default function AdminPage() {
   const handleAction = async (id, newStatus, finalType) => {
     if (newStatus === "rejected") {
       if (adminRole !== "admin") return alert("رفض الطلبات للمدير فقط ⛔");
-      const password = prompt("أدخل باسورد التأكيد لرفض وحذف هذا الطلب:");
+      const password = prompt("أدخل باسورد التأكيد (98612) للرفض والحذف:");
       if (password !== "98612") return alert("عملية ملغاة ❌");
     }
     try {
@@ -168,16 +169,16 @@ export default function AdminPage() {
     } catch (error) { alert(error.message); setUploading(false); }
   };
 
-  // شاشة إدخال الكود (تظهر فقط عند ?mode=login وبدون كود مخزن)
+  // شاشة الدخول السوداء
   if (!isLoading && !isAuthenticated && !showFake404) {
     return (
-      <div className="min-h-screen  flex items-center justify-center p-6 text-white" dir="rtl">
-        <div className=" p-10 rounded-[2.5rem] border border-white/10 w-full max-w-md text-center shadow-2xl">
+      <div className="min-h-screen bg-black flex items-center justify-center p-6 text-white" dir="rtl">
+        <div className="bg-[#111] p-10 rounded-[2.5rem] border border-white/10 w-full max-w-md text-center shadow-2xl">
           <FaShieldAlt className="text-purple-500 text-5xl mx-auto mb-6" />
-          <h2 className="text-xl font-black mb-6 uppercase tracking-tighter italic">Admin Access</h2>
+          <h2 className="text-xl font-black mb-6 uppercase tracking-tighter italic italic">Admin Access</h2>
           <input 
-            type="password" placeholder="أدخل كود المشرف " 
-            className="w-full  border border-white/20 p-4 rounded-2xl text-white text-center font-bold tracking-widest outline-none focus:border-purple-500 transition-all"
+            type="password" placeholder="أدخل كود المشرف" 
+            className="w-full bg-black border border-white/20 p-4 rounded-2xl text-white text-center font-bold tracking-widest outline-none focus:border-purple-500 transition-all"
             onKeyDown={(e) => e.key === 'Enter' && verifyCode(e.target.value)}
           />
           <p className="text-gray-600 text-[10px] mt-4 uppercase">System Verification Required</p>
@@ -186,12 +187,17 @@ export default function AdminPage() {
     );
   }
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center"><FaSpinner className="animate-spin text-4xl text-purple-600" /></div>;
-  if (showFake404) return <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans"><h1 className="text-4xl font-bold border-r pr-4 mr-4">404</h1><div>This page could not be found.</div></div>;
+  if (isLoading) return <div className="min-h-screen bg-black flex items-center justify-center"><FaSpinner className="animate-spin text-4xl text-purple-600" /></div>;
+  
+  if (showFake404) return (
+    <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans">
+      <h1 className="text-4xl font-bold border-r pr-4 mr-4">404</h1>
+      <div>This page could not be found.</div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen w-full text-white p-0 md:p-8 font-sans relative overflow-x-hidden bg-[#050505]" dir="rtl">
-      {/* ... باقي كود الواجهة (UI) اللي كان عندك شغال تمام ... */}
       <div className="relative z-10 w-full max-w-7xl mx-auto pt-6 px-3 md:px-0">
          <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6 px-2">
            <div className="flex items-center gap-4">
@@ -202,17 +208,14 @@ export default function AdminPage() {
            </div>
          </div>
 
-         {message && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-50 bg-green-500/20 text-green-400 px-8 py-4 rounded-2xl font-bold border border-green-500/20 backdrop-blur-md">{message}</div>}
+         {message && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-50 bg-green-500/20 text-green-400 px-8 py-4 rounded-2xl font-bold border border-green-500/20 backdrop-blur-md shadow-2xl">{message}</div>}
 
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8 pb-20">
-            {/* ... كود الـ Form والأرشيف كما هو في ملفك الأصلي ... */}
-            {/* ملاحظة: قمت بدمج منطق الرفع والأرشيف الذي أرسلته سابقاً هنا */}
+            {/* عمود الرفع */}
             <div className="lg:col-span-1">
-               {/* كود الفورم (الرفع) */}
                <div className="bg-[#111] rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-white/5 sticky top-4 shadow-2xl">
                  <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-purple-400 italic tracking-tighter"><FaCloudUploadAlt/> نشر سريع</h2>
                  <form onSubmit={handleUpload} className="space-y-6">
-                    {/* ... محتوى الفورم كما هو في كودك ... */}
                     <div className="grid grid-cols-2 gap-2">
                        <select value={year} onChange={(e)=>setYear(e.target.value)} className="bg-black/40 border border-white/5 p-3 rounded-xl text-xs font-bold outline-none">
                          {[1,2,3,4].map(y => <option key={y} value={y} className="bg-black text-white text-right">فرقة {y}</option>)}
@@ -222,43 +225,48 @@ export default function AdminPage() {
                          <option value={2} className="bg-black text-white text-right">ترم ثانٍ</option>
                        </select>
                     </div>
+                    
                     <div className="grid grid-cols-2 gap-2 bg-black/40 p-1 rounded-xl border border-white/10">
                        <button type="button" onClick={() => setType("summary")} className={`py-2 rounded-lg font-black text-[10px] transition-all ${type === "summary" ? 'bg-purple-600 text-white' : 'text-gray-500'}`}>ملخص</button>
                        <button type="button" onClick={() => setType("assignment")} className={`py-2 rounded-lg font-black text-[10px] transition-all ${type === "assignment" ? 'bg-blue-600 text-white' : 'text-gray-500'}`}>تكليف</button>
                     </div>
-                    <input type="text" className="w-full bg-black/40 rounded-2xl p-4 border border-white/5 text-sm font-bold outline-none" value={title} onChange={(e)=>setTitle(e.target.value)} required placeholder="عنوان المخلص" />
+
+                    <input type="text" className="w-full bg-black/40 rounded-2xl p-4 border border-white/5 text-sm font-bold outline-none focus:border-purple-500/50" value={title} onChange={(e)=>setTitle(e.target.value)} required placeholder="عنوان المخلص" />
+                    
                     <select className="w-full bg-black/40 rounded-2xl p-4 border border-white/5 text-sm font-bold outline-none" value={subject} onChange={(e)=>setSubject(e.target.value)}>
                        {currentSubjects.map((s, i) => <option key={i} className="bg-gray-900" value={s}>{s}</option>)}
                     </select>
-                    <div className="relative border-2 border-dashed border-white/10 rounded-[2rem] p-6 text-center">
+
+                    <div className="relative border-2 border-dashed border-white/10 rounded-[2rem] p-6 text-center hover:border-purple-500/30 transition-all">
                        <input type="file" onChange={(e) => setFiles(Array.from(e.target.files))} multiple className="absolute inset-0 opacity-0 cursor-pointer" />
                        <FaCloudUploadAlt size={24} className={`mx-auto mb-2 ${files.length > 0 ? 'text-green-500' : 'opacity-20'}`}/>
-                       <p className="text-[10px] font-bold text-gray-500">{files.length > 0 ? `تم اختيار ${files.length} ملفات` : "اسحب الملفات هنا"}</p>
+                       <p className="text-[10px] font-bold text-gray-500 uppercase">{files.length > 0 ? `Selected: ${files.length}` : "Click to select files"}</p>
                     </div>
-                    <button type="submit" disabled={uploading} className="w-full bg-purple-600 hover:bg-purple-500 py-4 rounded-2xl font-black shadow-xl text-xs uppercase italic tracking-widest transition-all">
-                       {uploading ? "جاري الرفع..." : "نشر الآن"}
+
+                    <button type="submit" disabled={uploading} className="w-full bg-purple-600 hover:bg-purple-500 py-4 rounded-2xl font-black shadow-xl text-xs uppercase italic tracking-widest transition-all active:scale-95 disabled:opacity-50">
+                       {uploading ? "Uploading..." : "Publish Now"}
                     </button>
                  </form>
                </div>
             </div>
 
+            {/* عمود الأرشيف والمراجعة */}
             <div className="lg:col-span-2 space-y-8">
-               {/* كود طلبات المراجعة */}
                {pendingList.length > 0 && (
                  <div className="bg-yellow-500/5 rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-yellow-500/20 shadow-xl">
                     <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-yellow-500 italic"><FaSpinner className="animate-spin"/> طلبات المراجعة ({pendingList.length})</h2>
                     <div className="space-y-6">
                        {pendingList.map((item) => (
-                          <div key={item.id} className="bg-black/60 rounded-[2rem] p-6 border border-white/5">
+                          <div key={item.id} className="bg-black/60 rounded-[2rem] p-6 border border-white/5 shadow-inner">
                              <div className="flex flex-col md:flex-row justify-between gap-4">
                                 <div className="flex-1">
                                    <h4 className="font-black text-white text-md mb-1">{item.title}</h4>
-                                   <p className="text-[10px] text-purple-400 font-bold uppercase tracking-widest">بواسطة: {item.studentName} | {item.subject}</p>
+                                   <p className="text-[10px] text-purple-400 font-bold uppercase tracking-widest">بواسطة: {item.studentName || "Unknown"} | {item.subject}</p>
                                 </div>
-                                <div className="flex gap-2">
-                                   <button onClick={() => handleAction(item.id, "approved", item.selectedType)} className="bg-green-600 text-white p-3 rounded-xl hover:scale-110 transition-all"><FaCheck/></button>
+                                <div className="flex gap-2 items-center">
+                                   <button onClick={() => handleAction(item.id, "approved", item.selectedType)} className="bg-green-600 text-white p-3 rounded-xl hover:scale-110 transition-all shadow-lg shadow-green-600/20"><FaCheck/></button>
                                    {adminRole === "admin" && (
-                                     <button onClick={() => handleAction(item.id, "rejected")} className="bg-red-600 text-white p-3 rounded-xl hover:scale-110 transition-all"><FaTimes/></button>
+                                     <button onClick={() => handleAction(item.id, "rejected")} className="bg-red-600 text-white p-3 rounded-xl hover:scale-110 transition-all shadow-lg shadow-red-600/20"><FaTimes/></button>
                                    )}
                                 </div>
                              </div>
@@ -268,7 +276,6 @@ export default function AdminPage() {
                  </div>
                )}
 
-               {/* كود الأرشيف العام */}
                <div className="bg-[#111] rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-white/5 shadow-2xl">
                   <h2 className="text-xl font-bold mb-8 flex items-center gap-3 border-b border-white/5 pb-6 italic uppercase tracking-tighter"><FaLayerGroup className="text-blue-500"/> الأرشيف العام ({materialsList.length})</h2>
                   <div className="space-y-4 max-h-[800px] overflow-y-auto custom-scrollbar pr-2">
@@ -284,7 +291,7 @@ export default function AdminPage() {
                               </div>
                            </div>
                            <div className="flex gap-2">
-                              <button onClick={() => window.open(item.files?.[0]?.url, '_blank')} className="p-2.5 rounded-xl bg-white/5 text-gray-500 hover:text-white transition-all"><FaLayerGroup size={14}/></button>
+                              <button onClick={() => window.open(item.files?.[0]?.url, '_blank')} className="p-2.5 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-all"><FaLayerGroup size={14}/></button>
                               {adminRole === "admin" && (
                                 <button onClick={() => handleDelete(item.id, item.title)} className="bg-red-500/5 text-red-500 p-2.5 rounded-xl hover:bg-red-500 hover:text-white transition-all"><FaTrash size={14}/></button>
                               )}
