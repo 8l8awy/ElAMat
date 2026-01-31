@@ -93,27 +93,43 @@ export default function AdminPage() {
     return () => unsubscribe();
   }, [isAuthenticated]);
 
- const handleDelete = async (id, title) => {
-    // 1. التأكد من الصلاحية أولاً
+const handleDelete = async (id, title) => {
     if (adminRole !== "admin") {
       alert("صلاحية الحذف النهائي للمدير فقط ⛔");
       return;
     }
 
-    // 2. طلب باسورد الحذف
     const password = prompt(`أدخل باسورد التأكيد لحذف "${title}":`);
-
     if (password === "98612") {
       try {
         await deleteDoc(doc(db, "materials", id));
         setMessage("تم الحذف بنجاح ✅");
         setTimeout(() => setMessage(""), 3000);
-      } catch (error) {
-        alert("حدث خطأ أثناء الحذف");
-      }
+      } catch (error) { alert("حدث خطأ أثناء الحذف"); }
     } else if (password !== null) {
       alert("الباسورد خطأ! لا يمكن الحذف ❌");
     }
+  };
+
+  const handleAction = async (id, newStatus, finalType) => {
+    if (newStatus === "rejected") {
+      const password = prompt("أدخل باسورد التأكيد لرفض وحذف هذا الطلب:");
+      if (password !== "98612") {
+        alert("الباسورد خطأ أو تم إلغاء العملية ❌");
+        return;
+      }
+    }
+
+    try {
+      if (newStatus === "approved") {
+        await updateDoc(doc(db, "materials", id), { status: "approved", type: finalType });
+        setMessage("تم القبول والنشر ✅");
+      } else {
+        await deleteDoc(doc(db, "materials", id));
+        setMessage("تم حذف الطلب ❌");
+      }
+      setTimeout(() => setMessage(""), 3000);
+    } catch (error) { alert("خطأ في الصلاحيات"); }
   };
   const handleUpload = async (e) => {
     e.preventDefault();
