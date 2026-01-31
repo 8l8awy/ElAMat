@@ -28,16 +28,24 @@ export default function Navbar() {
 
 // داخل ملف Navbar.js
 useEffect(() => {
-  const checkAccess = () => {
-    // تأكد أننا نبحث عن adminCode وليس userEmail
-    const code = localStorage.getItem("adminCode");
-    if (code === "98610" || code === "98600") {
-      setHasAccess(true);
-    } else {
-      setHasAccess(false);
-    }
-  };
-  
+    const checkAccess = () => {
+      // إحنا هنبص على كل الاحتمالات عشان نضمن إن الزرار يظهر
+      const adminCode = localStorage.getItem("adminCode");
+      const userEmail = localStorage.getItem("userEmail"); // اللي ظهرت في صورتك
+      const savedRole = localStorage.getItem("adminRole");
+
+      // لو أي واحد من دول فيه الكود بتاعك، الزرار هيظهر
+      if (adminCode === "98610" || userEmail === "98610" || savedRole === "moderator" || savedRole === "admin") {
+        setHasAccess(true);
+      } else {
+        setHasAccess(false);
+      }
+    };
+
+    // تشغيل الفحص كل ثانية عشان يحس بالدخول فوراً
+    const interval = setInterval(checkAccess, 1000);
+    return () => clearInterval(interval);
+  }, []);
   const interval = setInterval(checkAccess, 1000);
   return () => clearInterval(interval);
 }, []);
