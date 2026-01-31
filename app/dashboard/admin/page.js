@@ -209,7 +209,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen w-full text-white p-0 md:p-8 font-sans relative overflow-x-hidden bg-[#050505]" dir="rtl">
+    <div className="min-h-screen w-full text-white p-0 md:p-8 font-sans relative overflow-x-hidden " dir="rtl">
       <div className="relative z-10 w-full max-w-7xl mx-auto pt-6 px-3 md:px-0">
          {/* الهيدر */}
          <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6 px-2">
