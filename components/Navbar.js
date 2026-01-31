@@ -3,11 +3,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
-import AdminLink from './AdminLink'; 
 import { 
   FaHome, FaBook, FaBell, FaSignOutAlt, 
   FaCloudUploadAlt, FaUserClock, FaBars, 
-  FaTimes, FaClipboardList, FaCogs
+  FaTimes, FaClipboardList, FaShieldAlt
 } from 'react-icons/fa';
 
 export default function Navbar() {
@@ -15,7 +14,7 @@ export default function Navbar() {
   const router = useRouter();
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
@@ -26,40 +25,45 @@ export default function Navbar() {
     router.push('/');
   };
 
+  // التحقق من الصلاحية (سواء كان أدمن أو مود)
   useEffect(() => {
-    const checkAdmin = () => {
-      if (typeof window !== 'undefined' && localStorage.getItem("adminCode")) {
-        setIsAdmin(true);
+    const checkAccess = () => {
+      const role = localStorage.getItem("adminRole");
+      const code = localStorage.getItem("adminCode");
+      // يظهر الزرار لو الشخص مراجع (moderator) أو مدير (admin)
+      if (role === "moderator" || role === "admin" || code === "98600") {
+        setHasAccess(true);
+      } else {
+        setHasAccess(false);
       }
     };
-    checkAdmin();
+    checkAccess();
+    window.addEventListener('storage', checkAccess);
+    return () => window.removeEventListener('storage', checkAccess);
   }, []);
 
   const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5";
 
   return (
-    <nav className="navbar">
-      {/* 1. تم تحديث الهيدر هنا ليعرض اللوجو الجديد فقط */}
-{/* 1. تم تكبير اللوجو وضبط المسافات */}
-   {/* اللوجو الجديد بحجم أكبر وبدون أخطاء برمجية */}
-     {/* هيدر الناف بار - الحجم الصغير والملموم */}
-     {/* هيدر الناف بار - الحجم الصغير والملموم */}
+    <nav className="navbar" style={{ padding: '10px 0' }}>
       <div className="flex items-center justify-center py-1 mb-0 select-none cursor-pointer group" onClick={() => router.push('/dashboard')}>
         <img 
           src="/logo.png" 
           alt="EAM Logo" 
-          className="h-8 md:h-12 w-auto object-contain drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] transition-all duration-300 group-hover:scale-110"
+          className="h-10 md:h-14 w-auto object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-all duration-300 group-hover:scale-110"
           onError={(e) => { e.target.src = "/a.png" }} 
         />
       </div>
-      <button className="burger-btn" onClick={toggleMenu}>
+
+      <button className="burger-btn" onClick={toggleMenu} style={{ right: '15px' }}>
         {isMenuOpen ? <FaTimes /> : <FaBars />}
       </button>
 
-      <div className={`nav-buttons ${isMenuOpen ? 'active' : ''}`}>
+      {/* القائمة بدون حواف جانبية في الموبايل */}
+      <div className={`nav-buttons ${isMenuOpen ? 'active' : ''}`} style={{ width: '100%', left: 0, padding: '20px 0' }}>
         
-        <span id="userName" style={{color:'white', fontWeight:'bold', display:'block', textAlign:'center', marginBottom:'15px', fontSize: '0.9rem'}}>
-            {user?.name}
+        <span className="block text-center mb-4 text-white font-black text-[10px] uppercase tracking-widest opacity-60">
+            {user?.name || "طالب"}
         </span>
         
         <Link href="/dashboard" className={`${btnClass} hover:bg-blue-600`} title="الرئيسية" onClick={closeMenu}>
@@ -78,19 +82,16 @@ export default function Navbar() {
             <FaBell size={20} />
         </Link>
         
-        <Link href="/dashboard/share" className={`${btnClass} hover:bg-green-600`} title="رفع ملخص / تكليف" onClick={closeMenu}>
+        <Link href="/dashboard/share" className={`${btnClass} hover:bg-green-600`} title="رفع ملخص" onClick={closeMenu}>
              <FaCloudUploadAlt size={20} />
         </Link>
 
-        {isAdmin && (
-          <Link href="/dashboard/admin" className={`${btnClass} hover:bg-orange-600`} title="لوحة التحكم الرئيسية" onClick={closeMenu}>
-               <FaCogs size={20} />
+        {/* زر لوحة التحكم يظهر للمود (98600) فوراً 👈 */}
+        {hasAccess && (
+          <Link href="/admin?mode=login" className={`${btnClass} bg-orange-600/20 border-orange-500/50 text-orange-500 hover:bg-orange-600 hover:text-white`} title="لوحة التحكم" onClick={closeMenu}>
+               <FaShieldAlt size={20} />
           </Link>
         )}
-
-        <div className="w-fit mx-auto"> 
-            <AdminLink onClick={closeMenu} />
-        </div>
 
         <Link href="/dashboard/myUploads" className={`${btnClass} hover:bg-cyan-600`} title="ملخصاتي" onClick={closeMenu}>
              <FaUserClock size={20} />
