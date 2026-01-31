@@ -48,24 +48,21 @@ export default function AdminPage() {
     setSubject(currentSubjects[0] || "");
   }, [year, semester]);
 
- const verifyCode = async (codeToVerify) => {
-  try {
-    const q = query(collection(db, "allowedCodes"), where("code", "==", codeToVerify.trim()));
-    const querySnapshot = await getDocs(q);
-    
-    if (!querySnapshot.empty && querySnapshot.docs[0].data().admin === true) {
-      const userData = querySnapshot.docs[0].data();
-      
-      // ✅ حفظ الكود والاسم الصحيح ليتعرف عليه الـ Navbar
-      localStorage.setItem("adminCode", codeToVerify.trim());
-      localStorage.setItem("adminRole", userData.role || "moderator");
-      
-      setIsAuthenticated(true);
-      setShowFake404(false);
-      setAdminRole(userData.role || "moderator");
-    }
-  } catch (error) { console.error(error); }
-};
+  const verifyCode = async (codeToVerify) => {
+    try {
+      const q = query(collection(db, "allowedCodes"), where("code", "==", codeToVerify.trim()));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty && querySnapshot.docs[0].data().admin === true) {
+        const userData = querySnapshot.docs[0].data();
+        setIsAuthenticated(true);
+        setShowFake404(false);
+        localStorage.setItem("adminCode", codeToVerify);
+        localStorage.setItem("adminRole", userData.role || "admin"); 
+        setAdminRole(userData.role || "admin");
+      } else { handleLoginFail(); }
+    } catch (error) { console.error(error); }
+    setIsLoading(false);
+  };
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -160,12 +157,12 @@ export default function AdminPage() {
     } catch (error) { alert(error.message); setUploading(false); }
   };
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-black"><FaSpinner className="animate-spin text-4xl text-purple-600" /></div>;
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center "><FaSpinner className="animate-spin text-4xl text-purple-600" /></div>;
   if (showFake404) return <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans"><h1 className="text-4xl font-bold border-r pr-4 mr-4">404</h1><div>This page could not be found.</div></div>;
 
   return (
     <div className="min-h-screen w-full text-white p-0 md:p-8 font-sans relative overflow-x-hidden" dir="rtl">
-      <div className="fixed inset-0 -z-10 "><div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[100px]"></div></div>
+      <div className="fixed inset-0 -z-10 bg-[#050505]"><div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[100px]"></div></div>
       
       <div className="relative z-10 w-full max-w-7xl mx-auto pt-6 px-3 md:px-0">
         <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6 px-2">
