@@ -5,7 +5,7 @@ import { db } from "@/lib/firebase";
 import { collection, deleteDoc, doc, getDocs, query, where, serverTimestamp, orderBy, onSnapshot, addDoc, updateDoc } from "firebase/firestore";
 import { 
   FaSpinner, FaTrash, FaFilePdf, FaFileImage, 
-  FaCloudUploadAlt, FaLayerGroup, FaCheck, FaTimes, FaShieldAlt, FaBook, FaFileSignature 
+  FaCloudUploadAlt, FaLayerGroup, FaCheck, FaTimes, FaShieldAlt, FaEye, FaBook, FaFileSignature 
 } from "react-icons/fa";
 
 export default function AdminPage() {
@@ -19,7 +19,7 @@ export default function AdminPage() {
   const [showFake404, setShowFake404] = useState(true);
   const [adminRole, setAdminRole] = useState("moderator");
 
-  // --- حالات نظام النشر (الـ Form) ---
+  // --- حالات نظام النشر ---
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState(""); 
   const [year, setYear] = useState(1);
@@ -49,8 +49,8 @@ export default function AdminPage() {
     setSubject(currentSubjects[0] || "");
   }, [year, semester]);
 
-  // --- نظام الأمان ---
-  const verifyCode = async (codeToVerify, isAutoCheck = false) => {
+  // --- نظام الأمان والتحقق ---
+  const verifyCode = async (codeToVerify) => {
     try {
       const q = query(collection(db, "allowedCodes"), where("code", "==", codeToVerify.trim()));
       const querySnapshot = await getDocs(q);
@@ -70,7 +70,7 @@ export default function AdminPage() {
     const checkAccess = async () => {
       const savedCode = localStorage.getItem("adminCode");
       const isSecretMode = searchParams.get("mode") === "login";
-      if (savedCode) { await verifyCode(savedCode, true); }
+      if (savedCode) await verifyCode(savedCode);
       else if (isSecretMode) { setIsLoading(false); setShowFake404(false); }
       else { setIsLoading(false); setShowFake404(true); }
     };
@@ -112,7 +112,7 @@ export default function AdminPage() {
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!files.length || !title) return alert("البيانات ناقصة يا هندسة!");
+    if (!files.length || !title) return alert("البيانات ناقصة");
     setUploading(true);
     try {
       const uploadedFilesData = [];
@@ -138,6 +138,8 @@ export default function AdminPage() {
     if (confirm(`حذف "${title}" نهائياً؟`)) await deleteDoc(doc(db, "materials", id));
   };
 
+  const openSingleFile = (url) => { if (url) window.open(url, '_blank'); };
+
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-black"><FaSpinner className="animate-spin text-4xl text-purple-600" /></div>;
   if (showFake404) return <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans"><h1 className="text-4xl font-bold border-r pr-4 mr-4">404</h1><div>This page could not be found.</div></div>;
 
@@ -146,109 +148,95 @@ export default function AdminPage() {
       <div className="fixed inset-0 -z-10 bg-[#050505]"></div>
       
       <div className="relative z-10 w-full max-w-7xl mx-auto pt-6 px-4 md:px-0">
-        <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-black italic uppercase">Admin Central 🚀</h1>
-            <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${adminRole === 'admin' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
-               {adminRole === 'admin' ? "المدير العام" : "مُراجع المحتوى"}
+        <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-black italic uppercase">Admin Central</h1>
+            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${adminRole === 'admin' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
+               {adminRole}
             </span>
           </div>
         </div>
 
-        {message && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-8 py-3 rounded-full font-bold shadow-2xl">{message}</div>}
+        {message && <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-6 py-2 rounded-full font-bold shadow-2xl">{message}</div>}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-20">
           
-          {/* لوحة النشر (النظام القديم الذي طلبته) */}
+          {/* عمود النشر السريع (اليمين) */}
           <div className="lg:col-span-1">
-            <div className="bg-[#111] backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/5 sticky top-4 shadow-2xl">
-              <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-purple-400"><FaCloudUploadAlt/> نشر جديد</h2>
-              <form onSubmit={handleUpload} className="space-y-5">
-                
+            <div className="bg-[#111] rounded-[2rem] p-6 border border-white/5 sticky top-4 shadow-2xl">
+              <h2 className="text-lg font-bold mb-6 text-purple-400 flex items-center gap-2 tracking-tighter italic"><FaCloudUploadAlt/> نشر محتوى</h2>
+              <form onSubmit={handleUpload} className="space-y-4">
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-gray-500 font-black uppercase mr-2 italic">الفرقة</label>
-                    <select value={year} onChange={(e)=>setYear(e.target.value)} className="w-full bg-black/40 border border-white/5 p-3 rounded-xl text-xs font-bold outline-none">
-                       {[1,2,3,4].map(y => <option key={y} value={y} className="bg-black">الفرقة {y}</option>)}
+                    <select value={year} onChange={(e)=>setYear(e.target.value)} className="bg-black/40 border border-white/5 p-3 rounded-xl text-xs font-bold outline-none">
+                       {[1,2,3,4].map(y => <option key={y} value={y} className="bg-black">فرقة {y}</option>)}
                     </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-gray-500 font-black uppercase mr-2 italic">الترم</label>
-                    <select value={semester} onChange={(e)=>setSemester(e.target.value)} className="w-full bg-black/40 border border-white/5 p-3 rounded-xl text-xs font-bold outline-none">
-                       <option value={1} className="bg-black">الأول</option>
-                       <option value={2} className="bg-black">الثاني</option>
+                    <select value={semester} onChange={(e)=>setSemester(e.target.value)} className="bg-black/40 border border-white/5 p-3 rounded-xl text-xs font-bold outline-none">
+                       <option value={1} className="bg-black">ترم 1</option>
+                       <option value={2} className="bg-black">ترم 2</option>
                     </select>
-                  </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[10px] text-gray-500 font-black mr-2 uppercase italic">نوع المحتوى</label>
-                  <div className="grid grid-cols-2 gap-2 bg-black/40 p-1 rounded-xl border border-white/5">
-                    <button type="button" onClick={() => setType("summary")} className={`py-2.5 rounded-lg font-black text-[10px] transition-all flex items-center justify-center gap-2 ${type === "summary" ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-500'}`}>
-                      <FaBook/> ملخص
-                    </button>
-                    <button type="button" onClick={() => setType("assignment")} className={`py-2.5 rounded-lg font-black text-[10px] transition-all flex items-center justify-center gap-2 ${type === "assignment" ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500'}`}>
-                      <FaFileSignature/> تكليف
-                    </button>
-                  </div>
+                <div className="grid grid-cols-2 gap-2 bg-black/40 p-1 rounded-xl border border-white/5">
+                    <button type="button" onClick={() => setType("summary")} className={`py-2 rounded-lg font-black text-[10px] transition-all ${type === "summary" ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-500'}`}>ملخص</button>
+                    <button type="button" onClick={() => setType("assignment")} className={`py-2 rounded-lg font-black text-[10px] transition-all ${type === "assignment" ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500'}`}>تكليف</button>
                 </div>
 
-                <input type="text" className="w-full bg-black/40 rounded-2xl p-4 outline-none border border-white/5 text-sm font-bold focus:border-purple-500/50 transition-all" value={title} onChange={(e)=>setTitle(e.target.value)} required placeholder="عنوان المنشور" />
+                <input type="text" className="w-full bg-black/40 rounded-xl p-4 outline-none border border-white/5 text-sm font-bold" value={title} onChange={(e)=>setTitle(e.target.value)} required placeholder="عنوان المنشور" />
+                <textarea className="w-full bg-black/40 rounded-xl p-4 outline-none border border-white/5 text-sm font-bold resize-none" rows="2" value={desc} onChange={(e)=>setDesc(e.target.value)} placeholder="وصف اختياري"></textarea>
                 
-                <textarea className="w-full bg-black/40 rounded-2xl p-4 outline-none border border-white/5 text-sm font-bold resize-none focus:border-purple-500/50" rows="2" value={desc} onChange={(e)=>setDesc(e.target.value)} placeholder="وصف أو ملاحظات (اختياري)"></textarea>
-
-                <select className="w-full bg-black/40 rounded-2xl p-4 outline-none appearance-none border border-white/5 text-sm font-bold" value={subject} onChange={(e)=>setSubject(e.target.value)}>
+                <select className="w-full bg-black/40 rounded-xl p-4 outline-none appearance-none border border-white/5 text-sm font-bold" value={subject} onChange={(e)=>setSubject(e.target.value)}>
                     {currentSubjects.map((s, i) => <option key={i} className="bg-gray-900" value={s}>{s}</option>)}
                 </select>
 
                 <div className="relative group">
                   <input type="file" onChange={(e) => setFiles(Array.from(e.target.files))} multiple className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-                  <div className={`border-2 border-dashed rounded-[2rem] p-6 text-center transition-all ${files.length > 0 ? 'border-green-500/50 bg-green-500/5' : 'border-white/10 group-hover:border-purple-500/30'}`}>
-                    {files.length > 0 ? <p className="text-green-400 font-black text-xs italic">تم اختيار {files.length} ملفات</p> : <FaCloudUploadAlt size={24} className="mx-auto opacity-20"/>}
+                  <div className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all ${files.length > 0 ? 'border-green-500/50 bg-green-500/5' : 'border-white/10'}`}>
+                    {files.length > 0 ? <p className="text-green-400 font-bold text-xs">تم اختيار {files.length} ملفات</p> : <FaCloudUploadAlt size={24} className="mx-auto opacity-20"/>}
                   </div>
                 </div>
 
-                <button type="submit" disabled={uploading} className="w-full bg-purple-600 hover:bg-purple-500 py-5 rounded-[1.5rem] font-black shadow-xl disabled:opacity-50 text-xs italic uppercase tracking-widest transition-all">
-                  {uploading ? "جاري المعالجة..." : "نشر المحتوى الآن"}
+                <button type="submit" disabled={uploading} className="w-full bg-purple-600 hover:bg-purple-500 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg">
+                  {uploading ? "جاري الرفع..." : "نشر الآن"}
                 </button>
               </form>
             </div>
           </div>
 
-          <div className="lg:col-span-2 space-y-8">
-            {/* مراجعة الطلبات */}
+          {/* عمود المراجعة والأرشيف (الشمال) */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* قسم طلبات المراجعة (لعرض كل الصور) */}
             {pendingList.length > 0 && (
-              <div className="bg-yellow-500/5 backdrop-blur-xl rounded-[2.5rem] p-8 border border-yellow-500/20 shadow-xl">
-                <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-yellow-500 italic uppercase"><FaSpinner className="animate-spin"/> مراجعة الطلبات ({pendingList.length})</h2>
-                <div className="space-y-6">
+              <div className="bg-yellow-500/5 rounded-[2rem] p-6 border border-yellow-500/20 shadow-xl">
+                <h2 className="text-lg font-bold mb-6 text-yellow-500 flex items-center gap-2"><FaSpinner className="animate-spin"/> طلبات المراجعة ({pendingList.length})</h2>
+                <div className="space-y-4">
                   {pendingList.map((item) => (
-                    <div key={item.id} className="bg-black/60 rounded-[2.5rem] p-6 border border-white/5">
-                      <div className="flex justify-between items-start mb-6">
-                        <div className="flex-1">
-                          <h4 className="font-black text-white text-md mb-1">{item.title}</h4>
-                          {item.desc && <p className="text-[11px] text-gray-400 mb-2 italic leading-relaxed">{item.desc}</p>}
-                          <p className="text-[10px] text-purple-400 font-bold uppercase tracking-widest">بواسطة: {item.studentName} | {item.subject}</p>
+                    <div key={item.id} className="bg-black/60 rounded-[1.5rem] p-5 border border-white/5">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-white text-sm truncate">{item.title}</h4>
+                          <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">{item.studentName} | {item.subject}</p>
                         </div>
                         <div className="flex flex-col gap-2">
-                           <div className="flex bg-black/40 p-1 rounded-xl border border-white/10 gap-1">
-                              <button onClick={() => setPendingList(pendingList.map(p => p.id === item.id ? {...p, selectedType: "summary"} : p))} className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all ${item.selectedType === 'summary' ? 'bg-purple-600 text-white shadow-md' : 'text-gray-500'}`}>ملخص</button>
-                              <button onClick={() => setPendingList(pendingList.map(p => p.id === item.id ? {...p, selectedType: "assignment"} : p))} className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all ${item.selectedType === 'assignment' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500'}`}>تكليف</button>
+                           <div className="flex bg-black/40 p-1 rounded-lg border border-white/10 gap-1">
+                              <button onClick={() => setPendingList(pendingList.map(p => p.id === item.id ? {...p, selectedType: "summary"} : p))} className={`px-2 py-1 rounded-md text-[8px] font-black ${item.selectedType === 'summary' ? 'bg-purple-600' : 'text-gray-500'}`}>ملخص</button>
+                              <button onClick={() => setPendingList(pendingList.map(p => p.id === item.id ? {...p, selectedType: "assignment"} : p))} className={`px-2 py-1 rounded-md text-[8px] font-black ${item.selectedType === 'assignment' ? 'bg-blue-600' : 'text-gray-500'}`}>تكليف</button>
                            </div>
-                           <div className="flex gap-2 justify-end mt-1">
-                              <button onClick={() => handleAction(item.id, "approved", item.selectedType)} className="bg-green-600 text-white p-3 rounded-xl hover:scale-110 transition-all shadow-lg"><FaCheck/></button>
+                           <div className="flex gap-2 justify-end">
+                              <button onClick={() => handleAction(item.id, "approved", item.selectedType)} className="bg-green-600 text-white p-2.5 rounded-lg hover:scale-105 transition-all"><FaCheck size={12}/></button>
                               {adminRole === "admin" && (
-                                <button onClick={() => handleAction(item.id, "rejected")} className="bg-red-600 text-white p-3 rounded-xl hover:scale-110 transition-all shadow-lg"><FaTimes/></button>
+                                <button onClick={() => handleAction(item.id, "rejected")} className="bg-red-600 text-white p-2.5 rounded-lg hover:scale-105 transition-all"><FaTimes size={12}/></button>
                               )}
                            </div>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 pt-4 border-t border-white/5">
                         {item.files?.map((file, idx) => (
-                          <div key={idx} className="relative cursor-pointer group" onClick={() => window.open(file.url, '_blank')}>
+                          <div key={idx} className="cursor-pointer" onClick={() => openSingleFile(file.url)}>
                             {file.type?.includes('pdf') ? (
-                              <div className="w-16 h-16 bg-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20 transition-all group-hover:bg-red-500/20"><FaFilePdf className="text-red-500 text-xl"/></div>
+                              <div className="w-12 h-12 bg-red-500/10 rounded-lg flex items-center justify-center"><FaFilePdf className="text-red-500 text-lg"/></div>
                             ) : (
-                              <img src={file.url} className="w-16 h-16 object-cover rounded-xl border border-white/10 group-hover:border-purple-500 transition-all" alt="thumb" />
+                              <img src={file.url} className="w-12 h-12 object-cover rounded-lg border border-white/10" alt="thumb" />
                             )}
                           </div>
                         ))}
@@ -259,36 +247,36 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* الأرشيف المعتمد */}
-            <div className="bg-[#111] backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/5 shadow-2xl">
-              <h2 className="text-xl font-bold mb-8 flex items-center gap-3 border-b border-white/5 pb-6 italic uppercase tracking-tighter"><FaLayerGroup className="text-blue-500"/> الأرشيف العام ({materialsList.length})</h2>
-              <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
+            {/* سجل الأرشيف (النظام القديم المنظم) */}
+            <div className="bg-[#111] rounded-[2rem] p-6 border border-white/5 shadow-2xl">
+              <h2 className="text-lg font-bold mb-6 text-blue-500 flex items-center gap-2 italic uppercase tracking-tighter"><FaLayerGroup/> الأرشيف المعتمد ({materialsList.length})</h2>
+              <div className="space-y-3 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar">
                 {materialsList.map((item) => (
-                  <div key={item.id} className="bg-black/30 rounded-[2rem] p-5 flex items-center justify-between border border-white/5 hover:border-purple-500/30 transition-all group">
+                  <div key={item.id} className="bg-black/30 rounded-2xl p-4 flex items-center justify-between border border-white/5 hover:border-purple-500/30 transition-all">
                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                       <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center shrink-0">
+                       <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center shrink-0">
                           {item.files?.[0]?.type?.includes('pdf') ? <FaFilePdf className="text-red-500"/> : <FaFileImage className="text-blue-400"/>}
                        </div>
                        <div className="min-w-0">
-                         <div className="flex items-center gap-2 mb-1">
-                            <span className={`text-[8px] font-black px-2 py-0.5 rounded-lg uppercase ${item.type === 'summary' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>{item.type === 'summary' ? 'ملخص' : 'تكليف'}</span>
-                            <h4 className="font-black text-sm text-white italic truncate">{item.title}</h4>
+                         <div className="flex items-center gap-2 mb-0.5">
+                            <span className={`text-[7px] font-black px-1.5 py-0.5 rounded uppercase ${item.type === 'summary' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>{item.type === 'summary' ? 'ملخص' : 'تكليف'}</span>
+                            <h4 className="font-bold text-white text-xs truncate max-w-[200px] italic">{item.title}</h4>
                          </div>
-                         {item.desc && <p className="text-[10px] text-gray-500 mb-1 italic truncate max-w-xs">{item.desc}</p>}
-                         <div className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">{item.subject} | فرقة {item.year}</div>
+                         <p className="text-[9px] text-gray-600 font-bold uppercase">{item.subject} | فرقة {item.year}</p>
                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        {adminRole === "admin" && (
-                          <button onClick={() => handleDelete(item.id, item.title)} className="bg-red-500/5 text-red-500 p-3 rounded-2xl hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/10"><FaTrash size={14}/></button>
-                        )}
+                    <div className="flex gap-2">
+                       <button onClick={() => openSingleFile(item.files?.[0]?.url)} className="p-2.5 rounded-lg bg-white/5 text-gray-500 hover:text-white transition-all"><FaEye size={12}/></button>
+                       {adminRole === "admin" && (
+                         <button onClick={() => handleDelete(item.id, item.title)} className="p-2.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"><FaTrash size={12}/></button>
+                       )}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
 
+          </div>
         </div>
       </div>
     </div>
