@@ -48,19 +48,30 @@ export default function AdminPage() {
     setSubject(currentSubjects[0] || "");
   }, [year, semester]);
 
+  // دالة التحقق المعدلة لتعترف بك فوراً
   const verifyCode = async (codeToVerify) => {
     try {
       const q = query(collection(db, "allowedCodes"), where("code", "==", codeToVerify.trim()));
       const querySnapshot = await getDocs(q);
+      
       if (!querySnapshot.empty && querySnapshot.docs[0].data().admin === true) {
         const userData = querySnapshot.docs[0].data();
+        
         setIsAuthenticated(true);
         setShowFake404(false);
-        localStorage.setItem("adminCode", codeToVerify);
-        localStorage.setItem("adminRole", userData.role || "admin"); 
-        setAdminRole(userData.role || "admin");
-      } else { handleLoginFail(); }
-    } catch (error) { console.error(error); }
+        
+        // تحديث الرتبة في الـ State والـ Storage
+        const userRole = userData.role || "admin";
+        setAdminRole(userRole);
+        localStorage.setItem("adminCode", codeToVerify.trim());
+        localStorage.setItem("adminRole", userRole);
+      } else {
+        handleLoginFail();
+      }
+    } catch (error) {
+      console.error(error);
+      handleLoginFail();
+    }
     setIsLoading(false);
   };
 
@@ -68,9 +79,20 @@ export default function AdminPage() {
     const checkAccess = async () => {
       const savedCode = localStorage.getItem("adminCode");
       const isSecretMode = searchParams.get("mode") === "login";
-      if (savedCode) { await verifyCode(savedCode); }
-      else if (isSecretMode) { setIsLoading(false); setShowFake404(false); }
-      else { setIsLoading(false); setShowFake404(true); }
+      
+      // إذا وجد كود محفوظ، نتحقق منه فوراً
+      if (savedCode) {
+        await verifyCode(savedCode);
+      } 
+      // إذا كان الرابط يحتوي على وضع التسجيل، نظهر صفحة الدخول (إخفاء 404)
+      else if (isSecretMode) {
+        setIsLoading(false);
+        setShowFake404(false);
+      } 
+      else {
+        setIsLoading(false);
+        setShowFake404(true);
+      }
     };
     checkAccess();
   }, [searchParams]);
@@ -93,13 +115,11 @@ export default function AdminPage() {
     return () => unsubscribe();
   }, [isAuthenticated]);
 
-  // دالة الحذف بالباسورد للمدير فقط
   const handleDelete = async (id, title) => {
     if (adminRole !== "admin") {
       alert("صلاحية الحذف النهائي للمدير فقط ⛔");
       return;
     }
-
     const password = prompt(`أدخل باسورد التأكيد لحذف "${title}":`);
     if (password === "98612") {
       try {
@@ -121,7 +141,6 @@ export default function AdminPage() {
         return;
       }
     }
-
     try {
       if (newStatus === "approved") {
         await updateDoc(doc(db, "materials", id), { status: "approved", type: finalType });
@@ -157,6 +176,24 @@ export default function AdminPage() {
     } catch (error) { alert(error.message); setUploading(false); }
   };
 
+  // واجهة إدخال الكود البسيطة (تظهر عند mode=login)
+  if (!isLoading && !isAuthenticated && !showFake404) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
+        <div className="bg-[#111] p-8 rounded-[2rem] border border-white/10 w-full max-w-md shadow-2xl">
+          <h2 className="text-2xl font-black text-white mb-6 text-center italic uppercase">Admin Access</h2>
+          <input 
+            type="password" 
+            placeholder="أدخل كود الدخول" 
+            className="w-full bg-black border border-white/20 p-4 rounded-xl text-white outline-none focus:border-purple-500 mb-4 text-center font-bold tracking-widest"
+            onKeyDown={(e) => e.key === 'Enter' && verifyCode(e.target.value)}
+          />
+          <p className="text-gray-500 text-[10px] text-center uppercase font-bold">اضغط Enter بعد كتابة الكود</p>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-black"><FaSpinner className="animate-spin text-4xl text-purple-600" /></div>;
   if (showFake404) return <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans"><h1 className="text-4xl font-bold border-r pr-4 mr-4">404</h1><div>This page could not be found.</div></div>;
 
@@ -177,7 +214,7 @@ export default function AdminPage() {
         {message && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-50 bg-green-500/20 text-green-400 px-8 py-4 rounded-2xl font-bold border border-green-500/20 backdrop-blur-md">{message}</div>}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8 pb-20">
-          
+          {/* ... بقية محتوى الرفع والمراجعة والأرشيف ... */}
           <div className="lg:col-span-1">
             <div className="bg-[#111] rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-white/5 sticky top-4 shadow-2xl">
               <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-purple-400 italic tracking-tighter"><FaCloudUploadAlt/> نشر </h2>
@@ -191,33 +228,28 @@ export default function AdminPage() {
                     <option value={2} className="bg-black text-white text-right">ترم ثانٍ</option>
                   </select>
                 </div>
-                
                 <div className="grid grid-cols-2 gap-2 bg-black/40 p-1 rounded-xl border border-white/5">
                   <button type="button" onClick={() => setType("summary")} className={`py-2 rounded-lg font-black text-[10px] transition-all ${type === "summary" ? 'bg-purple-600 text-white' : 'text-gray-500'}`}>ملخص</button>
                   <button type="button" onClick={() => setType("assignment")} className={`py-2 rounded-lg font-black text-[10px] transition-all ${type === "assignment" ? 'bg-blue-600 text-white' : 'text-gray-500'}`}>تكليف</button>
                 </div>
-
                 <input type="text" className="w-full bg-black/40 rounded-2xl p-4 outline-none border border-white/5 text-sm font-bold" value={title} onChange={(e)=>setTitle(e.target.value)} required placeholder="عنوان المخلص" />
                 <textarea className="w-full bg-black/40 rounded-2xl p-4 outline-none border border-white/5 text-sm font-bold resize-none font-sans" rows="2" value={desc} onChange={(e)=>setDesc(e.target.value)} placeholder="وصف مختصر (اختياري)"></textarea>
-
                 <select className="w-full bg-black/40 rounded-2xl p-4 outline-none border border-white/5 text-sm font-bold appearance-none" value={subject} onChange={(e)=>setSubject(e.target.value)}>
                     {currentSubjects.map((s, i) => <option key={i} className="bg-gray-900" value={s}>{s}</option>)}
                 </select>
-
                 <div className="relative group">
                   <input type="file" onChange={(e) => setFiles(Array.from(e.target.files))} multiple className="absolute inset-0 opacity-0 cursor-pointer z-10" />
                   <div className={`border-2 border-dashed rounded-[2rem] p-6 text-center transition-all ${files.length > 0 ? 'border-green-500/50 bg-green-500/5' : 'border-white/10'}`}>
                     {files.length > 0 ? <p className="text-green-400 font-black text-xs">تم اختيار {files.length} ملفات</p> : <FaCloudUploadAlt size={24} className="mx-auto opacity-20"/>}
                   </div>
                 </div>
-
                 <button type="submit" disabled={uploading} className="w-full bg-purple-600 hover:bg-purple-500 py-4 rounded-2xl font-black shadow-xl transition-all text-xs uppercase italic tracking-widest">
                   {uploading ? "جاري الرفع..." : "نشر الآن"}
                 </button>
               </form>
             </div>
           </div>
-
+          {/* عمود المراجعة والأرشيف */}
           <div className="lg:col-span-2 space-y-6 md:space-y-8">
             {pendingList.length > 0 && (
               <div className="bg-yellow-500/5 backdrop-blur-xl rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-yellow-500/20 shadow-xl">
@@ -246,9 +278,9 @@ export default function AdminPage() {
                       </div>
                       <div className="flex flex-wrap gap-2 pt-4 border-t border-white/5">
                         {item.files?.map((file, idx) => (
-                          <div key={idx} className="relative cursor-pointer" onClick={() => window.open(file.url, '_blank')}>
+                          <div key={idx} className="relative cursor-pointer group" onClick={() => window.open(file.url, '_blank')}>
                             {file.type?.includes('pdf') ? (
-                              <div className="w-16 h-16 bg-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20"><FaFilePdf className="text-red-500 text-xl"/></div>
+                              <div className="w-16 h-16 bg-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20 transition-all group-hover:bg-red-500/20"><FaFilePdf className="text-red-500 text-xl"/></div>
                             ) : (
                               <img src={file.url} className="w-16 h-16 object-cover rounded-xl border border-white/10" alt="thumb" />
                             )}
@@ -260,7 +292,7 @@ export default function AdminPage() {
                 </div>
               </div>
             )}
-
+            {/* الأرشيف */}
             <div className="bg-[#111] backdrop-blur-xl rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 border border-white/5 shadow-2xl">
               <h2 className="text-xl font-bold mb-8 flex items-center gap-3 border-b border-white/5 pb-6 italic uppercase tracking-tighter"><FaLayerGroup className="text-blue-500"/> الأرشيف العام ({materialsList.length})</h2>
               <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
