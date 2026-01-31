@@ -9,7 +9,7 @@ import {
 } from "firebase/firestore";
 import { 
   FaSpinner, FaTrash, FaFilePdf, FaFileImage, 
-  FaCloudUploadAlt, FaLayerGroup, FaCheck, FaTimes, FaShieldAlt 
+  FaCloudUploadAlt, FaLayerGroup, FaCheck, FaTimes, FaShieldAlt, FaInfoCircle
 } from "react-icons/fa";
 
 function AdminContent() {
@@ -23,7 +23,6 @@ function AdminContent() {
   const [showFake404, setShowFake404] = useState(true);
   const [adminRole, setAdminRole] = useState("moderator");
 
-  // State للفورم والأرشيف
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState(""); 
   const [year, setYear] = useState(1);
@@ -52,7 +51,6 @@ function AdminContent() {
     setSubject(currentSubjects[0] || "");
   }, [year, semester, currentSubjects]);
 
-  // دالة التحقق والحفظ الإجباري
   const verifyAndLogin = async (code) => {
     if (!code) return;
     const cleanCode = String(code).trim();
@@ -171,20 +169,27 @@ function AdminContent() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-20">
           {/* عمود الرفع */}
           <div className="lg:col-span-1">
-            <div className="bg-[#111] p-6 md:p-8 rounded-[2rem] border border-white/5 sticky top-4">
+            <div className="bg-[#111] p-6 md:p-8 rounded-[2rem] border border-white/5 sticky top-4 shadow-xl">
               <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-purple-400"><FaCloudUploadAlt/> نشر مادة</h2>
               <form onSubmit={handleUpload} className="space-y-4">
                 <input type="text" className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none focus:border-purple-500" value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="عنوان المخلص" required />
+                <textarea className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none focus:border-purple-500 text-sm h-20 resize-none" value={desc} onChange={(e)=>setDesc(e.target.value)} placeholder="وصف المخلص أو ملاحظات..."></textarea>
+                
+                <div className="grid grid-cols-2 gap-2 bg-black/40 p-1 rounded-xl border border-white/5">
+                    <button type="button" onClick={() => setType("summary")} className={`py-2 rounded-lg font-black text-[10px] transition-all ${type === "summary" ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-500'}`}>ملخص</button>
+                    <button type="button" onClick={() => setType("assignment")} className={`py-2 rounded-lg font-black text-[10px] transition-all ${type === "assignment" ? 'bg-orange-600 text-white shadow-lg' : 'text-gray-500'}`}>تكليف</button>
+                </div>
+
                 <div className="grid grid-cols-2 gap-2">
-                   <select value={year} onChange={(e)=>setYear(e.target.value)} className="bg-black border border-white/10 p-4 rounded-2xl outline-none">
+                   <select value={year} onChange={(e)=>setYear(e.target.value)} className="bg-black border border-white/10 p-4 rounded-2xl outline-none text-xs">
                      {[1,2,3,4].map(y => <option key={y} value={y}>فرقة {y}</option>)}
                    </select>
-                   <select value={semester} onChange={(e)=>setSemester(e.target.value)} className="bg-black border border-white/10 p-4 rounded-2xl outline-none text-blue-400">
+                   <select value={semester} onChange={(e)=>setSemester(e.target.value)} className="bg-black border border-white/10 p-4 rounded-2xl outline-none text-xs text-blue-400">
                      <option value={1}>ترم أول</option>
                      <option value={2}>ترم ثانٍ</option>
                    </select>
                 </div>
-                <select value={subject} onChange={(e)=>setSubject(e.target.value)} className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none">
+                <select value={subject} onChange={(e)=>setSubject(e.target.value)} className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none text-xs">
                   {currentSubjects.map((s, i) => <option key={i} value={s}>{s}</option>)}
                 </select>
                 <div className="relative border-2 border-dashed border-white/10 p-6 rounded-2xl text-center hover:border-purple-500/30 cursor-pointer">
@@ -192,35 +197,47 @@ function AdminContent() {
                   <FaCloudUploadAlt size={24} className={`mx-auto mb-2 ${files.length > 0 ? 'text-green-500' : 'opacity-20'}`}/>
                   <p className="text-[10px] font-bold text-gray-500">{files.length > 0 ? `Selected: ${files.length}` : "اضغط لرفع الملفات"}</p>
                 </div>
-                <button type="submit" disabled={uploading} className="w-full bg-purple-600 p-4 rounded-2xl font-black hover:bg-purple-500 transition-all">
+                <button type="submit" disabled={uploading} className="w-full bg-purple-600 p-4 rounded-2xl font-black hover:bg-purple-500 transition-all uppercase italic">
                   {uploading ? "جاري النشر..." : "نشر الآن"}
                 </button>
               </form>
             </div>
           </div>
 
-          {/* عمود المراجعة والأرشيف */}
           <div className="lg:col-span-2 space-y-8">
-            {/* قسم المراجعة مع المعاينة */}
+            {/* قسم المراجعة */}
             {pendingList.length > 0 && (
-              <div className="bg-yellow-500/5 p-6 md:p-8 rounded-[2rem] border border-yellow-500/20 shadow-xl">
-                <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-yellow-500"><FaSpinner className="animate-spin"/> طلبات تحتاج مراجعة ({pendingList.length})</h2>
+              <div className="bg-yellow-500/5 p-6 md:p-8 rounded-[2rem] border border-yellow-500/20 shadow-2xl">
+                <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-yellow-500 italic"><FaSpinner className="animate-spin"/> طلبات تحتاج مراجعة ({pendingList.length})</h2>
                 <div className="space-y-6">
                   {pendingList.map(item => (
                     <div key={item.id} className="bg-black/60 p-6 rounded-[2rem] border border-white/5">
                       <div className="flex flex-col md:flex-row justify-between gap-6">
                         <div className="flex-1">
-                          <h4 className="font-bold text-white text-md mb-1">{item.title}</h4>
-                          <p className="text-[10px] text-purple-400 font-bold uppercase mb-4">{item.subject} | {item.studentName || "طالب مجهول"}</p>
+                          <div className="flex items-center gap-2 mb-1">
+                             <span className={`text-[8px] font-black px-2 py-0.5 rounded-md uppercase ${item.type === 'summary' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/20' : 'bg-orange-500/20 text-orange-400 border border-orange-500/20'}`}>
+                                {item.type === 'summary' ? 'ملخص' : 'تكليف'}
+                             </span>
+                             <h4 className="font-bold text-white text-md">{item.title}</h4>
+                          </div>
+                          <p className="text-[10px] text-gray-500 font-bold mb-3">{item.subject} | {item.studentName || "طالب مجهول"}</p>
                           
-                          {/* المعاينة داخل الطلب */}
+                          {/* عرض الوصف في المراجعة */}
+                          {item.desc && (
+                            <div className="bg-white/5 p-3 rounded-xl mb-4 border-r-2 border-yellow-500/50">
+                                <p className="text-xs text-gray-400 italic flex gap-2 items-start tracking-tight leading-relaxed">
+                                    <FaInfoCircle className="shrink-0 mt-0.5 opacity-50"/> {item.desc}
+                                </p>
+                            </div>
+                          )}
+
                           <div className="flex flex-wrap gap-3">
                             {item.files?.map((file, idx) => (
-                              <div key={idx} className="w-20 h-20 rounded-xl border border-white/10 overflow-hidden cursor-pointer hover:scale-105 transition-all" onClick={() => window.open(file.url, '_blank')}>
+                              <div key={idx} className="w-16 h-16 rounded-xl border border-white/10 overflow-hidden cursor-pointer hover:scale-105 transition-all" onClick={() => window.open(file.url, '_blank')}>
                                 {file.type?.includes('pdf') ? (
                                   <div className="w-full h-full bg-red-500/10 flex flex-col items-center justify-center">
-                                    <FaFilePdf className="text-red-500 text-xl"/>
-                                    <span className="text-[8px] text-red-500 mt-1">PDF</span>
+                                    <FaFilePdf className="text-red-500 text-lg"/>
+                                    <span className="text-[7px] text-red-500 mt-1">PDF</span>
                                   </div>
                                 ) : (
                                   <img src={file.url} className="w-full h-full object-cover" alt="preview" />
@@ -230,7 +247,7 @@ function AdminContent() {
                           </div>
                         </div>
                         <div className="flex gap-2 items-center">
-                          <button onClick={() => updateDoc(doc(db, "materials", item.id), { status: "approved" })} className="bg-green-600 text-white px-5 py-3 rounded-xl hover:bg-green-500 transition-all flex items-center gap-2 font-bold"><FaCheck/> قبول</button>
+                          <button onClick={() => updateDoc(doc(db, "materials", item.id), { status: "approved" })} className="bg-green-600 text-white px-5 py-3 rounded-xl hover:bg-green-500 transition-all flex items-center gap-2 font-bold shadow-lg shadow-green-600/10"><FaCheck/> قبول</button>
                           <button onClick={() => deleteDoc(doc(db, "materials", item.id))} className="bg-red-600/10 text-red-500 px-5 py-3 rounded-xl hover:bg-red-600 hover:text-white transition-all border border-red-500/10 font-bold"><FaTimes/> رفض</button>
                         </div>
                       </div>
@@ -241,21 +258,26 @@ function AdminContent() {
             )}
 
             {/* الأرشيف */}
-            <div className="bg-[#111] p-6 md:p-8 rounded-[2rem] border border-white/5">
-              <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-blue-500 uppercase"><FaLayerGroup/> الأرشيف ({materialsList.length})</h2>
+            <div className="bg-[#111] p-6 md:p-8 rounded-[2rem] border border-white/5 shadow-2xl">
+              <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-blue-500 uppercase tracking-tighter italic"><FaLayerGroup/> الأرشيف العام ({materialsList.length})</h2>
               <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
                 {materialsList.map(item => (
-                  <div key={item.id} className="bg-black/30 p-4 rounded-xl flex justify-between items-center border border-white/5 hover:border-purple-500/30 transition-all">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-white/5 rounded-2xl flex items-center justify-center">
+                  <div key={item.id} className="bg-black/30 p-4 rounded-2xl flex justify-between items-center border border-white/5 hover:border-purple-500/30 transition-all">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                      <div className="w-10 h-10 bg-white/5 rounded-2xl flex items-center justify-center shrink-0">
                         {item.files?.[0]?.type?.includes('pdf') ? <FaFilePdf className="text-red-500"/> : <FaFileImage className="text-blue-400"/>}
                       </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-white">{item.title}</h4>
-                        <p className="text-[10px] text-gray-600 font-bold uppercase">{item.subject} | فرقة {item.year}</p>
+                      <div className="truncate">
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <span className={`text-[7px] font-black px-1.5 py-0.5 rounded uppercase ${item.type === 'summary' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/10' : 'bg-orange-500/10 text-orange-400 border border-orange-500/10'}`}>
+                                {item.type === 'summary' ? 'ملخص' : 'تكليف'}
+                            </span>
+                            <h4 className="text-sm font-bold text-white truncate">{item.title}</h4>
+                        </div>
+                        <p className="text-[10px] text-gray-600 font-bold uppercase truncate">{item.subject} | فرقة {item.year}</p>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 shrink-0">
                       <button onClick={() => window.open(item.files?.[0]?.url, '_blank')} className="p-3 rounded-xl bg-white/5 text-gray-500 hover:text-white transition-all"><FaLayerGroup size={14}/></button>
                       {adminRole === "admin" && (
                         <button onClick={() => deleteDoc(doc(db, "materials", item.id))} className="text-red-500/30 hover:text-red-500 p-3 rounded-xl transition-all"><FaTrash size={14}/></button>
