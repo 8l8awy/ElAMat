@@ -3,11 +3,10 @@ import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import Link from "next/link";
-// ✅ تم تعديل الاستيراد ليكون من 'fa' لضمان وجود كل الأيقونات
 import { 
-  FaChartLine, FaLanguage, FaCalculator, FaBalanceScale, 
-  FaBriefcase, FaBookOpen, FaArrowsRotate, FaGavel, FaGlobe,
-  FaUsers, FaHandshake, FaLightbulb, FaCog, FaMicrochip, FaPiggyBank, FaDatabase, FaLayerGroup
+  FaChartLine, FaCalculator, FaBalanceScale, FaUsers, 
+  FaBookOpen, FaArrowsRotate, FaGlobe, FaLightbulb, 
+  FaCog, FaMicrochip, FaDatabase, FaBriefcase 
 } from "react-icons/fa";
 
 export default function SubjectsPage() {
@@ -16,30 +15,32 @@ export default function SubjectsPage() {
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // ✅ تم تحديث أسماء الأيقونات (مثلاً FaCog بدل FaCogs) لتتوافق مع المكتبة
+  // خريطة أيقونات مبسطة لتجنب أي خطأ في الرفع
   const subjectIcons = {
+    // الفرقة الأولى
     "مبادئ الاقتصاد": <FaChartLine className="text-blue-400" />,
     "مبادئ المحاسبة المالية": <FaCalculator className="text-green-400" />,
     "مبادئ القانون": <FaBalanceScale className="text-red-400" />,
     "السلوك التنظيمي": <FaUsers className="text-purple-400" />,
-    "طرق ومهارات الاتصال": <FaHandshake className="text-blue-400" />,
+    "طرق ومهارات الاتصال": <FaUsers className="text-blue-400" />,
     "حقوق الإنسان": <FaBalanceScale className="text-yellow-500" />,
     "رياضيات الأعمال": <FaCalculator className="text-green-500" />,
     "التفكير الابتكاري": <FaLightbulb className="text-yellow-400" />,
     "مبادئ علم الاجتماع": <FaGlobe className="text-cyan-400" />,
+
+    // الفرقة الثانية
     "مبادئ المحاسبة الإدارية": <FaCalculator className="text-emerald-400" />,
     "إدارة الإنتاج والعمليات": <FaCog className="text-gray-400" />,
     "نظم المعلومات الإدارية": <FaMicrochip className="text-blue-500" />,
     "مبادئ الإدارة المالية": <FaChartLine className="text-green-500" />,
     "تحليلات الأعمال": <FaChartLine className="text-orange-400" />,
-    "إدارة مالية متقدمة (بنوك)": <FaPiggyBank className="text-pink-400" />,
-    "المحاسبة المتوسطة 2 (بنوك)": <FaCalculator className="text-orange-400" />,
+
+    // الفرقة الثالثة والرابعة
     "الأعمال الإلكترونية": <FaGlobe className="text-sky-400" />,
     "قواعد البيانات": <FaDatabase className="text-indigo-400" />,
     "الإحصاء التطبيقي": <FaChartLine className="text-red-400" />,
     "مشروع التخرج": <FaBriefcase className="text-amber-500" />,
-    "الإدارة الاستراتيجية": <FaBriefcase className="text-purple-500" />,
-    "اقتصاديات النقود والبنوك": <FaPiggyBank className="text-green-400" />,
+    
     "default": <FaBookOpen className="text-gray-500" />
   };
 
@@ -89,45 +90,45 @@ export default function SubjectsPage() {
   }, [year, semester]);
 
   return (
-    <div className="min-h-screen w-full text-white px-2 md:px-10 py-6 font-sans overflow-x-hidden" dir="rtl">
+    <div className="min-h-screen w-full text-white px-2 md:px-10 py-6 font-sans" dir="rtl">
       <div className="w-full max-w-7xl mx-auto mb-10 space-y-6">
         <div className="flex flex-wrap justify-between items-center gap-4 border-b border-white/5 pb-6">
            <div className="flex gap-1.5 bg-white/5 p-1 rounded-2xl w-fit border border-white/5">
               {[1, 2, 3, 4].map(y => (
                 <button key={y} onClick={() => setYear(y)} 
                   className={`px-5 md:px-7 py-2 rounded-xl font-black text-sm md:text-base transition-all ${year === y ? 'bg-purple-600 shadow-xl' : 'text-gray-500 hover:text-gray-300'}`}>
-                  فرقة {y}
+                  {y}
                 </button>
               ))}
            </div>
            <button onClick={() => setSemester(semester === 1 ? 2 : 1)} 
-             className="w-fit group bg-white/5 border border-white/10 px-6 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 active:scale-95 transition-all">
-             <FaArrowsRotate className="text-purple-500 group-hover:rotate-180 transition-transform duration-500" /> 
+             className="bg-white/5 border border-white/10 px-6 py-2 rounded-xl font-black text-sm flex items-center gap-2 transition-all">
+             <FaArrowsRotate className="text-purple-500" /> 
              <span>ترم {semester === 1 ? "أول" : "ثاني"}</span>
            </button>
         </div>
         <div className="text-center pt-2">
-          <h1 className="text-3xl md:text-5xl font-black italic tracking-tighter uppercase">المواد الدراسية</h1>
+          <h1 className="text-3xl md:text-5xl font-black italic uppercase tracking-tighter">المواد الدراسية</h1>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 w-full max-w-7xl mx-auto pb-20">
         {subjects.map((sub) => (
           <Link href={`/dashboard/materials?subject=${encodeURIComponent(sub)}`} key={sub}>
-            <div className="group bg-[#111] border border-white/5 rounded-[2rem] p-6 md:p-10 hover:bg-[#151515] transition-all duration-300 hover:-translate-y-1 cursor-pointer shadow-2xl">
+            <div className="group bg-[#111] border border-white/5 rounded-[2rem] p-6 md:p-10 hover:bg-[#151515] transition-all duration-300 hover:-translate-y-1 cursor-pointer">
               <div className="flex flex-col items-center text-center space-y-4 md:space-y-6">
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-3xl bg-white/5 flex items-center justify-center text-3xl md:text-4xl shadow-inner border border-white/5 transition-transform group-hover:scale-110 duration-500">
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-3xl bg-white/5 flex items-center justify-center text-3xl md:text-4xl border border-white/5">
                   {subjectIcons[sub] || subjectIcons["default"]}
                 </div>
-                <h3 className="text-lg md:text-xl font-black tracking-tight group-hover:text-purple-400 transition-colors h-14 flex items-center">
+                <h3 className="text-lg md:text-xl font-black group-hover:text-purple-400 transition-colors h-14 flex items-center">
                   {sub}
                 </h3>
                 <div className="flex items-center gap-2">
                    <div className="bg-black/40 px-4 py-2 rounded-xl text-[10px] font-bold text-gray-400 border border-white/5 flex items-center gap-2">
-                     <span className="text-purple-500">📚</span> {stats[sub]?.summary || 0} ملخص
+                     <span className="text-purple-500">📚</span> {stats[sub]?.summary || 0}
                    </div>
                    <div className="bg-black/40 px-4 py-2 rounded-xl text-[10px] font-bold text-gray-400 border border-white/5 flex items-center gap-2">
-                     <span className="text-orange-500">📝</span> {stats[sub]?.assignment || 0} تكليف
+                     <span className="text-orange-500">📝</span> {stats[sub]?.assignment || 0}
                    </div>
                 </div>
               </div>
