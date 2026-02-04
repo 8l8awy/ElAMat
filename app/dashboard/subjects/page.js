@@ -13,6 +13,31 @@ export default function SubjectsPage() {
   const [semester, setSemester] = useState(2);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
+  const subjectIcons = {
+  // الفرقة الأولى
+  "السلوك التنظيمي": <FaUsers className="text-purple-400" />,
+  "طرق ومهارات الاتصال": <FaHandshake className="text-blue-400" />,
+  "حقوق الإنسان": <FaBalanceScale className="text-red-400" />,
+  "رياضيات الأعمال": <FaCalculator className="text-green-400" />,
+  "التفكير الابتكاري": <FaLightbulb className="text-yellow-400" />,
+  "مبادئ علم الاجتماع": <FaGlobe className="text-cyan-400" />,
+
+  // الفرقة الثانية
+  "مبادئ المحاسبة الإدارية": <FaCalculator className="text-emerald-400" />,
+  "إدارة الإنتاج والعمليات": <FaCogs className="text-gray-400" />,
+  "نظم المعلومات الإدارية": <FaMicrochip className="text-blue-500" />,
+  "مبادئ الإدارة المالية": <FaChartLine className="text-green-500" />,
+
+  // الفرقة الثالثة والرابعة (بنوك ومشروعات)
+  "إدارة مالية متقدمة (بنوك)": <FaPiggyBank className="text-pink-400" />,
+  "المحاسبة المتوسطة 2 (بنوك)": <FaCalculator className="text-orange-400" />,
+  "الأعمال الإلكترونية": <FaGlobe className="text-sky-400" />,
+  "قواعد البيانات": <FaDatabase className="text-indigo-400" />,
+  "الإحصاء التطبيقي": <FaChartLine className="text-red-400" />,
+  "مشروع التخرج": <FaBriefcase className="text-amber-500" />,
+  
+  "default": <FaLayerGroup className="text-gray-500" />
+};
 
   const allSubjects = {
     year1: {
