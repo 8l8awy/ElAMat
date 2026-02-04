@@ -3,11 +3,10 @@ import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import Link from "next/link";
-// ✅ تم تعديل FaArrowsRotate إلى FaSyncAlt لتعمل مع مكتبة fa
 import { 
   FaChartLine, FaLanguage, FaCalculator, FaBalanceScale, 
   FaBriefcase, FaBookOpen, FaSyncAlt, FaGavel, FaGlobe,
-  FaUsers, FaHandshake, FaLightbulb, FaCog, FaMicrochip, FaPiggyBank, FaDatabase, FaLayerGroup
+  FaUsers, FaHandshake, FaLightbulb, FaCog, FaMicrochip, FaPiggyBank, FaDatabase, FaLayerGroup, FaUniversity, FaFileContract
 } from "react-icons/fa";
 
 export default function SubjectsPage() {
@@ -16,29 +15,57 @@ export default function SubjectsPage() {
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
 
+  // ✅ قائمة الأيقونات المحدثة بأسماء مطابقة تماماً للجداول
   const subjectIcons = {
+    // الفرقة الأولى
     "مبادئ الاقتصاد": <FaChartLine className="text-blue-400" />,
+    "لغة اجنبية (1)": <FaLanguage className="text-purple-400" />,
     "مبادئ المحاسبة المالية": <FaCalculator className="text-green-400" />,
     "مبادئ القانون": <FaBalanceScale className="text-red-400" />,
+    "مبادئ ادارة الاعمال": <FaBriefcase className="text-orange-400" />,
     "السلوك التنظيمي": <FaUsers className="text-purple-400" />,
     "طرق ومهارات الاتصال": <FaHandshake className="text-blue-400" />,
     "حقوق الإنسان": <FaBalanceScale className="text-yellow-500" />,
     "رياضيات الأعمال": <FaCalculator className="text-green-500" />,
     "التفكير الابتكاري": <FaLightbulb className="text-yellow-400" />,
     "مبادئ علم الاجتماع": <FaGlobe className="text-cyan-400" />,
+
+    // الفرقة الثانية
+    "محاسبة التكاليف": <FaCalculator className="text-emerald-400" />,
+    "إدارة التسويق": <FaChartLine className="text-pink-400" />,
+    "إدارة المشتريات": <FaBriefcase className="text-orange-300" />,
+    "التنمية المستدامة": <FaGlobe className="text-green-300" />,
     "مبادئ المحاسبة الإدارية": <FaCalculator className="text-emerald-400" />,
     "إدارة الإنتاج والعمليات": <FaCog className="text-gray-400" />,
-    "نظم المعلومات الإدارية": <FaMicrochip className="text-blue-500" />,
-    "مبادئ الإدارة المالية": <FaChartLine className="text-green-500" />,
     "تحليلات الأعمال": <FaChartLine className="text-orange-400" />,
-    "إدارة مالية متقدمة (بنوك)": <FaPiggyBank className="text-pink-400" />,
-    "المحاسبة المتوسطة 2 (بنوك)": <FaCalculator className="text-orange-400" />,
-    "الأعمال الإلكترونية": <FaGlobe className="text-sky-400" />,
-    "قواعد البيانات": <FaDatabase className="text-indigo-400" />,
-    "الإحصاء التطبيقي": <FaChartLine className="text-red-400" />,
-    "مشروع التخرج": <FaBriefcase className="text-amber-500" />,
+    "مبادئ الإدارة المالية": <FaChartLine className="text-green-500" />,
+    "نظم المعلومات الإدارية": <FaMicrochip className="text-blue-500" />,
+    "لغة أجنبية (2)": <FaLanguage className="text-purple-300" />,
+
+    // الفرقة الثالثة
+    "إدارة الجودة": <FaCheckCircle className="text-teal-400" />,
+    "المالية العامة": <FaUniversity className="text-yellow-600" />,
+    "منهج البحث العلمي": <FaBookOpen className="text-blue-300" />,
+    "محاسبة إدارية متقدمة": <FaCalculator className="text-green-600" />,
+    "جداول العمل الإلكترونية": <FaDatabase className="text-green-400" />,
+    "نظم المعلومات المحاسبية": <FaMicrochip className="text-cyan-500" />,
     "الإدارة الاستراتيجية": <FaBriefcase className="text-purple-500" />,
     "اقتصاديات النقود والبنوك": <FaPiggyBank className="text-green-400" />,
+    "ريادة الأعمال والمشروعات الصغيرة": <FaLightbulb className="text-orange-400" />,
+    "إدارة مالية متقدمة (بنوك)": <FaPiggyBank className="text-pink-400" />,
+    "المحاسبة المتوسطة 2 (بنوك)": <FaCalculator className="text-orange-400" />,
+
+    // الفرقة الرابعة
+    "إدارة المخاطر": <FaShieldAlt className="text-red-500" />,
+    "مراجعة الحسابات": <FaFileContract className="text-blue-400" />,
+    "محاسبة المنشآت المتخصصة": <FaCalculator className="text-emerald-500" />,
+    "إدارة المحافظ المالية والمشتقات": <FaChartLine className="text-green-400" />,
+    "إدارة الموارد البشرية": <FaUsers className="text-purple-400" />,
+    "الأعمال الإلكترونية": <FaGlobe className="text-sky-400" />,
+    "الإحصاء التطبيقي": <FaChartLine className="text-red-400" />,
+    "قواعد البيانات": <FaDatabase className="text-indigo-400" />,
+    "مشروع التخرج": <FaBriefcase className="text-amber-500" />,
+    
     "default": <FaBookOpen className="text-gray-500" />
   };
 
@@ -62,6 +89,12 @@ export default function SubjectsPage() {
   };
 
   const subjects = allSubjects[`year${year}`][semester] || [];
+
+  // دالة ذكية لتنظيف النص قبل مقارنته بالأيقونات لضمان الظهور
+  const getIcon = (name) => {
+    const cleanName = name.trim();
+    return subjectIcons[cleanName] || subjectIcons["default"];
+  };
 
   useEffect(() => {
     async function fetchStats() {
@@ -118,7 +151,7 @@ export default function SubjectsPage() {
             <div className="group bg-[#111] border border-white/5 rounded-[2rem] p-6 md:p-10 hover:bg-[#151515] transition-all duration-300 hover:-translate-y-1 cursor-pointer shadow-2xl">
               <div className="flex flex-col items-center text-center space-y-4 md:space-y-6">
                 <div className="w-16 h-16 md:w-20 md:h-20 rounded-3xl bg-white/5 flex items-center justify-center text-3xl md:text-4xl shadow-inner border border-white/5 transition-transform group-hover:scale-110 duration-500">
-                  {subjectIcons[sub] || subjectIcons["default"]}
+                  {getIcon(sub)}
                 </div>
                 <h3 className="text-lg md:text-xl font-black tracking-tight group-hover:text-purple-400 transition-colors h-14 flex items-center">
                   {sub}
