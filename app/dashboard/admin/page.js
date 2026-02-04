@@ -6,7 +6,12 @@ import {
   collection, deleteDoc, doc, getDocs, query, 
   where, serverTimestamp, orderBy, onSnapshot, 
   addDoc, updateDoc 
-} from "firebase/firestore";
+}import { 
+  FaSpinner, FaTrash, FaFilePdf, FaFileImage, 
+  FaCloudUploadAlt, FaLayerGroup, FaCheck, FaTimes, FaShieldAlt, FaInfoCircle,
+  FaCalculator, FaBalanceScale, FaChartBar, FaGlobe, FaUsers, FaLightbulb, FaDatabase, FaMicrochip 
+} from "react-icons/fa";
+  from "firebase/firestore";
 import { 
   FaSpinner, FaTrash, FaFilePdf, FaFileImage, 
   FaCloudUploadAlt, FaLayerGroup, FaCheck, FaTimes, FaShieldAlt, FaInfoCircle
