@@ -35,55 +35,7 @@ function AdminContent() {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
 
-يا محمد، المشكلة واضحة جداً في تقرير الـ Error اللي بعته:
-
-Unexpected token subjectsBank
-
-السبب إنك قمت بوضع تعريف const subjectsBank مرتين متتاليتين في الكود (السطر 38 والسطر 39)، وده بيخلي الـ Compiler "يتلخبط" ويرفض يكمل الـ Build.
-
-إليك الكود الكامل والمصلح لملف app/dashboard/admin/page.js. قمت بتنظيف التكرار ووضع المواد الجديدة للشعبتين بشكل صحيح. انسخ الكود ده كله واستبدله باللي عندك:
-
-الكود النهائي والمصلح لرفع الموقع
-JavaScript
-"use client";
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { db } from "@/lib/firebase"; 
-import { 
-  collection, deleteDoc, doc, getDocs, query, 
-  where, serverTimestamp, orderBy, onSnapshot, 
-  addDoc, updateDoc 
-} from "firebase/firestore";
-import { 
-  FaSpinner, FaTrash, FaFilePdf, FaFileImage, 
-  FaCloudUploadAlt, FaLayerGroup, FaCheck, FaTimes, FaShieldAlt, FaInfoCircle
-} from "react-icons/fa";
-
-function AdminContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const CLOUD_NAME = "dhj0extnk"; 
-  const UPLOAD_PRESET = "ml_default"; 
-
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showFake404, setShowFake404] = useState(true);
-  const [adminRole, setAdminRole] = useState("moderator");
-
-  const [title, setTitle] = useState("");
-  const [desc, setDesc] = useState(""); 
-  const [year, setYear] = useState(1);
-  const [semester, setSemester] = useState(2);
-  const [subject, setSubject] = useState("");
-  const [type, setType] = useState("summary");
-  const [files, setFiles] = useState([]); 
-  const [materialsList, setMaterialsList] = useState([]); 
-  const [pendingList, setPendingList] = useState([]); 
-  const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState("");
-
-  // ✅ تم إصلاح التكرار هنا ووضع المواد النهائية للشعبتين
-  const subjectsBank = {
+const subjectsBank = {
     year1: {
       1: ["مبادئ الاقتصاد", "لغة اجنبية (1)", "مبادئ المحاسبة المالية", "مبادئ القانون", "مبادئ ادارة الاعمال"],
       2: ["السلوك التنظيمي", "طرق ومهارات الاتصال", "حقوق الإنسان", "رياضيات الأعمال", "التفكير الابتكاري", "مبادئ علم الاجتماع"]
@@ -94,10 +46,7 @@ function AdminContent() {
     },
     year3: { 
       1: ["إدارة الجودة", "المالية العامة", "منهج البحث العلمي"], 
-      2: [
-        "محاسبة إدارية متقدمة", "جداول العمل الإلكترونية", "نظم المعلومات المحاسبية", "الإدارة الاستراتيجية", "اقتصاديات النقود والبنوك", "ريادة الأعمال والمشروعات الصغيرة",
-        "إدارة مالية متقدمة (بنوك)", "المحاسبة المتوسطة 2 (بنوك)"
-      ] 
+      2: ["محاسبة إدارية متقدمة", "جداول العمل الإلكترونية", "نظم المعلومات المحاسبية", "الإدارة الاستراتيجية", "اقتصاديات النقود والبنوك", "ريادة الأعمال والمشروعات الصغيرة", "إدارة مالية متقدمة (بنوك)", "المحاسبة المتوسطة 2 (بنوك)"] 
     },
     year4: { 
       1: ["إدارة المخاطر", "مراجعة الحسابات", "محاسبة المنشآت المتخصصة"], 
@@ -106,6 +55,7 @@ function AdminContent() {
   };
 
   const currentSubjects = subjectsBank[`year${year}`][semester] || [];
+
   useEffect(() => {
     setSubject(currentSubjects[0] || "");
   }, [year, semester, currentSubjects]);
