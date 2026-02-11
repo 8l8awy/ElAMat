@@ -186,7 +186,7 @@ function AdminContent() {
               <form onSubmit={handleUpload} className="space-y-4">
                 
                 <div className="grid grid-cols-2 gap-2">
-                   <select value={year} onChange={(e)=>setYear(Number(e.target.value))} className="bg-black border border-white/10 p-4 rounded-2xl outline-none text-xs">
+                   <select value={year} onChange={(e)=>setYear(Number(e.target.value))} className=" border border-white/10 p-4 rounded-2xl outline-none text-xs">
                      {[1,2,3,4].map(y => <option key={y} value={y}>فرقة {y}</option>)}
                    </select>
                    <select value={semester} onChange={(e)=>setSemester(Number(e.target.value))} className="bg-black border border-white/10 p-4 rounded-2xl outline-none text-xs text-blue-400">
@@ -195,12 +195,12 @@ function AdminContent() {
                    </select>
                 </div>
 
-                <select value={subject} onChange={(e)=>setSubject(e.target.value)} className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none text-sm font-bold">
+                <select value={subject} onChange={(e)=>setSubject(e.target.value)} className="w-full  border border-white/10 p-4 rounded-2xl outline-none text-sm font-bold">
                   {currentSubjects.map((s, i) => <option key={i} value={s}>{s}</option>)}
                 </select>
 
-                <input type="text" className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none focus:border-purple-500" value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="عنوان المخلص" required />
-                <textarea className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none focus:border-purple-500 text-sm h-20 resize-none" value={desc} onChange={(e)=>setDesc(e.target.value)} placeholder="وصف المخلص أو ملاحظات..."></textarea>
+                <input type="text" className="w-full  border border-white/10 p-4 rounded-2xl outline-none focus:border-purple-500" value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="عنوان المخلص" required />
+                <textarea className="w-full  border border-white/10 p-4 rounded-2xl outline-none focus:border-purple-500 text-sm h-20 resize-none" value={desc} onChange={(e)=>setDesc(e.target.value)} placeholder="وصف المخلص أو ملاحظات..."></textarea>
                 
                 <div className="grid grid-cols-2 gap-2 bg-black/40 p-1 rounded-xl border border-white/5">
                     <button type="button" onClick={() => setType("summary")} className={`py-2 rounded-lg font-black text-[10px] transition-all ${type === "summary" ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-500'}`}>ملخص</button>
