@@ -168,7 +168,7 @@ function AdminContent() {
   }
 
   return (
-    <div className="min-h-screen w-full text-white p-4 md:p-8 font-sans bg-[#050505]" dir="rtl">
+    <div className="min-h-screen w-full text-white p-4 md:p-8 font-sans" dir="rtl">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6">
           <h1 className="text-2xl md:text-3xl font-black italic tracking-tighter uppercase">Admin Central</h1>
