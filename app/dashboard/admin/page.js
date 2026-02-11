@@ -142,7 +142,7 @@ function AdminContent() {
     } catch (error) { alert(error.message); setUploading(false); }
   };
 
-  if (isLoading) return <div className="min-h-screen bg-black flex items-center justify-center text-purple-600 font-black animate-pulse">جاري التحقق...</div>;
+  if (isLoading) return <div className="min-h-screen  flex items-center justify-center text-purple-600 font-black animate-pulse">جاري التحقق...</div>;
 
   if (showFake404) return (
     <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans text-center">
@@ -153,13 +153,13 @@ function AdminContent() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6 text-white" dir="rtl">
+      <div className="min-h-screen flex items-center justify-center p-6 text-white" dir="rtl">
         <div className="bg-[#111] p-10 rounded-[2.5rem] border border-white/10 w-full max-w-md text-center">
           <FaShieldAlt className="text-purple-500 text-5xl mx-auto mb-6" />
           <h2 className="text-xl font-bold mb-6 italic uppercase">Identity Check</h2>
           <input 
             type="password" placeholder="أدخل كود الإدارة" 
-            className="w-full bg-black border border-white/20 p-4 rounded-2xl text-white text-center font-bold outline-none focus:border-purple-500 transition-all"
+            className="w-full  border border-white/20 p-4 rounded-2xl text-white text-center font-bold outline-none focus:border-purple-500 transition-all"
             onKeyDown={(e) => e.key === 'Enter' && verifyAndLogin(e.target.value)}
           />
         </div>
