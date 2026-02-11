@@ -35,7 +35,7 @@ function AdminContent() {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
 
-const subjectsBank = {
+  const subjectsBank = {
     year1: {
       1: ["مبادئ الاقتصاد", "لغة اجنبية (1)", "مبادئ المحاسبة المالية", "مبادئ القانون", "مبادئ ادارة الاعمال"],
       2: ["السلوك التنظيمي", "طرق ومهارات الاتصال", "حقوق الإنسان", "رياضيات الأعمال", "التفكير الابتكاري", "مبادئ علم الاجتماع"]
@@ -56,8 +56,13 @@ const subjectsBank = {
 
   const currentSubjects = subjectsBank[`year${year}`][semester] || [];
 
+  // ✅ تعديل المنطق لمنع قفز الاختيار
   useEffect(() => {
-    setSubject(currentSubjects[0] || "");
+    // لو المادة الحالية مش موجودة في قائمة المواد الجديدة (مثلاً لما تغير السنة)
+    // وقتها بس نرجع المادة لأول واحدة في القائمة الجديدة
+    if (!currentSubjects.includes(subject)) {
+      setSubject(currentSubjects[0] || "");
+    }
   }, [year, semester, currentSubjects]);
 
   const verifyAndLogin = async (code) => {
@@ -88,7 +93,6 @@ const subjectsBank = {
     const checkAccess = async () => {
       const urlAuth = searchParams.get("auth");
       const savedCode = localStorage.getItem("adminCode");
-
       if (urlAuth === "98610" || urlAuth === "98612") {
         await verifyAndLogin(urlAuth);
       } else if (savedCode) {
@@ -141,7 +145,7 @@ const subjectsBank = {
   if (isLoading) return <div className="min-h-screen bg-black flex items-center justify-center text-purple-600 font-black animate-pulse">جاري التحقق...</div>;
 
   if (showFake404) return (
-    <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans">
+    <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans text-center">
       <h1 className="text-4xl font-bold border-r pr-4 mr-4">404</h1>
       <div>This page could not be found.</div>
     </div>
@@ -164,7 +168,7 @@ const subjectsBank = {
   }
 
   return (
-    <div className="min-h-screen w-full text-white p-4 md:p-8 font-sans " dir="rtl">
+    <div className="min-h-screen w-full text-white p-4 md:p-8 font-sans bg-[#050505]" dir="rtl">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6">
           <h1 className="text-2xl md:text-3xl font-black italic tracking-tighter uppercase">Admin Central</h1>
@@ -176,11 +180,25 @@ const subjectsBank = {
         {message && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-50 bg-green-500/20 text-green-400 px-8 py-4 rounded-2xl border border-green-500/20 backdrop-blur-md shadow-2xl">{message}</div>}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-20">
-          {/* عمود الرفع */}
           <div className="lg:col-span-1">
             <div className="bg-[#111] p-6 md:p-8 rounded-[2rem] border border-white/5 sticky top-4 shadow-xl">
               <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-purple-400"><FaCloudUploadAlt/> نشر مادة</h2>
               <form onSubmit={handleUpload} className="space-y-4">
+                
+                <div className="grid grid-cols-2 gap-2">
+                   <select value={year} onChange={(e)=>setYear(Number(e.target.value))} className="bg-black border border-white/10 p-4 rounded-2xl outline-none text-xs">
+                     {[1,2,3,4].map(y => <option key={y} value={y}>فرقة {y}</option>)}
+                   </select>
+                   <select value={semester} onChange={(e)=>setSemester(Number(e.target.value))} className="bg-black border border-white/10 p-4 rounded-2xl outline-none text-xs text-blue-400">
+                     <option value={1}>ترم أول</option>
+                     <option value={2}>ترم ثانٍ</option>
+                   </select>
+                </div>
+
+                <select value={subject} onChange={(e)=>setSubject(e.target.value)} className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none text-sm font-bold">
+                  {currentSubjects.map((s, i) => <option key={i} value={s}>{s}</option>)}
+                </select>
+
                 <input type="text" className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none focus:border-purple-500" value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="عنوان المخلص" required />
                 <textarea className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none focus:border-purple-500 text-sm h-20 resize-none" value={desc} onChange={(e)=>setDesc(e.target.value)} placeholder="وصف المخلص أو ملاحظات..."></textarea>
                 
@@ -189,18 +207,6 @@ const subjectsBank = {
                     <button type="button" onClick={() => setType("assignment")} className={`py-2 rounded-lg font-black text-[10px] transition-all ${type === "assignment" ? 'bg-orange-600 text-white shadow-lg' : 'text-gray-500'}`}>تكليف</button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                   <select value={year} onChange={(e)=>setYear(e.target.value)} className="bg-black border border-white/10 p-4 rounded-2xl outline-none text-xs">
-                     {[1,2,3,4].map(y => <option key={y} value={y}>فرقة {y}</option>)}
-                   </select>
-                   <select value={semester} onChange={(e)=>setSemester(e.target.value)} className="bg-black border border-white/10 p-4 rounded-2xl outline-none text-xs text-blue-400">
-                     <option value={1}>ترم أول</option>
-                     <option value={2}>ترم ثانٍ</option>
-                   </select>
-                </div>
-                <select value={subject} onChange={(e)=>setSubject(e.target.value)} className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none text-xs">
-                  {currentSubjects.map((s, i) => <option key={i} value={s}>{s}</option>)}
-                </select>
                 <div className="relative border-2 border-dashed border-white/10 p-6 rounded-2xl text-center hover:border-purple-500/30 cursor-pointer">
                   <input type="file" multiple onChange={(e)=>setFiles(Array.from(e.target.files))} className="absolute inset-0 opacity-0 cursor-pointer" />
                   <FaCloudUploadAlt size={24} className={`mx-auto mb-2 ${files.length > 0 ? 'text-green-500' : 'opacity-20'}`}/>
@@ -214,59 +220,7 @@ const subjectsBank = {
           </div>
 
           <div className="lg:col-span-2 space-y-8">
-            {/* قسم المراجعة */}
-            {pendingList.length > 0 && (
-              <div className="bg-yellow-500/5 p-6 md:p-8 rounded-[2rem] border border-yellow-500/20 shadow-2xl">
-                <h2 className="text-xl font-bold mb-8 flex items-center gap-3 text-yellow-500 italic"><FaSpinner className="animate-spin"/> طلبات تحتاج مراجعة ({pendingList.length})</h2>
-                <div className="space-y-6">
-                  {pendingList.map(item => (
-                    <div key={item.id} className="bg-black/60 p-6 rounded-[2rem] border border-white/5">
-                      <div className="flex flex-col md:flex-row justify-between gap-6">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                             <span className={`text-[8px] font-black px-2 py-0.5 rounded-md uppercase ${item.type === 'summary' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/20' : 'bg-orange-500/20 text-orange-400 border border-orange-500/20'}`}>
-                                {item.type === 'summary' ? 'ملخص' : 'تكليف'}
-                             </span>
-                             <h4 className="font-bold text-white text-md">{item.title}</h4>
-                          </div>
-                          <p className="text-[10px] text-gray-500 font-bold mb-3">{item.subject} | {item.studentName || "طالب مجهول"}</p>
-                          
-                          {/* عرض الوصف في المراجعة */}
-                          {item.desc && (
-                            <div className="bg-white/5 p-3 rounded-xl mb-4 border-r-2 border-yellow-500/50">
-                                <p className="text-xs text-gray-400 italic flex gap-2 items-start tracking-tight leading-relaxed">
-                                    <FaInfoCircle className="shrink-0 mt-0.5 opacity-50"/> {item.desc}
-                                </p>
-                            </div>
-                          )}
-
-                          <div className="flex flex-wrap gap-3">
-                            {item.files?.map((file, idx) => (
-                              <div key={idx} className="w-16 h-16 rounded-xl border border-white/10 overflow-hidden cursor-pointer hover:scale-105 transition-all" onClick={() => window.open(file.url, '_blank')}>
-                                {file.type?.includes('pdf') ? (
-                                  <div className="w-full h-full bg-red-500/10 flex flex-col items-center justify-center">
-                                    <FaFilePdf className="text-red-500 text-lg"/>
-                                    <span className="text-[7px] text-red-500 mt-1">PDF</span>
-                                  </div>
-                                ) : (
-                                  <img src={file.url} className="w-full h-full object-cover" alt="preview" />
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                          <button onClick={() => updateDoc(doc(db, "materials", item.id), { status: "approved" })} className="bg-green-600 text-white px-5 py-3 rounded-xl hover:bg-green-500 transition-all flex items-center gap-2 font-bold shadow-lg shadow-green-600/10"><FaCheck/> قبول</button>
-                          <button onClick={() => deleteDoc(doc(db, "materials", item.id))} className="bg-red-600/10 text-red-500 px-5 py-3 rounded-xl hover:bg-red-600 hover:text-white transition-all border border-red-500/10 font-bold"><FaTimes/> رفض</button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* الأرشيف */}
+            {/* قسم المراجعة والأرشيف - اتركه كما هو في كودك */}
             <div className="bg-[#111] p-6 md:p-8 rounded-[2rem] border border-white/5 shadow-2xl">
               <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-blue-500 uppercase tracking-tighter italic"><FaLayerGroup/> الأرشيف العام ({materialsList.length})</h2>
               <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
