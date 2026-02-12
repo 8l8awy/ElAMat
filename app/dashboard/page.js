@@ -71,9 +71,15 @@ export default function Dashboard() {
     fetchData();
   }, [user]);
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center ">
-        <div className="w-10 h-10 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin"></div>
+ if (isLoading) return (
+    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center gap-4">
+      {/* دائرة تحميل بتلف بشكل انسيابي */}
+      <div className="w-12 h-12 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin"></div>
+      
+      {/* نص التحميل مع أنيميشن خفيف */}
+      <p className="text-purple-500 font-black italic animate-pulse tracking-widest text-sm uppercase">
+        Loading Data...
+      </p>
     </div>
   );
 
@@ -85,7 +91,7 @@ export default function Dashboard() {
                 لوحة <span className="text-purple-500 text-purple-glow">المعلومات</span>
             </h2>
             <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px] bg-white/5 w-fit px-3 py-1 rounded-full border border-white/5">
-                مرحباً ، {user?.name || ""}
+                اهلا ، {user?.name || ""}
             </p>
         </div>
         
@@ -113,13 +119,13 @@ export default function Dashboard() {
             <div className="p-3 bg-purple-600/10 rounded-2xl border border-purple-500/20">
                 <FaBullhorn className="text-purple-400 text-xl" />
             </div>
-            <h3 className="text-2xl font-black text-white">آخر الإعلانات</h3>
+            <h3 className="text-2xl font-black text-white">آخر الاخبار</h3>
           </div>
           
           <div className="space-y-4">
             {announcements.length === 0 ? (
               <div className="bg-[#0a0a0a] border border-dashed border-white/10 p-12 rounded-[2.5rem] text-center">
-                <p className="text-gray-600 font-bold">لا توجد إعلانات نشطة للترم الثاني</p>
+                <p className="text-gray-600 font-bold">لا توجد اخبار نشطة للترم الثاني</p>
               </div>
             ) : (
               announcements.map(ann => (
