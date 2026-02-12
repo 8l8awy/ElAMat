@@ -1,226 +1,117 @@
 "use client";
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import AdminLink from './AdminLink'; 
 import { 
-  FaHome, 
-  FaBook, 
-  FaBell, 
-  FaSignOutAlt, 
-  FaCloudUploadAlt, 
-  FaUserClock, 
-  FaBars, 
-  FaTimes, 
-  FaClipboardList, 
-  FaCogs
+  FaHome, FaBook, FaBell, FaSignOutAlt, 
+  FaCloudUploadAlt, FaUserClock, FaBars, 
+  FaTimes, FaClipboardList, FaCogs
 } from 'react-icons/fa';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Memoized toggle and close functions
-  const toggleMenu = useCallback(() => setIsMenuOpen(prev => !prev), []);
-  const closeMenu = useCallback(() => setIsMenuOpen(false), []);
+  useEffect(() => {
+    // Note: In a production app, verify admin status via your AuthContext/Backend
+    const adminToken = typeof window !== 'undefined' ? localStorage.getItem("adminCode") : null;
+    setIsAdmin(!!adminToken);
+  }, []);
 
-  // Optimized logout handler
-  const handleLogout = useCallback(() => {
-    logout();
-    closeMenu();
+  // Close menu when route changes
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
+
+  const handleLogout = async () => {
+    await logout();
     router.push('/');
-  }, [logout, closeMenu, router]);
+  };
 
-  // Check admin status on mount and when dependencies change
-  useEffect(() => {
-    const checkAdmin = () => {
-      if (typeof window !== 'undefined') {
-        const adminCode = localStorage.getItem("adminCode");
-        setIsAdmin(!!adminCode);
-      }
-    };
-    checkAdmin();
-  }, [user]); // Re-check when user changes
-
-  // Close menu on route change
-  useEffect(() => {
-    closeMenu();
-  }, [router, closeMenu]);
-
-  // Close menu on escape key
-  useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape' && isMenuOpen) {
-        closeMenu();
-      }
-    };
-    
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isMenuOpen, closeMenu]);
-
-  // Prevent body scroll when menu is open
-  useEffect(() => {
-    if (isMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isMenuOpen]);
-
-  // Navigation items configuration
   const navItems = useMemo(() => [
-    {
-      href: '/dashboard',
-      icon: FaHome,
-      title: 'الرئيسية',
-      hoverColor: 'hover:bg-blue-600',
-    },
-    {
-      href: '/dashboard/subjects',
-      icon: FaBook,
-      title: 'المواد',
-      hoverColor: 'hover:bg-gray-600',
-    },
-    {
-      href: '/dashboard/exams',
-      icon: FaClipboardList,
-      title: 'الامتحانات',
-      hoverColor: 'hover:bg-purple-600',
-    },
-    {
-      href: '/dashboard/announcements',
-      icon: FaBell,
-      title: 'الإعلانات',
-      hoverColor: 'hover:bg-yellow-600',
-    },
-    {
-      href: '/dashboard/share',
-      icon: FaCloudUploadAlt,
-      title: 'رفع ملخص / تكليف',
-      hoverColor: 'hover:bg-green-600',
-    },
-    ...(isAdmin ? [{
-      href: '/dashboard/admin',
-      icon: FaCogs,
-      title: 'لوحة التحكم الرئيسية',
-      hoverColor: 'hover:bg-orange-600',
-    }] : []),
-    {
-      href: '/dashboard/myUploads',
-      icon: FaUserClock,
-      title: 'ملخصاتي',
-      hoverColor: 'hover:bg-cyan-600',
-    },
-  ], [isAdmin]);
+    { href: '/dashboard', icon: FaHome, label: 'الرئيسية', color: 'hover:bg-blue-600' },
+    { href: '/dashboard/subjects', icon: FaBook, label: 'المواد', color: 'hover:bg-gray-600' },
+    { href: '/dashboard/exams', icon: FaClipboardList, label: 'الامتحانات', color: 'hover:bg-purple-600' },
+    { href: '/dashboard/announcements', icon: FaBell, label: 'الإعلانات', color: 'hover:bg-yellow-600' },
+    { href: '/dashboard/share', icon: FaCloudUploadAlt, label: 'رفع ملخص', color: 'hover:bg-green-600' },
+    { href: '/dashboard/myUploads', icon: FaUserClock, label: 'ملخصاتي', color: 'hover:bg-cyan-600' },
+  ], []);
 
-  const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5";
+  const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all duration-200 hover:scale-110 shadow-lg border border-white/5";
 
   return (
-    <>
-      {/* Overlay for mobile menu */}
-      {isMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={closeMenu}
-          aria-hidden="true"
+    <nav className="navbar relative z-50">
+      {/* Logo Section */}
+      <div 
+        className="flex items-center justify-center py-2 mb-2 select-none cursor-pointer group" 
+        onClick={() => router.push('/dashboard')}
+      >
+        <img 
+          src="/logo.png" 
+          alt="EAM Logo" 
+          className="h-10 md:h-14 w-auto object-contain drop-shadow-[0_0_8px_rgba(168,85,247,0.4)] transition-transform duration-300 group-hover:scale-105"
+          onError={(e) => { e.currentTarget.src = "/a.png" }} 
         />
-      )}
+      </div>
 
-      <nav className="navbar" role="navigation" aria-label="Main navigation">
-        {/* Logo Header */}
-        <div 
-          className="flex items-center justify-center py-1 mb-0 select-none cursor-pointer group" 
-          onClick={() => router.push('/dashboard')}
-          role="button"
-          tabIndex={0}
-          onKeyPress={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              router.push('/dashboard');
-            }
-          }}
-          aria-label="Go to dashboard"
-        >
-          <img 
-            src="/logo.png" 
-            alt="EAM Logo" 
-            className="h-8 md:h-12 w-auto object-contain drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] transition-all duration-300 group-hover:scale-110"
-            onError={(e) => { 
-              e.target.onerror = null; // Prevent infinite loop
-              e.target.src = "/a.png";
-            }} 
-          />
-        </div>
+      {/* Mobile Toggle */}
+      <button 
+        className="burger-btn text-2xl p-2 md:hidden" 
+        onClick={() => setIsMenuOpen(!isMenuOpen)}
+        aria-label="Toggle Menu"
+      >
+        {isMenuOpen ? <FaTimes /> : <FaBars />}
+      </button>
 
-        {/* Mobile Menu Toggle */}
-        <button 
-          className="burger-btn" 
-          onClick={toggleMenu}
-          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-          aria-expanded={isMenuOpen}
-          aria-controls="nav-menu"
-        >
-          {isMenuOpen ? <FaTimes /> : <FaBars />}
-        </button>
-
-        {/* Navigation Menu */}
-        <div 
-          id="nav-menu"
-          className={`nav-buttons ${isMenuOpen ? 'active' : ''}`}
-          role="menu"
-        >
-          {/* User Name Display */}
-          {user?.name && (
-            <span 
-              className="text-white font-bold block text-center mb-4 text-sm md:text-base truncate px-2"
-              aria-label={`Logged in as ${user.name}`}
-            >
-              {user.name}
-            </span>
-          )}
-          
-          {/* Navigation Links */}
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link 
-                key={item.href}
-                href={item.href} 
-                className={`${btnClass} ${item.hoverColor}`} 
-                title={item.title}
-                onClick={closeMenu}
-                role="menuitem"
-                aria-label={item.title}
-              >
-                <Icon size={20} aria-hidden="true" />
-              </Link>
-            );
-          })}
-
-          {/* Admin Link Component */}
-          <div className="w-fit mx-auto"> 
-            <AdminLink onClick={closeMenu} />
-          </div>
-
-          {/* Logout Button */}
-          <button 
-            onClick={handleLogout} 
-            className={`${btnClass} logout bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white mt-2`}
-            title="تسجيل خروج"
-            role="menuitem"
-            aria-label="Logout"
+      {/* Navigation Links */}
+      <div className={`nav-buttons flex flex-col gap-3 transition-all ${isMenuOpen ? 'active' : ''}`}>
+        
+        {user?.name && (
+          <span className="text-white font-bold text-center mb-4 text-sm block truncate px-2">
+            {user.name}
+          </span>
+        )}
+        
+        {navItems.map((item) => (
+          <Link 
+            key={item.href}
+            href={item.href} 
+            className={`${btnClass} ${item.color}`} 
+            title={item.label}
           >
-            <FaSignOutAlt size={20} aria-hidden="true" />
-          </button>
+            <item.icon size={20} />
+          </Link>
+        ))}
+
+        {isAdmin && (
+          <Link 
+            href="/dashboard/admin" 
+            className={`${btnClass} hover:bg-orange-600`} 
+            title="لوحة التحكم"
+          >
+             <FaCogs size={20} />
+          </Link>
+        )}
+
+        <div className="w-fit mx-auto"> 
+            <AdminLink onClick={() => setIsMenuOpen(false)} />
         </div>
-      </nav>
-    </>
+
+        {/* Logout Button */}
+        <button 
+          onClick={handleLogout} 
+          className={`${btnClass} mt-4 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white border-red-500/20`}
+          title="تسجيل خروج"
+        >
+            <FaSignOutAlt size={20} />
+        </button>
+      </div>
+    </nav>
   );
 }
