@@ -39,9 +39,15 @@ export default function MyUploadsPage() {
     return () => unsubscribe();
   }, [user]);
 
-  if (loading) return (
-    <div className="min-h-[60vh] flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+ if (isLoading) return (
+    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center gap-4">
+      {/* دائرة تحميل بتلف بشكل انسيابي */}
+      <div className="w-12 h-12 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin"></div>
+      
+      {/* نص التحميل مع أنيميشن خفيف */}
+      <p className="text-purple-500 font-black italic animate-pulse tracking-widest text-sm uppercase">
+        Loading Data...
+      </p>
     </div>
   );
 
