@@ -1,7 +1,7 @@
 "use client";
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import AdminLink from './AdminLink'; 
 import { 
@@ -13,102 +13,90 @@ import {
 export default function Navbar() {
   const { user, logout } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  useEffect(() => {
-    // Note: In a production app, verify admin status via your AuthContext/Backend
-    const adminToken = typeof window !== 'undefined' ? localStorage.getItem("adminCode") : null;
-    setIsAdmin(!!adminToken);
-  }, []);
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const closeMenu = () => setIsMenuOpen(false);
 
-  // Close menu when route changes
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [pathname]);
-
-  const handleLogout = async () => {
-    await logout();
+  const handleLogout = () => {
+    logout();
+    closeMenu();
     router.push('/');
   };
 
-  const navItems = useMemo(() => [
-    { href: '/dashboard', icon: FaHome, label: 'الرئيسية', color: 'hover:bg-blue-600' },
-    { href: '/dashboard/subjects', icon: FaBook, label: 'المواد', color: 'hover:bg-gray-600' },
-    { href: '/dashboard/exams', icon: FaClipboardList, label: 'الامتحانات', color: 'hover:bg-purple-600' },
-    { href: '/dashboard/announcements', icon: FaBell, label: 'الإعلانات', color: 'hover:bg-yellow-600' },
-    { href: '/dashboard/share', icon: FaCloudUploadAlt, label: 'رفع ملخص', color: 'hover:bg-green-600' },
-    { href: '/dashboard/myUploads', icon: FaUserClock, label: 'ملخصاتي', color: 'hover:bg-cyan-600' },
-  ], []);
+  useEffect(() => {
+    const checkAdmin = () => {
+      if (typeof window !== 'undefined' && localStorage.getItem("adminCode")) {
+        setIsAdmin(true);
+      }
+    };
+    checkAdmin();
+  }, []);
 
-  const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all duration-200 hover:scale-110 shadow-lg border border-white/5";
+  const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5";
 
   return (
-    <nav className="navbar relative z-50">
-      {/* Logo Section */}
-      <div 
-        className="flex items-center justify-center py-2 mb-2 select-none cursor-pointer group" 
-        onClick={() => router.push('/dashboard')}
-      >
+    <nav className="navbar">
+      {/* 1. تم تحديث الهيدر هنا ليعرض اللوجو الجديد فقط */}
+{/* 1. تم تكبير اللوجو وضبط المسافات */}
+   {/* اللوجو الجديد بحجم أكبر وبدون أخطاء برمجية */}
+     {/* هيدر الناف بار - الحجم الصغير والملموم */}
+     {/* هيدر الناف بار - الحجم الصغير والملموم */}
+      <div className="flex items-center justify-center py-1 mb-0 select-none cursor-pointer group" onClick={() => router.push('/dashboard')}>
         <img 
           src="/logo.png" 
           alt="EAM Logo" 
-          className="h-10 md:h-14 w-auto object-contain drop-shadow-[0_0_8px_rgba(168,85,247,0.4)] transition-transform duration-300 group-hover:scale-105"
-          onError={(e) => { e.currentTarget.src = "/a.png" }} 
+          className="h-8 md:h-12 w-auto object-contain drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] transition-all duration-300 group-hover:scale-110"
+          onError={(e) => { e.target.src = "/a.png" }} 
         />
       </div>
-
-      {/* Mobile Toggle */}
-      <button 
-        className="burger-btn text-2xl p-2 md:hidden" 
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
-        aria-label="Toggle Menu"
-      >
+      <button className="burger-btn" onClick={toggleMenu}>
         {isMenuOpen ? <FaTimes /> : <FaBars />}
       </button>
 
-      {/* Navigation Links */}
-      <div className={`nav-buttons flex flex-col gap-3 transition-all ${isMenuOpen ? 'active' : ''}`}>
+      <div className={`nav-buttons ${isMenuOpen ? 'active' : ''}`}>
         
-        {user?.name && (
-          <span className="text-white font-bold text-center mb-4 text-sm block truncate px-2">
-            {user.name}
-          </span>
-        )}
+        <span id="userName" style={{color:'white', fontWeight:'bold', display:'block', textAlign:'center', marginBottom:'15px', fontSize: '0.9rem'}}>
+            {user?.name}
+        </span>
         
-        {navItems.map((item) => (
-          <Link 
-            key={item.href}
-            href={item.href} 
-            className={`${btnClass} ${item.color}`} 
-            title={item.label}
-          >
-            <item.icon size={20} />
-          </Link>
-        ))}
+        <Link href="/dashboard" className={`${btnClass} hover:bg-blue-600`} title="الرئيسية" onClick={closeMenu}>
+            <FaHome size={20} />
+        </Link>
+
+        <Link href="/dashboard/subjects" className={`${btnClass} hover:bg-gray-600`} title="المواد" onClick={closeMenu}>
+            <FaBook size={20} />
+        </Link>
+        
+        <Link href="/dashboard/exams" className={`${btnClass} hover:bg-purple-600`} title="الامتحانات" onClick={closeMenu}>
+            <FaClipboardList size={20} />
+        </Link>
+
+        <Link href="/dashboard/announcements" className={`${btnClass} hover:bg-yellow-600`} title="الإعلانات" onClick={closeMenu}>
+            <FaBell size={20} />
+        </Link>
+        
+        <Link href="/dashboard/share" className={`${btnClass} hover:bg-green-600`} title="رفع ملخص / تكليف" onClick={closeMenu}>
+             <FaCloudUploadAlt size={20} />
+        </Link>
 
         {isAdmin && (
-          <Link 
-            href="/dashboard/admin" 
-            className={`${btnClass} hover:bg-orange-600`} 
-            title="لوحة التحكم"
-          >
-             <FaCogs size={20} />
+          <Link href="/dashboard/admin" className={`${btnClass} hover:bg-orange-600`} title="لوحة التحكم الرئيسية" onClick={closeMenu}>
+               <FaCogs size={20} />
           </Link>
         )}
 
         <div className="w-fit mx-auto"> 
-            <AdminLink onClick={() => setIsMenuOpen(false)} />
+            <AdminLink onClick={closeMenu} />
         </div>
 
-        {/* Logout Button */}
-        <button 
-          onClick={handleLogout} 
-          className={`${btnClass} mt-4 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white border-red-500/20`}
-          title="تسجيل خروج"
-        >
+        <Link href="/dashboard/myUploads" className={`${btnClass} hover:bg-cyan-600`} title="ملخصاتي" onClick={closeMenu}>
+             <FaUserClock size={20} />
+        </Link>
+
+        <button onClick={handleLogout} className={`${btnClass} logout bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white`} title="تسجيل خروج" style={{marginTop:'10px'}}>
             <FaSignOutAlt size={20} />
         </button>
       </div>
