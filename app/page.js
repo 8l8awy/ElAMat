@@ -163,7 +163,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6 relative overflow-hidden" dir="rtl">
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden" dir="rtl">
       <div className="absolute top-[-10%] left-[-10%] w-72 h-72 bg-purple-600/10 rounded-full blur-[120px]"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-72 h-72 bg-blue-600/10 rounded-full blur-[120px]"></div>
 
@@ -173,7 +173,6 @@ export default function LoginPage() {
             <FaShieldAlt className="text-purple-500 text-3xl" />
           </div>
           <h1 className="text-2xl font-black italic text-white uppercase">El Agamy Materials</h1>
-          <p className="text-gray-500 text-xs mt-1">بوابة الطلاب الذكية</p>
         </div>
 
         <div className="flex bg-black/50 p-1 rounded-2xl mb-6">
@@ -183,7 +182,7 @@ export default function LoginPage() {
 
         {isLogin ? (
           <form onSubmit={handleLogin} className="space-y-4">
-            <input type="text" placeholder="الكود أو البريد الإلكتروني" value={loginEmail} onChange={(e)=>setLoginEmail(e.target.value)} className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none focus:border-purple-500 text-white text-sm" required />
+            <input type="text" placeholder="  البريد الإلكتروني" value={loginEmail} onChange={(e)=>setLoginEmail(e.target.value)} className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none focus:border-purple-500 text-white text-sm" required />
             <input type="password" placeholder="كلمة المرور" value={loginPassword} onChange={(e)=>setLoginPassword(e.target.value)} className="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none focus:border-purple-500 text-white text-sm" />
             <button type="submit" disabled={loading} className="w-full bg-purple-600 p-4 rounded-2xl font-black hover:bg-purple-500 flex items-center justify-center gap-2">
               <FaSignInAlt /> {loading ? "جاري التحقق..." : "تسجيل الدخول"}
@@ -201,14 +200,15 @@ export default function LoginPage() {
         )}
 
         <div className="relative my-8"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div><span className="relative bg-[#111] px-4 text-[10px] text-gray-600 font-bold">أو</span></div>
-
-        <button onClick={handleGoogleLogin} className="w-full flex items-center justify-center gap-3 bg-white text-black p-4 rounded-2xl font-black hover:bg-gray-200">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" className="w-5 h-5" alt="google" />
-          <span className="text-sm">جوجل</span>
-        </button>
-
+<button 
+  onClick={handleGoogleLogin} 
+  className="w-full flex items-center justify-center gap-3 bg-white text-black p-4 rounded-2xl font-black hover:bg-gray-100 transition-all active:scale-95"
+>
+  <FaGoogle className="text-[#DB4437] text-lg" /> 
+  <span className="text-sm">المتابعة باستخدام جوجل</span>
+</button>
         {error && <p className="text-red-500 text-[10px] font-bold mt-4 animate-bounce">{error}</p>}
-        <p className="text-center text-[10px] text-gray-600 mt-8 tracking-widest uppercase">تحت إشراف <strong>محمد علي دياب</strong></p>
+        <p className="text-center text-[10px] text-gray-600 mt-8 tracking-widest uppercase">تحت إشراف <strong>محمد علي </strong></p>
       </div>
     </div>
   );
