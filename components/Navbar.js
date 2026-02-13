@@ -11,7 +11,7 @@ import {
 } from 'react-icons/fa';
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth(); // 'user' يحتوي على البيانات من Firestore
   const router = useRouter();
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -27,23 +27,27 @@ export default function Navbar() {
   };
 
   useEffect(() => {
-    const checkAdmin = () => {
-      if (typeof window !== 'undefined' && localStorage.getItem("adminCode")) {
+    // التحقق من الرتبة الحقيقية للمستخدم
+    const checkPermissions = () => {
+      // 1. فحص الرتبة من بيانات الـ AuthContext (الأكثر أماناً)
+      if (user?.role === 'admin' || user?.role === 'moderator' || user?.isAdmin) {
+        setIsAdmin(true);
+      } 
+      // 2. فحص الكود الخاص بك كمدير (98612)
+      else if (typeof window !== 'undefined' && localStorage.getItem("adminCode") === "98612") {
         setIsAdmin(true);
       }
+      else {
+        setIsAdmin(false);
+      }
     };
-    checkAdmin();
-  }, []);
+    checkPermissions();
+  }, [user]); // يتحدث كلما تغيرت بيانات المستخدم
 
   const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5";
 
   return (
     <nav className="navbar">
-      {/* 1. تم تحديث الهيدر هنا ليعرض اللوجو الجديد فقط */}
-{/* 1. تم تكبير اللوجو وضبط المسافات */}
-   {/* اللوجو الجديد بحجم أكبر وبدون أخطاء برمجية */}
-     {/* هيدر الناف بار - الحجم الصغير والملموم */}
-     {/* هيدر الناف بار - الحجم الصغير والملموم */}
       <div className="flex items-center justify-center py-1 mb-0 select-none cursor-pointer group" onClick={() => router.push('/dashboard')}>
         <img 
           src="/logo.png" 
@@ -52,6 +56,7 @@ export default function Navbar() {
           onError={(e) => { e.target.src = "/a.png" }} 
         />
       </div>
+      
       <button className="burger-btn" onClick={toggleMenu}>
         {isMenuOpen ? <FaTimes /> : <FaBars />}
       </button>
@@ -59,7 +64,7 @@ export default function Navbar() {
       <div className={`nav-buttons ${isMenuOpen ? 'active' : ''}`}>
         
         <span id="userName" style={{color:'white', fontWeight:'bold', display:'block', textAlign:'center', marginBottom:'15px', fontSize: '0.9rem'}}>
-            {user?.name}
+            {user?.name || "طالب"}
         </span>
         
         <Link href="/dashboard" className={`${btnClass} hover:bg-blue-600`} title="الرئيسية" onClick={closeMenu}>
@@ -82,15 +87,19 @@ export default function Navbar() {
              <FaCloudUploadAlt size={20} />
         </Link>
 
+        {/* ✅ هذا الزرار لن يظهر إلا للأدمن والمشرفين */}
         {isAdmin && (
-          <Link href="/dashboard/admin" className={`${btnClass} hover:bg-orange-600`} title="لوحة التحكم الرئيسية" onClick={closeMenu}>
+          <Link href="/dashboard/admin" className={`${btnClass} bg-orange-600/20 text-orange-500 hover:bg-orange-600 hover:text-white`} title="لوحة التحكم الرئيسية" onClick={closeMenu}>
                <FaCogs size={20} />
           </Link>
         )}
 
-        <div className="w-fit mx-auto"> 
-            <AdminLink onClick={closeMenu} />
-        </div>
+        {/* اختياري: إخفاء AdminLink أيضاً لو كان مخصصاً للإدارة فقط */}
+        {isAdmin && (
+          <div className="w-fit mx-auto"> 
+              <AdminLink onClick={closeMenu} />
+          </div>
+        )}
 
         <Link href="/dashboard/myUploads" className={`${btnClass} hover:bg-cyan-600`} title="ملخصاتي" onClick={closeMenu}>
              <FaUserClock size={20} />
