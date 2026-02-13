@@ -41,13 +41,13 @@ export default function UsersManagement() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center">
       <div className="w-10 h-10 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin"></div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-10 font-sans" dir="rtl">
+    <div className="min-h-screen  text-white p-6 md:p-10 font-sans" dir="rtl">
       <div className="max-w-7xl mx-auto">
         
         {/* الهيدر */}
