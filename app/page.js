@@ -22,7 +22,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (user) router.push("/dashboard/subjects");
+    if (user) router.push("/dashboard");
   }, [user, router]);
 
   // --- 1. تسجيل الدخول بجوجل ---
