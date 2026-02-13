@@ -1,16 +1,16 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { db, auth, googleProvider } from "@/lib/firebase"; // أضفنا googleProvider
+import { db, auth, googleProvider } from "@/lib/firebase"; 
 import { signInWithPopup, signOut } from "firebase/auth";
 import { 
   collection, deleteDoc, doc, getDocs, query, 
   where, serverTimestamp, orderBy, onSnapshot, 
-  addDoc, updateDoc, getDoc 
+  addDoc, updateDoc 
 } from "firebase/firestore";
 import { 
   FaSpinner, FaTrash, FaFilePdf, FaFileImage, 
-  FaCloudUploadAlt, FaLayerGroup, FaCheck, FaTimes, FaShieldAlt, FaInfoCircle, FaSearch, FaGoogle
+  FaCloudUploadAlt, FaLayerGroup, FaCheck, FaTimes, FaShieldAlt, FaInfoCircle, FaSearch, FaGoogle, FaUsersCog
 } from "react-icons/fa";
 
 function AdminContent() {
@@ -23,7 +23,7 @@ function AdminContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showFake404, setShowFake404] = useState(true);
   const [adminRole, setAdminRole] = useState("moderator");
-  const [searchTerm, setSearchTerm] = useState(""); // للبحث
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState(""); 
@@ -52,54 +52,72 @@ function AdminContent() {
     }
   }, [year, semester, currentSubjects]);
 
-  // ✅ نظام الدخول الجديد (جوجل + التحقق من الصلاحيات)
-  const handleGoogleLogin = async () => {
+  // ✅ نظام التحقق المزدوج (إيميل المشرفين + أكواد الإدارة)
+  const verifyAndLogin = async (input) => {
+    if (!input) return;
+    setIsLoading(true);
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const userEmail = result.user.email;
-      
-      // نبحث عن الإيميل في كوليكشن users أو allowedCodes
-      const q = query(collection(db, "users"), where("email", "==", userEmail));
-      const snap = await getDocs(q);
+      const cleanInput = input.trim().toLowerCase();
 
-      if (!snap.empty) {
-        const userData = snap.docs[0].data();
-        if (userData.role === 'admin' || userData.role === 'moderator') {
+      // 1. فحص جدول المستخدمين (للمشرفين المرقّين بالإيميل)
+      const usersRef = collection(db, "users");
+      const qUser = query(usersRef, where("email", "==", cleanInput));
+      const userSnap = await getDocs(qUser);
+
+      if (!userSnap.empty) {
+        const userData = userSnap.docs[0].data();
+        if (userData.role === "admin" || userData.role === "moderator") {
           setAdminRole(userData.role);
           setIsAuthenticated(true);
           setShowFake404(false);
           localStorage.setItem("adminRole", userData.role);
+          localStorage.setItem("adminLogin", cleanInput);
           return;
         }
       }
-      alert("عذراً، هذا الحساب لا يملك صلاحيات الإدارة ⛔");
-      await signOut(auth);
-    } catch (error) { alert("خطأ في تسجيل الدخول"); }
-  };
 
-  // ✅ الحفاظ على تسجيل الدخول القديم بالكود (للطوارئ)
-  const verifyAndLogin = async (code) => {
-    if (!code) return;
-    try {
-      const q = query(collection(db, "allowedCodes"), where("code", "==", code.trim()));
-      const snap = await getDocs(q);
-      if (!snap.empty && snap.docs[0].data().admin === true) {
-        const data = snap.docs[0].data();
+      // 2. فحص جدول الأكواد (للنظام القديم)
+      const codesRef = collection(db, "allowedCodes");
+      const qCode = query(codesRef, where("code", "==", input.trim()));
+      const codeSnap = await getDocs(qCode);
+
+      if (!codeSnap.empty && codeSnap.docs[0].data().admin === true) {
+        const data = codeSnap.docs[0].data();
         setAdminRole(data.role || "admin");
         setIsAuthenticated(true);
         setShowFake404(false);
-      } else { setShowFake404(true); }
-    } catch (err) { console.error(err); } finally { setIsLoading(false); }
+        localStorage.setItem("adminRole", data.role || "admin");
+      } else {
+        setShowFake404(true);
+        alert("عذراً، لا تمتلك صلاحيات الوصول لهذه اللوحة ⛔");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ✅ تسجيل دخول جوجل للمشرفين
+  const handleGoogleAdminLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      await verifyAndLogin(result.user.email);
+    } catch (error) {
+      alert("حدث خطأ في تسجيل دخول جوجل");
+    }
   };
 
   useEffect(() => {
     const checkAccess = async () => {
-      const savedCode = localStorage.getItem("adminCode");
-      if (savedCode) await verifyAndLogin(savedCode);
+      const urlAuth = searchParams.get("auth");
+      const savedLogin = localStorage.getItem("adminLogin");
+      if (urlAuth === "98610" || urlAuth === "98612") await verifyAndLogin(urlAuth);
+      else if (savedLogin) await verifyAndLogin(savedLogin);
       else setIsLoading(false);
     };
     checkAccess();
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -135,16 +153,15 @@ function AdminContent() {
     } catch (error) { alert(error.message); setUploading(false); }
   };
 
-  // ✅ فلترة الأرشيف بالبحث
   const filteredMaterials = materialsList.filter(m => 
     m.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
     m.subject.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading) return (
-    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center gap-4">
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4">
       <div className="w-12 h-12 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin"></div>
-      <p className="text-purple-500 font-black italic animate-pulse tracking-widest text-sm uppercase">Checking Access...</p>
+      <p className="text-purple-500 font-black italic animate-pulse tracking-widest text-sm uppercase">Checking Credentials...</p>
     </div>
   );
 
@@ -157,15 +174,25 @@ function AdminContent() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen  flex items-center justify-center p-6 text-white" dir="rtl">
+      <div className="min-h-screen flex items-center justify-center p-6 text-white" dir="rtl">
         <div className="bg-[#111] p-10 rounded-[2.5rem] border border-white/10 w-full max-w-md text-center shadow-2xl">
           <FaShieldAlt className="text-purple-500 text-5xl mx-auto mb-6" />
-          <h2 className="text-xl font-bold mb-6 italic uppercase tracking-widest">Admin Central</h2>
-          <button onClick={handleGoogleLogin} className="w-full flex items-center justify-center gap-3 bg-white text-black p-4 rounded-2xl font-black hover:bg-gray-200 transition-all active:scale-95 mb-4">
-            <FaGoogle /> دخول بجوجل (للمشرفين)
+          <h2 className="text-xl font-bold mb-8 italic uppercase tracking-widest">Admin Access</h2>
+          
+          <button onClick={handleGoogleAdminLogin} className="w-full flex items-center justify-center gap-3 bg-white text-black p-4 rounded-2xl font-black hover:bg-gray-200 transition-all active:scale-95 mb-4">
+            <FaGoogle /> دخول المشرفين بجوجل
           </button>
-          <div className="relative my-6 text-center text-[10px] text-gray-600 font-bold uppercase">أو استخدام الكود القديم</div>
-          <input type="password" placeholder="كود الإدارة" className="w-full bg-black border border-white/20 p-4 rounded-2xl text-white text-center font-bold outline-none focus:border-purple-500 transition-all" onKeyDown={(e) => e.key === 'Enter' && verifyAndLogin(e.target.value)} />
+
+          <div className="relative my-8 text-center">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
+            <span className="relative bg-[#111] px-4 text-[10px] text-gray-600 font-bold uppercase">أو استخدام كود</span>
+          </div>
+
+          <input 
+            type="password" placeholder="أدخل كود الإدارة" 
+            className="w-full bg-black border border-white/20 p-4 rounded-2xl text-white text-center font-bold outline-none focus:border-purple-500 transition-all"
+            onKeyDown={(e) => e.key === 'Enter' && verifyAndLogin(e.target.value)}
+          />
         </div>
       </div>
     );
@@ -175,12 +202,21 @@ function AdminContent() {
     <div className="min-h-screen w-full text-white p-4 md:p-8 font-sans bg-[#050505]" dir="rtl">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6">
-          <h1 className="text-2xl md:text-3xl font-black italic tracking-tighter uppercase">Admin Central</h1>
+          <div className="flex items-center gap-3">
+            <FaShieldAlt className="text-purple-500" />
+            <h1 className="text-2xl md:text-3xl font-black italic tracking-tighter uppercase">Admin Central</h1>
+          </div>
+          
           <div className="flex items-center gap-4">
-             <button onClick={() => router.push("/dashboard/users")} className="text-[10px] font-bold bg-white/5 px-4 py-2 rounded-xl border border-white/5 hover:bg-white/10">إدارة المستخدمين 👥</button>
-             <span className={`px-4 py-1 rounded-full text-[10px] font-bold border ${adminRole === 'admin' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
-                {adminRole === 'admin' ? "مدير نظام" : "مُراجع"}
-             </span>
+            {adminRole === 'admin' && (
+              <button onClick={() => router.push("/dashboard/admin/users")} className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-[10px] font-bold hover:bg-white/10 transition-all">
+                <FaUsersCog className="text-purple-500" /> إدارة المستخدمين
+              </button>
+            )}
+            <span className={`px-4 py-1 rounded-full text-[10px] font-bold border ${adminRole === 'admin' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
+              {adminRole === 'admin' ? "مدير نظام" : "مُراجع"}
+            </span>
+            <button onClick={() => { signOut(auth); localStorage.clear(); window.location.reload(); }} className="p-2 text-gray-600 hover:text-red-500 transition-all"><FaTimes/></button>
           </div>
         </div>
 
@@ -220,16 +256,14 @@ function AdminContent() {
           </div>
 
           <div className="lg:col-span-2 space-y-8">
-            <div className="bg-[#111] p-6 md:p-8 rounded-[2rem] border border-white/5 shadow-2xl relative overflow-hidden">
+            <div className="bg-[#111] p-6 md:p-8 rounded-[2rem] border border-white/5 shadow-2xl">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                 <h2 className="text-xl font-bold flex items-center gap-3 text-blue-500 uppercase tracking-tighter italic"><FaLayerGroup/> الأرشيف العام ({materialsList.length})</h2>
-                 {/* البحث في الأرشيف */}
-                 <div className="relative w-full md:w-64">
+                <h2 className="text-xl font-bold flex items-center gap-3 text-blue-500 uppercase tracking-tighter italic"><FaLayerGroup/> الأرشيف العام ({materialsList.length})</h2>
+                <div className="relative w-full md:w-64">
                     <FaSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs" />
                     <input type="text" placeholder="بحث سريع..." value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} className="w-full bg-black/50 border border-white/5 p-2 pr-10 rounded-xl outline-none text-xs focus:border-blue-500/50" />
-                 </div>
+                </div>
               </div>
-
               <div className="space-y-4 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
                 {filteredMaterials.map(item => (
                   <div key={item.id} className="bg-black/30 p-4 rounded-2xl flex justify-between items-center border border-white/5 hover:border-purple-500/30 transition-all">
