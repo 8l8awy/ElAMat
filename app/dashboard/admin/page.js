@@ -157,18 +157,18 @@ function AdminContent() {
   );
 
   if (!isAuthenticated) return (
-    <div className="min-h-screen flex items-center justify-center p-6 text-white bg-black" dir="rtl">
+    <div className="min-h-screen flex items-center justify-center p-6 text-white " dir="rtl">
       <div className="bg-[#111] p-10 rounded-[2.5rem] border border-white/10 w-full max-w-md text-center shadow-2xl">
         <FaShieldAlt className="text-purple-500 text-5xl mx-auto mb-6" />
         <h2 className="text-xl font-bold mb-6 italic uppercase">Admin Central</h2>
         <button onClick={() => signInWithPopup(auth, googleProvider).then(r => verifyAndLogin(r.user.email))} className="w-full flex items-center justify-center gap-3 bg-white text-black p-4 rounded-2xl font-black hover:bg-gray-200 mb-4 text-sm"><FaGoogle /> دخول بجوجل</button>
-        <input type="password" placeholder="كود الإدارة" className="w-full bg-black border border-white/20 p-4 rounded-2xl text-white text-center font-bold outline-none focus:border-purple-500" onKeyDown={(e) => e.key === 'Enter' && verifyAndLogin(e.target.value)} />
+        <input type="password" placeholder="كود الإدارة" className="w-full border border-white/20 p-4 rounded-2xl text-white text-center font-bold outline-none focus:border-purple-500" onKeyDown={(e) => e.key === 'Enter' && verifyAndLogin(e.target.value)} />
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen w-full text-white p-4 md:p-8 font-sans bg-black" dir="rtl">
+    <div className="min-h-screen w-full text-white p-4 md:p-8 font-sans " dir="rtl">
       <div className="max-w-7xl mx-auto pb-20 text-right">
         <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6">
           <h1 className="text-2xl md:text-3xl font-black italic tracking-tighter uppercase">Admin Central</h1>
@@ -183,10 +183,10 @@ function AdminContent() {
               <h2 className="text-xl font-bold mb-6 text-purple-400 flex items-center gap-2"><FaCloudUploadAlt/> نشر مادة</h2>
               <form onSubmit={handleUpload} className="space-y-4">
                 <div className="grid grid-cols-2 gap-2">
-                  <select value={year} onChange={(e)=>setYear(Number(e.target.value))} className="bg-black border border-white/10 p-4 rounded-2xl outline-none text-xs text-white">
+                  <select value={year} onChange={(e)=>setYear(Number(e.target.value))} className=" border border-white/10 p-4 rounded-2xl outline-none text-xs text-white">
                     {[1,2,3,4].map(y => <option key={y} value={y}>فرقة {y}</option>)}
                   </select>
-                  <select value={semester} onChange={(e)=>setSemester(Number(e.target.value))} className="bg-black border border-white/10 p-4 rounded-2xl outline-none text-xs text-blue-400">
+                  <select value={semester} onChange={(e)=>setSemester(Number(e.target.value))} className=" border border-white/10 p-4 rounded-2xl outline-none text-xs text-blue-400">
                     <option value={1}>ترم أول</option><option value={2}>ترم ثانٍ</option>
                   </select>
                 </div>
