@@ -148,19 +148,52 @@ function AdminContent() {
     </div>
   );
 
- if (showFake404) return (
-    <div className="min-h-screen flex items-center justify-center text-white font-sans text-center px-4">
-      <div className="flex items-center gap-6">
-        <h1 className="text-4xl md:text-5xl font-black italic border-l-2 border-white/10 pl-6 text-purple-600 tracking-tighter">404</h1>
-        <div className="text-right">
-          <div className="text-sm md:text-base font-bold uppercase tracking-widest text-gray-200">Page Not Found</div>
-          <div className="text-[10px] text-gray-500 font-medium mt-1 uppercase tracking-[0.3em]">Identity Not Verified</div>
+if (showFake404) return (
+    <div style={{
+      backgroundColor: '#050505',
+      color: 'white',
+      height: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      textAlign: 'center',
+      fontFamily: 'sans-serif',
+      flexDirection: 'column',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100%',
+      zIndex: 9999
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <h1 style={{ 
+          fontSize: '3rem', 
+          fontWeight: '900', 
+          margin: 0, 
+          paddingRight: '20px', 
+          borderRight: '2px solid rgba(255,255,255,0.1)',
+          fontStyle: 'italic',
+          color: '#a855f7' 
+        }}>404</h1>
+        <div style={{ textAlign: 'left' }}>
+          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', letterSpacing: '2px' }}>PAGE NOT FOUND</div>
+          <div style={{ fontSize: '0.7rem', color: '#666', marginTop: '5px', letterSpacing: '3px' }}>IDENTITY NOT VERIFIED</div>
         </div>
       </div>
       
       <button 
         onClick={() => router.push('/')}
-        className="absolute bottom-10 text-[10px] text-gray-800 hover:text-purple-500 transition-colors uppercase tracking-[0.5em] font-bold"
+        style={{
+          marginTop: '40px',
+          background: 'none',
+          border: 'none',
+          color: '#333',
+          fontSize: '10px',
+          fontWeight: 'bold',
+          letterSpacing: '5px',
+          cursor: 'pointer',
+          textTransform: 'uppercase'
+        }}
       >
         Return to Home
       </button>
