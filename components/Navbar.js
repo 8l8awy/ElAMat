@@ -26,24 +26,23 @@ export default function Navbar() {
     router.push('/');
   };
 
-  useEffect(() => {
-    // التحقق من الرتبة الحقيقية للمستخدم
+useEffect(() => {
     const checkPermissions = () => {
-      // 1. فحص الرتبة من بيانات الـ AuthContext (الأكثر أماناً)
-      if (user?.role === 'admin' || user?.role === 'moderator' || user?.isAdmin) {
+      // 1. فحص الرتبة من بيانات الـ Auth (لو مسجل بجوجل أو إيميل)
+      const hasAdminRole = user?.role === 'admin' || user?.role === 'moderator' || user?.isAdmin;
+      
+      // 2. فحص الأكواد المسموح لها برؤية الزرار (بما في ذلك الكود الجديد)
+      const savedCode = typeof window !== 'undefined' ? localStorage.getItem("adminCode") : null;
+      const isAdminCode = savedCode === "98612" || savedCode === "98610" || user?.email === "98612" || user?.email === "98610";
+
+      if (hasAdminRole || isAdminCode) {
         setIsAdmin(true);
-      } 
-      // 2. فحص الكود الخاص بك كمدير (98612)
-      else if (typeof window !== 'undefined' && localStorage.getItem("adminCode") === "98612") {
-        setIsAdmin(true);
-      }
-      else {
+      } else {
         setIsAdmin(false);
       }
     };
     checkPermissions();
-  }, [user]); // يتحدث كلما تغيرت بيانات المستخدم
-
+  }, [user]);
   const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5";
 
   return (
