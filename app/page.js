@@ -154,7 +154,7 @@ export default function LoginPage() {
       localStorage.setItem("userEmail", newUser.email);
       login(newUser);
       setMessage("تم إنشاء الحساب بنجاح ✅");
-      setTimeout(() => router.push("/dashboard/subjects"), 1000);
+      setTimeout(() => router.push("/dashboard"), 1000);
     } catch (err) {
       setError("فشل إنشاء الحساب");
     } finally {
