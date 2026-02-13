@@ -148,55 +148,34 @@ function AdminContent() {
     </div>
   );
 
-if (showFake404) return (
+// --- شاشة الـ 404 الفيك (بالتنسيق الأسود الاحترافي) ---
+  if (showFake404) return (
     <div style={{
-      backgroundColor: '#050505',
+      backgroundColor: '#050505', // السواد المطلوب
       color: 'white',
       height: '100vh',
+      width: '100vw',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      textAlign: 'center',
-      fontFamily: 'sans-serif',
-      flexDirection: 'column',
       position: 'fixed',
       top: 0,
       left: 0,
-      width: '100%',
-      zIndex: 9999
+      zIndex: 9999,
+      fontFamily: 'sans-serif'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
         <h1 style={{ 
           fontSize: '3rem', 
-          fontWeight: '900', 
-          margin: 0, 
-          paddingRight: '20px', 
-          borderRight: '2px solid rgba(255,255,255,0.1)',
-          fontStyle: 'italic',
-          color: '#a855f7' 
+          fontWeight: 'bold', 
+          borderRight: '1px solid rgba(255,255,255,0.3)', 
+          paddingRight: '20px',
+          margin: 0 
         }}>404</h1>
-        <div style={{ textAlign: 'left' }}>
-          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', letterSpacing: '2px' }}>PAGE NOT FOUND</div>
-          <div style={{ fontSize: '0.7rem', color: '#666', marginTop: '5px', letterSpacing: '3px' }}>IDENTITY NOT VERIFIED</div>
+        <div style={{ fontSize: '14px', letterSpacing: '1px' }}>
+          This page could not be found.
         </div>
       </div>
-      
-      <button 
-        onClick={() => router.push('/')}
-        style={{
-          marginTop: '40px',
-          background: 'none',
-          border: 'none',
-          color: '#333',
-          fontSize: '10px',
-          fontWeight: 'bold',
-          letterSpacing: '5px',
-          cursor: 'pointer',
-          textTransform: 'uppercase'
-        }}
-      >
-        Return to Home
-      </button>
     </div>
   );
 
