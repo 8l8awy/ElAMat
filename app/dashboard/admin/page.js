@@ -148,11 +148,10 @@ function AdminContent() {
     </div>
   );
 
-// --- شاشة الـ 404 الفيك (بالتنسيق الأسود الاحترافي) ---
-  if (showFake404) return (
+if (showFake404) return (
     <div style={{
-      backgroundColor: '#050505', // السواد المطلوب
-      color: 'white',
+      backgroundColor: '#000000', // سواد كامل
+      color: '#ffffff',
       height: '100vh',
       width: '100vw',
       display: 'flex',
@@ -161,24 +160,33 @@ function AdminContent() {
       position: 'fixed',
       top: 0,
       left: 0,
-      zIndex: 9999,
-      fontFamily: 'sans-serif'
+      zIndex: 99999, // عشان يغطي أي حاجة تانية
+      fontFamily: '-apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Fira Sans", Avenir, "Helvetica Neue", "Lucida Grande", sans-serif',
+      margin: 0,
+      padding: 0
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <h1 style={{ 
-          fontSize: '3rem', 
-          fontWeight: 'bold', 
-          borderRight: '1px solid rgba(255,255,255,0.3)', 
-          paddingRight: '20px',
-          margin: 0 
+      <div style={{ display: 'flex', alignItems: 'center', lineHeight: '49px' }}>
+        <h1 style={{
+          display: 'inline-block',
+          margin: '0 20px 0 0',
+          paddingRight: '23px',
+          fontSize: '24px',
+          fontWeight: 500,
+          verticalAlign: 'top',
+          borderRight: '1px solid rgba(255, 255, 255, 0.3)'
         }}>404</h1>
-        <div style={{ fontSize: '14px', letterSpacing: '1px' }}>
-          This page could not be found.
+        <div style={{ display: 'inline-block', textAlign: 'left' }}>
+          <h2 style={{
+            fontSize: '14px',
+            fontWeight: 'normal',
+            lineHeight: 'inherit',
+            margin: 0,
+            padding: 0
+          }}>This page could not be found.</h2>
         </div>
       </div>
     </div>
   );
-
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen  flex items-center justify-center p-6 text-white" dir="rtl">
