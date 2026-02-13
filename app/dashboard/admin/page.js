@@ -172,12 +172,12 @@ function AdminContent() {
   }
 
   return (
-    <div className="min-h-screen w-full text-white p-4 md:p-8 font-sans bg-[#050505]" dir="rtl">
+    <div className="min-h-screen w-full text-white p-4 md:p-8 font-sans " dir="rtl">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-10 border-b border-white/5 pb-6">
           <h1 className="text-2xl md:text-3xl font-black italic tracking-tighter uppercase">Admin Central</h1>
           <div className="flex items-center gap-4">
-             <button onClick={() => router.push("/dashboard/users")} className="text-[10px] font-bold bg-white/5 px-4 py-2 rounded-xl border border-white/5 hover:bg-white/10">إدارة المستخدمين 👥</button>
+             <button onClick={() => router.push("/dashboard/admin/users")} className="text-[10px] font-bold bg-white/5 px-4 py-2 rounded-xl border border-white/5 hover:bg-white/10">إدارة المستخدمين 👥</button>
              <span className={`px-4 py-1 rounded-full text-[10px] font-bold border ${adminRole === 'admin' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
                 {adminRole === 'admin' ? "مدير نظام" : "مُراجع"}
              </span>
@@ -261,5 +261,5 @@ function AdminContent() {
 }
 
 export default function AdminPage() {
-  return ( <Suspense fallback={<div className="min-h-screen bg-[#050505]" />}> <AdminContent /> </Suspense> );
+  return ( <Suspense fallback={<div className="min-h-screen " />}> <AdminContent /> </Suspense> );
 }
