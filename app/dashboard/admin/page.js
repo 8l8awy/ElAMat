@@ -148,10 +148,22 @@ function AdminContent() {
     </div>
   );
 
-  if (showFake404) return (
-    <div className="min-h-screen flex items-center justify-center text-black font-sans text-center">
-      <h1 className="text-4xl font-bold border-r pr-4 mr-4">404</h1>
-      <div>This page could not be found.</div>
+ if (showFake404) return (
+    <div className="min-h-screen flex items-center justify-center text-white font-sans text-center px-4">
+      <div className="flex items-center gap-6">
+        <h1 className="text-4xl md:text-5xl font-black italic border-l-2 border-white/10 pl-6 text-purple-600 tracking-tighter">404</h1>
+        <div className="text-right">
+          <div className="text-sm md:text-base font-bold uppercase tracking-widest text-gray-200">Page Not Found</div>
+          <div className="text-[10px] text-gray-500 font-medium mt-1 uppercase tracking-[0.3em]">Identity Not Verified</div>
+        </div>
+      </div>
+      
+      <button 
+        onClick={() => router.push('/')}
+        className="absolute bottom-10 text-[10px] text-gray-800 hover:text-purple-500 transition-colors uppercase tracking-[0.5em] font-bold"
+      >
+        Return to Home
+      </button>
     </div>
   );
 
