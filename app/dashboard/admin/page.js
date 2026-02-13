@@ -77,64 +77,46 @@ function AdminContent() {
     } catch (error) { alert("خطأ في تسجيل الدخول"); }
   };
 
-  // ✅ الحفاظ على تسجيل الدخول القديم بالكود (للطوارئ)
-  const verifyAndLogin = async (code) => {
-    if (!code) return;
+const verifyAndLogin = async (input) => {
+    if (!input) return;
+    setIsLoading(true);
     try {
-      const q = query(collection(db, "allowedCodes"), where("code", "==", code.trim()));
-      const snap = await getDocs(q);
-      if (!snap.empty && snap.docs[0].data().admin === true) {
-        const data = snap.docs[0].data();
-        setAdminRole(data.role || "admin");
-        setIsAuthenticated(true);
-        setShowFake404(false);
-      } else { setShowFake404(true); }
-    } catch (err) { console.error(err); } finally { setIsLoading(false); }
-  };
-
-  useEffect(() => {
-    const checkAccess = async () => {
-      const savedCode = localStorage.getItem("adminCode");
-      if (savedCode) await verifyAndLogin(savedCode);
-      else setIsLoading(false);
-    };
-    checkAccess();
-  }, []);
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    const q = query(collection(db, "materials"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const allData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setMaterialsList(allData.filter(item => item.status === "approved"));
-      setPendingList(allData.filter(item => item.status === "pending"));
-    });
-    return () => unsubscribe();
-  }, [isAuthenticated]);
-
-  const handleUpload = async (e) => {
-    e.preventDefault();
-    if (!files.length || !title) return alert("البيانات ناقصة");
-    setUploading(true);
-    try {
-      const uploadedFilesData = [];
-      for (let file of files) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("upload_preset", UPLOAD_PRESET);
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, { method: "POST", body: formData });
-        const data = await res.json();
-        uploadedFilesData.push({ name: file.name, url: data.secure_url, type: file.type });
+      // 1. فحص جدول الـ users (للمشرفين اللي إيميلاتهم اتسجلت جديد)
+      const uQ = query(collection(db, "users"), where("email", "==", input.trim().toLowerCase()));
+      const uSnap = await getDocs(uQ);
+      
+      if (!uSnap.empty) {
+        const userData = uSnap.docs[0].data();
+        // لو رتبته أدمن أو مشرف، افتح له الباب
+        if (userData.role === "admin" || userData.role === "moderator") {
+          setIsAuthenticated(true);
+          setAdminRole(userData.role);
+          setShowFake404(false);
+          localStorage.setItem("adminCode", input.trim().toLowerCase());
+          return;
+        }
       }
-      await addDoc(collection(db, "materials"), {
-        title, desc, subject, type, year: Number(year), semester: Number(semester),
-        files: uploadedFilesData, status: "approved", uploader: "Admin", createdAt: serverTimestamp(),
-      });
-      setUploading(false); setTitle(""); setDesc(""); setFiles([]); setMessage("تم النشر بنجاح ✅");
-      setTimeout(() => setMessage(""), 3000);
-    } catch (error) { alert(error.message); setUploading(false); }
-  };
 
+      // 2. فحص جدول الأكواد (عشانك أنت بالأكواد القديمة)
+      const cQ = query(collection(db, "allowedCodes"), where("code", "==", input.trim()));
+      const cSnap = await getDocs(cQ);
+      
+      if (!cSnap.empty && cSnap.docs[0].data().admin === true) {
+        setIsAuthenticated(true);
+        setAdminRole(cSnap.docs[0].data().role || "admin");
+        setShowFake404(false);
+        localStorage.setItem("adminCode", input.trim());
+      } else {
+        // لو مش موجود في الجدولين، ارمي الفيك ايرور
+        setShowFake404(true);
+      }
+    } catch (err) {
+      console.error(err);
+      setShowFake404(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   // ✅ فلترة الأرشيف بالبحث
   const filteredMaterials = materialsList.filter(m => 
     m.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
