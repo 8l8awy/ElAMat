@@ -149,7 +149,7 @@ function AdminContent() {
   );
 
   if (showFake404) return (
-    <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans text-center">
+    <div className="min-h-screen flex items-center justify-center text-black font-sans text-center">
       <h1 className="text-4xl font-bold border-r pr-4 mr-4">404</h1>
       <div>This page could not be found.</div>
     </div>
