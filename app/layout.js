@@ -23,7 +23,7 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  const isClosed = true; 
+  const isClosed = false; 
   const GA_MEASUREMENT_ID = ''; 
 
   const jsonLd = {
