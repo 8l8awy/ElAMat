@@ -11,7 +11,7 @@ import {
 } from 'react-icons/fa';
 
 export default function Navbar() {
-  const { user, logout } = useAuth(); // 'user' يحتوي على البيانات من Firestore
+  const { user, logout } = useAuth();
   const router = useRouter();
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -26,23 +26,40 @@ export default function Navbar() {
     router.push('/');
   };
 
-useEffect(() => {
-    const checkPermissions = () => {
+  useEffect(() => {
+    const checkPermissions = async () => {
       // 1. فحص الرتبة من بيانات الـ Auth (لو مسجل بجوجل أو إيميل)
       const hasAdminRole = user?.role === 'admin' || user?.role === 'moderator' || user?.isAdmin;
       
-      // 2. فحص الأكواد المسموح لها برؤية الزرار (بما في ذلك الكود الجديد)
+      // 2. فحص الأكواد المسموح لها عبر الـ API لضمان الأمان وعدم تسريب الكود
       const savedCode = typeof window !== 'undefined' ? localStorage.getItem("adminCode") : null;
-      const isAdminCode = savedCode === "98612" || savedCode === "98610" || user?.email === "98612" || user?.email === "98610";
+      
+      let isAdminByCode = false;
+      if (savedCode || user?.email) {
+        try {
+          const res = await fetch('/api/verify-admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ inputCode: savedCode || user?.email }),
+          });
+          const data = await res.json();
+          isAdminByCode = data.authorized;
+        } catch (e) {
+          isAdminByCode = false;
+        }
+      }
 
-      if (hasAdminRole || isAdminCode) {
+      // لو أي شرط تحقق، اظهر زرار الأدمن
+      if (hasAdminRole || isAdminByCode) {
         setIsAdmin(true);
       } else {
         setIsAdmin(false);
       }
     };
+    
     checkPermissions();
   }, [user]);
+
   const btnClass = "nav-btn w-fit mx-auto p-3 flex justify-center items-center rounded-xl transition-all hover:scale-110 shadow-lg border border-white/5";
 
   return (
@@ -61,7 +78,6 @@ useEffect(() => {
       </button>
 
       <div className={`nav-buttons ${isMenuOpen ? 'active' : ''}`}>
-        
         <span id="userName" style={{color:'white', fontWeight:'bold', display:'block', textAlign:'center', marginBottom:'15px', fontSize: '0.9rem'}}>
             {user?.name || "طالب"}
         </span>
@@ -86,14 +102,13 @@ useEffect(() => {
              <FaCloudUploadAlt size={20} />
         </Link>
 
-        {/* ✅ هذا الزرار لن يظهر إلا للأدمن والمشرفين */}
+        {/* زرار الأدمن لن يظهر إلا بعد تأكيد الـ API */}
         {isAdmin && (
           <Link href="/dashboard/admin" className={`${btnClass} bg-orange-600/20 text-orange-500 hover:bg-orange-600 hover:text-white`} title="لوحة التحكم الرئيسية" onClick={closeMenu}>
                <FaCogs size={20} />
           </Link>
         )}
 
-        {/* اختياري: إخفاء AdminLink أيضاً لو كان مخصصاً للإدارة فقط */}
         {isAdmin && (
           <div className="w-fit mx-auto"> 
               <AdminLink onClick={closeMenu} />

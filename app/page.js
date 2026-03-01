@@ -25,6 +25,28 @@ export default function LoginPage() {
     if (user) router.push("/dashboard");
   }, [user, router]);
 
+  // ✅ دالة التحقق السرية (تكلم السيرفر بدلاً من كتابة الأرقام هنا)
+  const verifyAdminStatus = async (codeOrEmail) => {
+    try {
+      const res = await fetch('/api/verify-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inputCode: codeOrEmail }),
+      });
+      const data = await res.json();
+      
+      if (data.authorized) {
+        // لو السيرفر أكد إنه أدمن، نخزن الكود للـ Session الحالية
+        localStorage.setItem("adminCode", codeOrEmail);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Verification error");
+      return false;
+    }
+  };
+
   // --- 1. تسجيل الدخول بجوجل ---
   const handleGoogleLogin = async () => {
     setError("");
@@ -50,11 +72,10 @@ export default function LoginPage() {
         userData = snap.docs[0].data();
       }
 
-      // حفظ الإيميل للتعرف عليه في باقي الصفحات
       localStorage.setItem("userEmail", gUser.email);
-      if (userData.role === "admin" || userData.role === "moderator") {
-        localStorage.setItem("adminCode", gUser.email);
-      }
+      
+      // ✅ التحقق عبر الـ API السري
+      await verifyAdminStatus(gUser.email);
 
       login(userData);
       router.push("/dashboard/subjects");
@@ -65,7 +86,7 @@ export default function LoginPage() {
     }
   };
 
-  // --- 2. تسجيل الدخول اليدوي (معدل ليتعرف عليك كأدمن) ---
+  // --- 2. تسجيل الدخول اليدوي ---
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -74,7 +95,7 @@ export default function LoginPage() {
     try {
       const cleanInput = loginEmail.trim();
 
-      // فحص الأكواد (allowedCodes)
+      // فحص الأكواد المسموحة (allowedCodes)
       const codesRef = collection(db, "allowedCodes");
       const qCode = query(codesRef, where("code", "==", cleanInput));
       const codeSnap = await getDocs(qCode);
@@ -82,15 +103,16 @@ export default function LoginPage() {
       if (!codeSnap.empty) {
         const data = codeSnap.docs[0].data();
         
-        // ✅ الخطوة السحرية: تخزين الكود في المفتاحين عشان الموقع يصدق إنك أدمن
-        localStorage.setItem("adminCode", cleanInput);
         localStorage.setItem("userEmail", cleanInput);
+        
+        // ✅ التحقق عبر الـ API السري
+        const isActuallyAdmin = await verifyAdminStatus(cleanInput);
 
         login({ 
           name: data.name || "User", 
           email: cleanInput, 
-          role: data.admin ? "admin" : "student", 
-          isAdmin: data.admin || false 
+          role: isActuallyAdmin ? "admin" : "student", 
+          isAdmin: isActuallyAdmin
         });
         
         router.push("/dashboard/subjects");
@@ -106,9 +128,10 @@ export default function LoginPage() {
         const data = userSnap.docs[0].data();
         if (data.password === loginPassword) {
           localStorage.setItem("userEmail", cleanInput);
-          if (data.role === "admin" || data.role === "moderator") {
-            localStorage.setItem("adminCode", cleanInput);
-          }
+          
+          // ✅ التحقق عبر الـ API السري
+          await verifyAdminStatus(cleanInput);
+
           login({ ...data });
           router.push("/dashboard/subjects");
         } else {
@@ -200,13 +223,14 @@ export default function LoginPage() {
         )}
 
         <div className="relative my-8"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div><span className="relative bg-[#111] px-4 text-[10px] text-gray-600 font-bold">أو</span></div>
-<button 
-  onClick={handleGoogleLogin} 
-  className="w-full flex items-center justify-center gap-3 bg-white text-black p-4 rounded-2xl font-black hover:bg-gray-100 transition-all active:scale-95"
->
-  <FaGoogle className="text-[#DB4437] text-lg" /> 
-  <span className="text-sm">المتابعة باستخدام جوجل</span>
-</button>
+        <button 
+          onClick={handleGoogleLogin} 
+          className="w-full flex items-center justify-center gap-3 bg-white text-black p-4 rounded-2xl font-black hover:bg-gray-100 transition-all active:scale-95"
+        >
+          <FaGoogle className="text-[#DB4437] text-lg" /> 
+          <span className="text-sm">المتابعة باستخدام جوجل</span>
+        </button>
+        {message && <p className="text-green-500 text-[10px] font-bold mt-4">{message}</p>}
         {error && <p className="text-red-500 text-[10px] font-bold mt-4 animate-bounce">{error}</p>}
         <p className="text-center text-[10px] text-gray-600 mt-8 tracking-widest uppercase">تحت إشراف <strong>محمد علي </strong></p>
       </div>
